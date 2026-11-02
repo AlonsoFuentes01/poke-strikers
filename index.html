@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#0a1230">
 <title>Poké Strikers · Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@600;800&family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
@@ -244,6 +244,29 @@ body.netHost #modeLbl,body.netGuest #modeLbl,body.netHost #modePick,body.netGues
 #netBar .chip.ok{background:#1d7a3a;border-color:#7dff9a;color:#eaffee}
 #netBar small{display:block;opacity:.8;font:700 11px/1.5 Nunito,sans-serif;margin-top:4px}
 #netBar button{margin:8px 0 0 0}
+
+/* ===== Móvil / táctil: interfaz compacta para pantallas bajas (celular horizontal) ===== */
+@media(pointer:coarse){
+ #keys,#pokeCard{display:none!important}
+ #top{top:3px;transform:translateX(-50%) scale(.62);transform-origin:top center}
+ #clock{top:30px;font-size:11px;padding:1px 12px}
+ #mini{width:104px;height:62px;top:5px;left:5px}
+ #envChip{top:72px;left:5px;font-size:9px;padding:2px 8px;max-width:150px}
+ #netChip{top:92px;left:5px;font-size:9px;padding:2px 8px}
+ #setBtn,#chg,#subBtn{top:4px!important;padding:4px 7px!important;font-size:9px!important;border-radius:7px!important;box-shadow:0 2px 0 #8096c4!important;font-family:Nunito,sans-serif!important;font-weight:800}
+ #subBtn{right:6px!important}#chg{right:92px!important}body.playing #setBtn{right:150px!important}
+ #bars{width:130px;bottom:6px;padding:3px 6px}#bars>div:not(.bar){display:none}#bars .bar{height:8px;margin:2px 0}
+ #powerHud{display:none!important}
+ .pad button[data-a="up"]{grid-column:2;grid-row:1}.pad button[data-a="left"]{grid-column:1;grid-row:2}.pad button[data-a="down"]{grid-column:2;grid-row:2}.pad button[data-a="right"]{grid-column:3;grid-row:2}
+ #powerBtn{right:150px;bottom:10px;padding:7px 9px;font-size:9px}
+ #touch{left:8px;right:8px;bottom:8px}
+ .pad{grid-template-columns:repeat(3,38px);grid-template-rows:repeat(2,38px);gap:3px}
+ .actions{grid-template-columns:repeat(2,60px);gap:5px}
+ .pad button,.actions button{font:800 9px Nunito,sans-serif!important;letter-spacing:0!important;white-space:nowrap;overflow:hidden;border-radius:9px}
+ .actions button{height:34px}
+ #msg{font-size:clamp(22px,6vw,40px);top:28%}
+ #toast{font-size:13px;top:calc(28% + 44px)}
+}
 </style></head><body>
 </div>
 <div id="vig"></div><div id="flash"></div><canvas id="mini" width="176" height="106"></canvas><div id="envChip"></div><div id="netChip"></div>
