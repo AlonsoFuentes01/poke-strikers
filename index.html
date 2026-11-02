@@ -248,6 +248,9 @@ body.netHost #modeLbl,body.netGuest #modeLbl,body.netHost #modePick,body.netGues
 /* ===== Móvil / táctil: interfaz compacta para pantallas bajas (celular horizontal) ===== */
 @media(pointer:coarse){
  #keys,#pokeCard{display:none!important}
+ body.playing,body.playing *{-webkit-touch-callout:none!important;-webkit-user-select:none!important;user-select:none!important;-webkit-tap-highlight-color:transparent}
+ #touch,#touch *{touch-action:none!important}
+ #touch button{-webkit-appearance:none;appearance:none}
  #top{top:3px;transform:translateX(-50%) scale(.62);transform-origin:top center}
  #clock{top:30px;font-size:11px;padding:1px 12px}
  #mini{width:104px;height:62px;top:5px;left:5px}
@@ -1233,12 +1236,15 @@ addEventListener('keyup',e=>{keys[e.code]=false;inputUp(e.code)});
 const uiTarget=t=>!!(t&&t.closest&&t.closest('button,input,select,#cfg,#menu,#end,#splash,#touch,#subs,#builder,#online'));
 addEventListener('mousedown',e=>{if(!ready||paused||uiTarget(e.target))return;e.preventDefault();const c='Mouse'+e.button;if(!keys[c]){keys[c]=true;inputDown(c)}});
 addEventListener('mouseup',e=>{const c='Mouse'+e.button;if(keys[c]){keys[c]=false;inputUp(c)}});
-addEventListener('contextmenu',e=>{if(ready||document.body.classList.contains('listening'))e.preventDefault()});
+addEventListener('contextmenu',e=>{if(ready||document.body.classList.contains('playing')||document.body.classList.contains('listening'))e.preventDefault()});
+addEventListener('selectstart',e=>{if(document.body.classList.contains('playing'))e.preventDefault()});
+['gesturestart','gesturechange'].forEach(ev=>addEventListener(ev,e=>e.preventDefault()));
+addEventListener('touchmove',e=>{if(document.body.classList.contains('playing')&&e.target.closest&&e.target.closest('#touch,canvas'))e.preventDefault()},{passive:false});
 addEventListener('auxclick',e=>{if(ready&&!uiTarget(e.target))e.preventDefault()});
 addEventListener('blur',()=>{for(const c in keys)keys[c]=false;for(const a in virt)virt[a]=false;shootArmed=false;charge=0});
 // Botones táctiles (por acción, así respetan la configuración).
 document.querySelectorAll('#touch button[data-a]').forEach(b=>{const a=b.dataset.a;
- const down=e=>{e.preventDefault();if(virt[a])return;virt[a]=true;actDown(a,!!(B&&B.o===user()))};
+ const down=e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId)}catch(_){}if(virt[a])return;virt[a]=true;actDown(a,!!(B&&B.o===user()))};
  const up=e=>{e.preventDefault();if(!virt[a])return;virt[a]=false;if(!held(a))actUp(a)};
  b.addEventListener('pointerdown',down);b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);b.addEventListener('pointerleave',e=>{if(e.buttons===0)up(e)})});
 
