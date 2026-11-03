@@ -216,9 +216,11 @@ function build(o){
  }
  // Capas situadas para la nueva proyección ortográfica, sin fuga de perspectiva.
  // La vista es fija: las capas se muestran completas sin mover la cámara.
- plane(sky,166,93,0,-35,-94);
- plane(town,128,56,0,-7,-75);
- plane(tribune,108,43.8,0,9,-HZ-37);
+ // El conjunto está compacto: edificio + escaleras + gradas junto al borde norte.
+ // Capas paralelas, misma escala de lectura y sin bloques dispersos.
+ plane(sky,117,62,0,-12,-56);
+ plane(town,102,48,0,0,-44);
+ plane(tribune,91,29,0,14.5,-28);
  // Side gardens are decor, not old stands. Keep outside the gameplay perimeter.
  const garden=canvas(256,192,q=>{
   r(q,0,164,256,28,C.stoneDark);
@@ -226,10 +228,8 @@ function build(o){
   for(let i=0;i<4;i++)tree(q,36+i*67,166,.38+(i%2)*.11);
   for(let i=0;i<8;i++)flowers(q,17+i*31,169);
  });
- plane(garden,29,16,-HX-13,6.7,-3,Math.PI/2);
- plane(garden,29,16,HX+13,6.7,-3,-Math.PI/2);
- // A low wall far outside the court; no billboard mesh or old seating.
- plane(foreground,106,16,0,1.8,-HZ-31);
+ // Sin paneles laterales rotados ni baranda lejana: rompían la composición.
+ // El jardín está pintado dentro de las terrazas centrales, unido al estadio.
  // Small pixel-art goal frames, not the former mesh, using existing goal dimensions.
  const goalTex=canvas(64,64,q=>{
   for(let y=0;y<64;y+=8)for(let x=0;x<64;x+=8){
