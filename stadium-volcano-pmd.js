@@ -281,12 +281,13 @@ function build(o){
    const y=342+row*47;
    rect(q,153,y+30,395,15,C.ink);
    rect(q,154,y+30,392,5,C.light);
+   // Bancos vacíos y módulos de piedra: los espectadores reales usan sprites PMD.
    for(let i=0;i<17;i++){
     const x=160+i*22+(row%2)*8;
     if(x>540)continue;
-    rect(q,x,y+9,15,20,i%4===0?'#705a8a':i%3===0?'#dc9c79':'#9e8793');
-    rect(q,x+4,y+4,10,9,i%3===1?'#f6c99d':'#c6a8a2');
-    rect(q,x+3,y+23,17,5,C.ink);
+    rect(q,x,y+13,18,8,'#514052');
+    rect(q,x+2,y+15,14,2,C.stone2);
+    rect(q,x+4,y+22,10,4,C.ink);
    }
   }
   rect(q,126,555,467,24,C.ink);rect(q,132,557,455,9,C.shine);
@@ -297,6 +298,39 @@ function build(o){
  });
  plane(sidePanel(-1),48,39,-47,3,-32);
  plane(sidePanel(1),48,39,47,3,-32);
+
+ // 3b. Gradas bajas bien delimitadas y atestadas de arquitectura pixel art.
+ // Estas son las plataformas en que se colocan los sprites reales desde index.html.
+ const standFrame=canvas(768,256,q=>{
+  rect(q,0,0,768,256,C.ink);
+  rect(q,8,10,752,239,C.stone);
+  bricks(q,12,16,744,227,.65);
+  // Banquetas claras, filas independientes y columnas de separación.
+  for(let row=0;row<3;row++){
+   const y=42+row*58;
+   rect(q,10,y,748,14,C.ink);
+   rect(q,14,y+2,740,6,C.shine);
+   rect(q,14,y+8,740,5,C.stone2);
+   for(let k=0;k<19;k++){
+    const x=23+k*39;
+    rect(q,x,y+15,27,25,C.ink);
+    rect(q,x+3,y+18,21,18,'#554359');
+    rect(q,x+5,y+23,17,3,C.light);
+   }
+  }
+  // Separadores que delimitan sectores, igual que las tribunas de Ciudad.
+  for(const x of [5,371,732]){
+   rect(q,x,10,29,239,C.ink);
+   rect(q,x+5,10,19,229,C.stone2);
+   rect(q,x+9,22,6,196,C.light);
+  }
+  rect(q,0,236,768,20,C.ink);rect(q,0,237,768,7,C.shine);
+ });
+ for(const side of [-1,1]){
+  // Plano al fondo de la fila de espectadores, separado de la puerta central.
+  plane(standFrame,27,11.4,side*45.3,7.5,-28.8);
+ }
+
  // 4. Edificaciones pequeñas y decoración cerca de las bandas, como Ciudad.
  const prop=canvas(128,152,q=>{
   rect(q,17,117,95,25,C.ink);rect(q,20,120,90,15,C.stone);
@@ -308,6 +342,57 @@ function build(o){
  for(const side of [-1,1])for(const z of [-12,7]){
   plane(prop,5.2,6.3,side*(HX+6),3.15,z);
  }
+
+ // Plaza exterior amplia y continua, para no mostrar el color vacío del cielo
+ // por debajo y a ambos costados del campo durante la panorámica inclinada.
+ const plazaGround=canvas(1024,1024,q=>{
+  rect(q,0,0,1024,1024,'#4c3b4b');
+  for(let row=0;row<46;row++){
+   const yy=row*23,shift=row%2?31:0;
+   for(let col=-1;col<18;col++){
+    const xx=col*62+shift;
+    rect(q,xx+2,yy+2,58,19,['#665061','#725767','#5a465a','#786071'][(row+col+12)%4]);
+    rect(q,xx+3,yy+3,52,2,'#9c7a80');
+    if((row*7+col)%5===0)rect(q,xx+9,yy+11,14,2,'#453544');
+   }
+  }
+  // Vetas discontinuas incandescentes, no una cuadrícula uniforme.
+  for(let i=0;i<54;i++){
+   let x=rand()*1024,y=rand()*1024;
+   q.beginPath();q.moveTo(x,y);
+   for(let j=0;j<4;j++){x+=9+rand()*12;y+=(rand()-.5)*22;q.lineTo(x,y);}
+   q.strokeStyle='#352636';q.lineWidth=4;q.stroke();
+   q.strokeStyle=i%3?'#b64b3d':'#ed7c3e';q.lineWidth=1.7;q.stroke();
+  }
+ });
+ const plazaTex=mkTex(plazaGround);plazaTex.wrapS=plazaTex.wrapT=THREE.RepeatWrapping;
+ plazaTex.repeat.set(1.38,1.35);
+ const plazaMesh=new THREE.Mesh(new THREE.PlaneGeometry(148,138),
+  new THREE.MeshBasicMaterial({map:plazaTex,side:THREE.DoubleSide,depthWrite:true}));
+ plazaMesh.rotation.x=-Math.PI/2;plazaMesh.position.set(0,-.085,8);
+ scene.add(plazaMesh);
+ // Muros de contención y lava dibujada alrededor, como piezas de escenario.
+ const lavaChannel=canvas(512,96,q=>{
+  rect(q,0,0,512,96,C.ink);rect(q,0,9,512,78,'#993b3a');
+  for(let i=0;i<41;i++){
+   const x=i*13,w=7+rand()*12,y=19+rand()*24;
+   rect(q,x,y,w,46,C.lava);
+   rect(q,x+2,y+9,w*.47,18,C.hot);
+   if(i%4===0)rect(q,x+3,y+12,3,20,C.core);
+  }
+  rect(q,0,0,512,10,C.stone2);rect(q,0,83,512,12,C.ink);
+ });
+ const lavaTex=mkTex(lavaChannel);
+ const lavaMat=new THREE.MeshBasicMaterial({map:lavaTex,side:THREE.DoubleSide});
+ for(const z of [-25.5,26.5]){
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(92,3.2),lavaMat);
+  m.rotation.x=-Math.PI/2;m.position.set(0,-.016,z);scene.add(m);
+ }
+ for(const x of [-38,38]){
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(3.0,56),lavaMat);
+  m.rotation.x=-Math.PI/2;m.position.set(x,-.015,0);scene.add(m);
+ }
+
  // 5. Primer plano ilustrado; se retira al terminar la cámara cinematográfica.
  const foreground=new THREE.Group();scene.add(foreground);
  const foregroundArt=canvas(1536,300,q=>{
