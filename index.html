@@ -619,7 +619,7 @@ button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="./city-pmd-atlas.js?v=atlas-4d3e293"></script>
 <script src="./stadium-city-pmd.js"></script>
-<script src="./stadium-volcano-pmd.js?v=volcano-bench-fit-20261103"></script>
+<script src="./stadium-volcano-pmd.js?v=volcano-same-pmd-as-city-20261103"></script>
 <script src="./city-pmd-v3.js?v=goal-bench-intro-2"></script>
 <script>
 const L={
@@ -1075,28 +1075,20 @@ function crowdAnimFor(id){
  return entry;
 }
 function arrangeStadiumCrowd(){
- // Las posiciones se anclan a los escalones dibujados del Volcán.
- // Ciudad conserva exactamente su antiguo aforo y sus dos filas.
+ // EXACTAMENTE el trazado de asientos y gradas del primer estadio.
+ // Volcán no usa una grada ficticia más alta ni 3 filas que flotan en aire.
  if(!crowd.length)return;
- const volcano=stadiumMode==='volcano';
- const seatsVol=[-50,-46.5,-43,-39.5,-36,36,39.5,43,46.5,50];
- const seatsCity=[-40.5,-37,-33.5,-30,30,33.5,37,40.5];
+ const seats=[-40.5,-37,-33.5,-30,30,33.5,37,40.5];
  for(let i=0;i<crowd.length;i++){
-  const member=crowd[i];
-  member.s.visible=volcano||i<16;
-  if(!member.s.visible)continue;
-  const row=volcano?Math.floor(i/10):Math.floor(i/8);
-  const idx=volcano?i%10:i%8;
-  const x=volcano?seatsVol[idx]:seatsCity[idx];
-  // Desfase de perspectiva: los sprites están delante del plano de gradas.
-  const feetY=volcano?[6.3,11.3,16.3][row]:[1.85,3.2][row];
-  const z=volcano?[-27,-27.65,-28.3][row]:[-24.6,-25.4][row];
-  const size=volcano?2.22:2.8;
-  member.fit=false;member.hc=volcano?1.72:2.2;
-  member.s.scale.set(size,size,1);
-  member.s.position.set(x,feetY+size*.42,z);
-  member.by=feetY+size*.42;
-  member.baseY=feetY;
+  const m=crowd[i];
+  m.s.visible=i<16;
+  if(!m.s.visible)continue;
+  const row=Math.floor(i/8),ix=i%8;
+  const size=2.8,y=row?3.2:1.85,z=row?-25.4:-24.6;
+  m.fit=false;m.hc=2.2;
+  m.s.scale.set(size,size,1);
+  m.s.position.set(seats[ix],y,z);
+  m.by=y;m.baseY=y-size*.49;
  }
 }
 function buildCrowd(T){
