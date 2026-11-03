@@ -4073,11 +4073,8 @@ function buildEnds(mode){
   return;
  }
 
- const sunset=mode==='sunset',tw=HZ*2+16,TH=BIOMES[mode],wallCol=TH?TH.wall:(mode==='city'?0x8b9988:sunset?0x3a2748:0x1a2a58),glow=TH?TH.glow:(mode==='city'?0xb7c38a:sunset?0xff9d5c:0x2fd0ff),
-  bases=sunset?['#5a3252','#6b3b57','#7a4560']:['#263d67','#2d527a','#35476e','#28334f'],wins=sunset?['#ffb86b','#ffe29a','#ff8a69']:['#61eaff','#ffd75a','#ff75d8','#9bffbd'];
- const facade=()=>{const c=document.createElement('canvas');c.width=64;c.height=128;const q=c.getContext('2d');q.fillStyle=bases[Math.random()*bases.length|0];q.fillRect(0,0,64,128);
-  const a=wins[Math.random()*wins.length|0];for(let y=6;y<124;y+=14)for(let x=6;x<60;x+=14){q.fillStyle=Math.random()>.25?a:'#26314e';q.fillRect(x,y,7,9)}
-  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;return new THREE.MeshStandardMaterial({map:t,roughness:.86})};
+ const sunset=mode==='sunset',tw=HZ*2+16,TH=BIOMES[mode],wallCol=TH?TH.wall:(mode==='city'?0x8b9988:sunset?0x3a2748:0x1a2a58),glow=TH?TH.glow:(mode==='city'?0xb7c38a:sunset?0xff9d5c:0x2fd0ff);
+
  for(const s of [-1,1]){
   for(let r=0;r<7;r++){
    const by=.55*(Math.min(r,3)+1)+Math.max(0,r-3)*.5,x=s*(HX+2.6+r*1.15);
@@ -4093,14 +4090,10 @@ function buildEnds(mode){
   const rail=new THREE.Mesh(new THREE.BoxGeometry(.38,.21,tw+6),new THREE.MeshStandardMaterial({color:0x7b8580,roughness:.7}));
   rail.position.set(wx,wh+.08,0);cityG.add(rail);
   // No reinstalar líneas LED verticales sobre la antigua muralla.
-  const roof=new THREE.Mesh(new THREE.BoxGeometry(8,.4,tw+6),new THREE.MeshStandardMaterial({color:TH?TH.roof:0x1b2340,roughness:.8}));roof.position.set(s*(HX+13.6),10.2,0);if(!TH)cityG.add(roof);
+  // Sin cubierta alta que tape las casas, montañas ni paisajes ilustrados.
   const ad=new THREE.Mesh(new THREE.PlaneGeometry(tw-6,1.3),new THREE.MeshBasicMaterial({map:adT}));ad.position.set(s*(HX+2.45),.75,0);ad.rotation.y=s>0?-Math.PI/2:Math.PI/2;cityG.add(ad);
-  // skyline detrás del muro
-  if(!TH&&mode!=='city')for(let row=0;row<2;row++)for(let i=0;i<(row?9:12);i++){
-   const w=5+Math.random()*3,h=(row?20:12)+Math.random()*(row?20:16),d=5+Math.random()*3,
-    x=s*(HX+(row?34:23)+Math.random()*6),z=-47+i*(row?11:8.2)+Math.random()*2;
-   const bm=new THREE.Mesh(new THREE.BoxGeometry(d,h,w),facade());bm.position.set(x,h/2-1,z);cityG.add(bm);
-  }
+  // Cada bioma conserva únicamente sus propias estructuras del diorama.
+
  }
 }
 cityFloor.material.map=null;cityFloor.material.color.setHex(0x9fa69f);cityFloor.material.needsUpdate=true;
