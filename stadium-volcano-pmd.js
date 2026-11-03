@@ -574,7 +574,7 @@ function buildBench(o){
  const {THREE,dugG,centerX,frontZ,backZ,name,color,subs,maxSubs}=o;
  const shade=(k)=>{const c=new THREE.Color(color);c.multiplyScalar(k);return '#'+c.getHexString()};
  const team=shade(1),lite=shade(1.43),dark=shade(.53);
- const ink='#34465f',wall='#e5c8a3',wood='#8f6652',woodLight='#c3986e';
+ const ink='#332941',wall='#9f8691',wood='#695364',woodLight='#d7b5ab';
  const canvas=(w,h,fn)=>{let c=document.createElement('canvas');c.width=w;c.height=h;const q=c.getContext('2d');q.imageSmoothingEnabled=false;fn(q,w,h);return c};
  const fill=(q,x,y,w,h,col)=>{q.fillStyle=col;q.fillRect(x,y,w,h)};
  const t=(c)=>{
