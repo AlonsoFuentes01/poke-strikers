@@ -619,7 +619,7 @@ button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="./city-pmd-atlas.js?v=atlas-4d3e293"></script>
 <script src="./stadium-city-pmd.js"></script>
-<script src="./stadium-volcano-pmd.js?v=volcano-entrance-depth-p2"></script>
+<script src="./stadium-volcano-pmd.js?v=volcano-foreground-p3"></script>
 <script src="./city-pmd-v3.js?v=goal-bench-intro-2"></script>
 <script>
 const L={
@@ -2547,6 +2547,9 @@ function render(t){pollSplashPad();aimTick(t);ctlTick(t);const dt=Math.min(.1,cl
   cam.lookAt(CAMERA_2D_LOOK.x+ballCamX,
    CAMERA_2D_LOOK.y+(CAMERA_PLAY_LOOK.y-CAMERA_2D_LOOK.y)*mix,
    CAMERA_2D_LOOK.z+(CAMERA_PLAY_LOOK.z-CAMERA_2D_LOOK.z)*mix+ballCamZ);
+  // El primer plano volcánico se retira durante la transición a cenital.
+  if(window.PMD_CITY.activeScene&&window.PMD_CITY.activeScene.userData.pmdSetIntro)
+   window.PMD_CITY.activeScene.userData.pmdSetIntro(mix);
   // Las láminas de Pokémon se orientan hacia la cámara para no quedar de canto.
   for(const p of P)if(p.spriteMesh){
    p.spriteMesh.quaternion.copy(cam.quaternion);
