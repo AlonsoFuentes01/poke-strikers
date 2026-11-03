@@ -5045,116 +5045,203 @@ function mdStadiumCards(){
 }
 
 
-// ===== NUEVO RENDER PMD 2.5D: NO REUTILIZA EDIFICIOS NI GRADAS ANTERIORES =====
+
+// ===== POKÉ STRIKERS / MYSTERY DUNGEON: NUEVO ESTADIO DESDE CERO =====
+// Ninguna fachada, grada, valla, carretera o multitud de los estadios antiguos se dibuja.
+// Lógica de juego, tamaños de la cancha, cámara, red y entrenadores permanecen independientes.
 function pmdNewStadium(mode){
- const pal={
- city:['#75c8ed','#d2eaf1','#8baa96','#e7c8a3','#bc6959','#547c9a'],
- sunset:['#b18fcb','#f7d09a','#a57c96','#e5b18b','#b96164','#f1c57d'],
- classic:['#7bcaed','#e8f1d4','#6b9e83','#dbce9f','#5f9885','#b59470'],
- beach:['#91d9ee','#f6e9c2','#42b4bd','#efd6a5','#51a5a7','#f5da8f'],
- volcano:['#8986ac','#f0b58d','#73596b','#ae8163','#593e50','#fc9150'],
- arctic:['#84c5e8','#f0fcfc','#93bdcf','#e9f2ed','#76a5c6','#d3f8ff'],
- space:['#393a76','#7e79b2','#545b8e','#9396bc','#515383','#c0b9f0'],
- desert:['#77c4ef','#ffe0b0','#daab76','#e8bd83','#c58b58','#f9dfaa']
- }[mode]||['#75c8ed','#d2eaf1','#8baa96','#e7c8a3','#bc6959','#547c9a'];
- let seed=1209;for(const c of mode)seed+=c.charCodeAt(0)*53;
- const rnd=()=>{seed=(seed*16807)%2147483647;return(seed/2147483647)};
- const root=new THREE.Group();root.name='PMD_NEW_'+mode;cityG.add(root);
+ const themes={
+  city:{sky:'#73b7ef',sky2:'#d4ecfa',mount:'#76b89e',mount2:'#4d9b82',wall:'#ecd0a8',light:'#fff0ce',shadow:'#8f7890',roof:'#c65d50',roof2:'#984b57',wood:'#79556a',glass:'#75b9d8',green:'#64ad66',green2:'#b0d36e',accent:'#387dba',ground:'#c4b29d',kind:'town'},
+  sunset:{sky:'#bd93ba',sky2:'#ffdfb7',mount:'#b47f9a',mount2:'#8d6a87',wall:'#eed0ab',light:'#ffe6b4',shadow:'#956b86',roof:'#b75b5d',roof2:'#8f526e',wood:'#886070',glass:'#d59a9c',green:'#8fab6b',green2:'#dfcf78',accent:'#df965f',ground:'#cfaa8c',kind:'town'},
+  classic:{sky:'#78bde9',sky2:'#e0f5e1',mount:'#87b5a0',mount2:'#578c72',wall:'#e5d6aa',light:'#f7ebc2',shadow:'#6c897a',roof:'#6a9472',roof2:'#4c7067',wood:'#917252',glass:'#9dd3cf',green:'#5da56e',green2:'#b9d67c',accent:'#b68e58',ground:'#9db17b',kind:'town'},
+  beach:{sky:'#75cbea',sky2:'#e2fcf0',mount:'#6bc4b2',mount2:'#3d9fae',wall:'#f2dfb2',light:'#fff3c8',shadow:'#8cb0a5',roof:'#58afa9',roof2:'#3d8699',wood:'#b28b62',glass:'#76d7dd',green:'#61bc8b',green2:'#cce48f',accent:'#379bb6',ground:'#e3d1a2',kind:'coast'},
+  volcano:{sky:'#8b8bb2',sky2:'#e3b099',mount:'#7d6372',mount2:'#4c3c52',wall:'#b18a70',light:'#f2c38e',shadow:'#583d50',roof:'#64414a',roof2:'#442b3b',wood:'#5c4350',glass:'#e89062',green:'#a67b62',green2:'#eb9b59',accent:'#eb7042',ground:'#9c745c',kind:'magma'},
+  desert:{sky:'#7ac1ed',sky2:'#fce2bb',mount:'#e5b67e',mount2:'#cd946a',wall:'#ead1a1',light:'#fff0c7',shadow:'#a27a5c',roof:'#c57a4a',roof2:'#995c48',wood:'#956e52',glass:'#b2d5d4',green:'#85ad6a',green2:'#c5ca72',accent:'#d99456',ground:'#dfb981',kind:'ruins'},
+  arctic:{sky:'#80bfe5',sky2:'#ebfaff',mount:'#a6d2de',mount2:'#79a5c2',wall:'#d9ebed',light:'#f9ffff',shadow:'#7698b2',roof:'#7eaec9',roof2:'#577caa',wood:'#8098a7',glass:'#a4e5ec',green:'#8abdb0',green2:'#e1f0d7',accent:'#8ac9df',ground:'#bbd7dd',kind:'snow'},
+  space:{sky:'#333665',sky2:'#7774a3',mount:'#625b8e',mount2:'#3d4777',wall:'#9a99bf',light:'#dfddfa',shadow:'#42446e',roof:'#6660a2',roof2:'#3b4274',wood:'#5b577b',glass:'#a8c9e9',green:'#959bc4',green2:'#cab3ec',accent:'#a794e0',ground:'#777aab',kind:'cosmos'}
+ };
+ const p=themes[mode]||themes.city;
+ const root=new THREE.Group();root.name='POKE_MYSTERY_DUNGEON_'+mode;cityG.add(root);
+ let seed=1679;for(const ch of mode)seed=(seed+ch.charCodeAt(0)*137)%2147483647;
+ const rng=()=>{seed=seed*16807%2147483647;return(seed/2147483647)};
  const canvas=(w,h,fn)=>{let c=document.createElement('canvas');c.width=w;c.height=h;let q=c.getContext('2d');q.imageSmoothingEnabled=false;fn(q);return c};
- const px=(q,x,y,w,h,c)=>{q.fillStyle=c;q.fillRect(x|0,y|0,w|0,h|0)};
- const shape=(q,pts,col)=>{q.fillStyle=col;q.beginPath();q.moveTo(...pts[0]);pts.slice(1).forEach(p=>q.lineTo(...p));q.closePath();q.fill()};
- const make=(c,w,h,x,y,z)=>{let t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.magFilter=t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;SCENIC_TEXTURES.push(t);let m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t,transparent:true,alphaTest:.01,side:THREE.DoubleSide,depthWrite:false,fog:false,toneMapped:false}));m.position.set(x,y,z);root.add(m);return m};
- const landscape=canvas(1024,424,q=>{
-  for(let i=0;i<8;i++)px(q,0,i*53,1024,53,pal[i<3?0:i<5?1:2]);
-  if(mode==='space'){for(let i=0;i<170;i++)px(q,rnd()*1024,rnd()*410,2+rnd()*4,2+rnd()*4,'#fcf6d8');}
-  else for(let i=0;i<17;i++){let x=rnd()*1024,y=24+rnd()*125;
-   px(q,x+8,y+9,85,19,'#96c4dc');px(q,x,y,81,16,'#fff9ee');px(q,x+19,y-18,44,19,'#fffef8');}
-  for(let i=0;i<9;i++){let x=i*147-70,y=220+rnd()*75;
-   shape(q,[[x-100,424],[x-65,y+50],[x,y-35],[x+45,y+43],[x+110,424]],pal[2]);
-   shape(q,[[x-55,y+60],[x,y-35],[x+32,y+40],[x+13,y+85]],pal[1]);}
-  if(mode==='volcano'){shape(q,[[320,424],[420,220],[520,108],[624,240],[720,424]],'#57485e');
-   for(let i=0;i<5;i++)px(q,500+i*15,128+i*22,11,150-i*13,i%2?'#ffb251':'#f46c39');}
-  if(mode==='beach')for(let i=0;i<9;i++)px(q,0,290+i*14,1024,9,i%2?'#2ca9c2':'#55d3cf');
-  if(mode==='desert')for(let i=0;i<12;i++)shape(q,[[i*110-50,424],[i*110,320-rnd()*40],[i*110+85,424]],'#eac58a');
- });
- const skyline=canvas(1024,336,q=>{
-  if(['city','sunset','classic'].includes(mode)){
-   for(let i=0;i<17;i++){let x=i*66-15,h=125+(i*19)%66,y=330-h;
-    px(q,x-4,y+4,69,h+6,pal[5]);px(q,x,y,61,h,pal[3]);
-    px(q,x-5,y-12,71,14,pal[4]);px(q,x,y-9,61,5,pal[1]);
-    for(let yy=y+18;yy<310;yy+=36)for(let xx=x+10;xx<x+53;xx+=26){
-     px(q,xx-3,yy-2,19,24,pal[5]);px(q,xx,yy,13,18,'#72afc4');px(q,xx+2,yy+2,8,7,'#c4edee');}
-   }
-  }else if(mode==='desert'){
-   for(let i=0;i<16;i++){let x=i*69;px(q,x,194-(i%4)*19,22,142,pal[4]);px(q,x-9,182-(i%4)*19,39,12,pal[3]);}
-  }else if(mode==='arctic'){
-   for(let i=0;i<22;i++){let x=i*49;shape(q,[[x-23,314],[x,146+(i%4)*16],[x+27,314]],'#507f8d');px(q,x-17,250,36,8,pal[1]);}
-  }else if(mode==='space'){
-   for(let i=0;i<15;i++){let x=i*75;px(q,x,225-(i%3)*20,58,110,pal[5]);px(q,x+9,240-(i%3)*20,40,8,pal[1]);}
-  }else if(mode==='volcano'){
-   for(let i=0;i<14;i++){let x=i*80;shape(q,[[x-60,335],[x,165+(i%4)*22],[x+55,335]],'#53465a');
-    px(q,x+5,246,7,86,'#ff9351');}
+ const rect=(q,x,y,w,h,c)=>{q.fillStyle=c;q.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h))};
+ const poly=(q,points,c)=>{q.fillStyle=c;q.beginPath();q.moveTo(points[0][0],points[0][1]);for(let i=1;i<points.length;i++)q.lineTo(points[i][0],points[i][1]);q.closePath();q.fill()};
+ const circ=(q,x,y,r,c)=>{q.fillStyle=c;q.beginPath();q.arc(x,y,r,0,Math.PI*2);q.fill()};
+ const outline=(q,x,y,w,h,fill,edge=p.shadow)=>{rect(q,x-4,y-4,w+8,h+8,edge);rect(q,x,y,w,h,fill);rect(q,x+3,y+3,w-6,4,p.light)};
+ const windows=(q,x,y,cols,rows,stepX=25,stepY=28)=>{
+  for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+   let xx=x+col*stepX,yy=y+row*stepY;
+   rect(q,xx-3,yy-3,18,23,p.shadow);rect(q,xx,yy,12,17,p.glass);
+   rect(q,xx+2,yy+2,5,7,p.light);rect(q,xx+12,yy-3,3,23,p.roof2);
+   rect(q,xx-4,yy+19,20,4,p.light);
+  }
+ };
+ const tree=(q,x,y,s=1)=>{
+  rect(q,x-6*s,y-48*s,12*s,49*s,p.wood);
+  const pts=[[-30,-70,24],[-10,-92,27],[19,-77,26],[34,-58,19],[-32,-47,17],[-1,-61,31]];
+  for(const [dx,dy,r] of pts)circ(q,x+dx*s,y+dy*s,r*s,p.shadow);
+  for(const [dx,dy,r] of pts)circ(q,x+(dx-3)*s,y+(dy-5)*s,r*s,rng()>.5?p.green:p.green2);
+  for(let i=0;i<9;i++)rect(q,x+(rng()-.5)*66*s,y-(45+rng()*68)*s,7*s,4*s,p.light);
+ };
+ const flower=(q,x,y)=>{
+  rect(q,x-11,y-5,22,8,p.wood);rect(q,x-13,y-9,26,6,p.light);
+  for(let i=0;i<5;i++){let f=x-10+i*5;rect(q,f,y-17-rng()*5,3,11,p.green);rect(q,f-1,y-20-rng()*7,6,6,i%2?'#f9bd91':'#fce58b')}
+ };
+ const awning=(q,x,y,w,colors=[p.roof,p.light])=>{
+  rect(q,x-5,y-6,w+10,8,p.wood);rect(q,x,y,w,25,colors[0]);
+  for(let i=0;i<w;i+=18)rect(q,x+i,y,17,20,(i/18)%2?colors[0]:colors[1]);
+  rect(q,x,y+22,w,5,p.shadow);
+ };
+ const tower=(q,x,y)=>{
+  outline(q,x-48,y-205,96,205,p.wall);rect(q,x-59,y-218,118,22,p.roof);
+  rect(q,x-38,y-243,76,26,p.roof2);rect(q,x-19,y-268,38,25,p.roof);
+  rect(q,x-6,y-278,12,12,p.light);
+  circ(q,x,y-169,35,p.shadow);circ(q,x,y-169,29,p.light);
+  circ(q,x,y-169,24,'#f6ebd5');
+  rect(q,x-1,y-187,3,20,p.wood);rect(q,x,y-169,16,3,p.wood);
+  windows(q,x-31,y-108,2,3,40,32);
+ };
+ const house=(q,x,y,w,h,style=0)=>{
+  outline(q,x,y-h,w,h,p.wall);
+  poly(q,[[x-12,y-h+9],[x+14,y-h-12],[x+w-14,y-h-12],[x+w+12,y-h+9]],style%2?p.roof2:p.roof);
+  rect(q,x-8,y-h+7,w+16,9,p.shadow);
+  windows(q,x+11,y-h+27,Math.max(1,Math.floor((w-14)/26)),Math.max(1,Math.floor((h-42)/32)));
+  if(style%3===0){rect(q,x+3,y-26,w-6,26,p.wood);awning(q,x+1,y-41,w-2);}
+ };
+ const sky=canvas(1536,640,(q)=>{
+  for(let y=0;y<640;y+=32)rect(q,0,y,1536,32,y<200?p.sky:y<380?p.sky2:p.mount);
+  if(p.kind==='cosmos'){
+   for(let i=0;i<240;i++)rect(q,rng()*1536,rng()*500,2+rng()*4,2+rng()*4,i%3?p.light:p.accent);
+   circ(q,1210,125,78,p.light);circ(q,1193,102,56,p.accent);
   }else{
-   for(let i=0;i<16;i++){let x=i*68;px(q,x,268,8,68,'#8c7156');
-    px(q,x-22,224,52,12,'#67b39a');px(q,x-12,205,32,22,'#7cc77f');}
+   for(let i=0;i<22;i++){
+    let x=rng()*1580,y=31+rng()*157,s=.6+rng()*.9;
+    rect(q,x+13*s,y+16*s,114*s,32*s,'#96c7e1');
+    rect(q,x,y,102*s,27*s,p.light);rect(q,x+24*s,y-20*s,71*s,38*s,'#ffffff');
+    rect(q,x+79*s,y+9*s,70*s,23*s,'#f5faf0');
+   }
+  }
+  for(let i=0;i<10;i++){
+   let x=i*185-80,top=270+rng()*126;
+   poly(q,[[x-130,640],[x-80,top+105],[x,top-66],[x+64,top+70],[x+150,640]],p.mount2);
+   poly(q,[[x-82,top+106],[x,top-66],[x+32,top+26],[x-12,top+119]],p.mount);
+  }
+  if(p.kind==='magma'){
+   poly(q,[[690,640],[850,204],[978,80],[1080,245],[1210,640]],p.shadow);
+   for(let i=0;i<7;i++)poly(q,[[955+i*5,110],[900+i*9,275],[931+i*12,420],[865+i*10,610],[909+i*10,610]],i%2?'#ffb14e':'#f76b37');
+   for(let i=0;i<12;i++)circ(q,960+rng()*150-75,55+rng()*100,29+rng()*26,p.mount2);
+  }
+  if(p.kind==='coast')for(let y=440;y<640;y+=24)rect(q,0,y,1536,18,(y/24)%2?'#34a7bb':'#58cace');
+  if(p.kind==='snow')for(let i=0;i<12;i++)poly(q,[[i*155-66,640],[i*155+50,284],[i*155+158,640]],p.light);
+  if(p.kind==='ruins')for(let i=0;i<12;i++){let x=i*155;rect(q,x,440,29,180,p.shadow);rect(q,x+4,443,21,178,p.wall);rect(q,x-12,426,54,18,p.light);}
+ });
+ const skyline=canvas(1536,600,q=>{
+  if(p.kind==='town'){
+   for(let i=0;i<14;i++){let x=i*118-52,h=210+(i*31)%128;house(q,x,584,100,h,i);}
+   tower(q,1090,555);
+   for(let i=0;i<15;i++)tree(q,i*119+18,571,.52+(i%3)*.13);
+  }else if(p.kind==='ruins'){
+   for(let i=0;i<20;i++){let x=i*88;rect(q,x,324+(i%4)*28,29,246,p.shadow);rect(q,x+5,321+(i%4)*28,20,234,p.wall);
+    rect(q,x-11,314+(i%4)*28,52,16,p.light);}
+  }else if(p.kind==='magma'){
+   for(let i=0;i<16;i++){let x=i*103;poly(q,[[x-60,584],[x,200+(i%4)*32],[x+75,584]],p.shadow);
+    rect(q,x+10,387,9,180,p.accent);}
+  }else if(p.kind==='snow'){
+   for(let i=0;i<19;i++){let x=i*82;poly(q,[[x-46,580],[x,208+(i%4)*21],[x+47,580]],p.mount2);rect(q,x-25,400,50,18,p.light);}
+  }else if(p.kind==='cosmos'){
+   for(let i=0;i<16;i++){let x=i*101;poly(q,[[x-56,500],[x+10,365-rng()*99],[x+69,500],[x+44,555],[x-38,555]],p.wall);
+    rect(q,x+8,327,8,60,p.accent);}
+  }else{
+   for(let i=0;i<16;i++){let x=i*110;rect(q,x,446,16,139,p.wood);
+    rect(q,x-40,406,95,13,p.accent);rect(q,x-28,384,68,26,p.green2);}
   }
  });
- const main=canvas(1024,286,q=>{
-  // Actual architectural grandstand: no drawn people, old stadium meshes, or rasterized characters.
-  px(q,0,249,1024,37,pal[5]);px(q,0,244,1024,8,pal[1]);
-  px(q,0,201,1024,43,pal[4]);px(q,0,211,1024,28,pal[3]);
-  for(let i=0;i<15;i++){let x=i*72;
-   px(q,x+4,104,64,96,pal[5]);px(q,x+8,109,56,89,pal[3]);
-   px(q,x+3,91,68,14,pal[4]);px(q,x+7,94,60,7,pal[1]);
-   px(q,x+18,130,34,48,pal[5]);px(q,x+22,135,26,37,'#78b9cb');
-   px(q,x+26,138,17,9,'#c3f0eb');
+ const tribune=canvas(1536,690,q=>{
+  // Stone base and stairs with deep, separated levels — no old stacked geometric seats.
+  rect(q,0,610,1536,80,p.shadow);rect(q,0,609,1536,9,p.light);
+  rect(q,0,506,1536,106,p.wall);
+  for(let i=0;i<1536;i+=47){rect(q,i,548,42,3,p.shadow);rect(q,i+9,573,35,3,p.shadow);}
+  for(let level=0;level<4;level++){
+   let yy=508-level*53;
+   rect(q,0,yy,1536,14,p.shadow);rect(q,0,yy,1536,5,p.light);
+   for(let x=0;x<1536;x+=70)rect(q,x+(level%2)*35,yy+15,64,3,p.shadow);
   }
-  // Central Pokémon-themed civic facade inspired by the city reference sheet.
-  px(q,411,65,202,156,pal[5]);px(q,417,69,190,150,pal[3]);
-  shape(q,[[401,73],[429,40],[594,40],[623,73]],pal[4]);
-  px(q,399,69,226,12,pal[5]);px(q,406,72,212,6,pal[1]);
-  px(q,455,138,115,78,pal[5]);px(q,462,145,101,68,'#7cb8cc');
-  px(q,506,144,9,70,pal[5]);px(q,462,149,101,5,pal[1]);
-  q.fillStyle=pal[5];q.beginPath();q.arc(512,91,33,0,7);q.fill();
-  q.fillStyle='#fff3db';q.beginPath();q.arc(512,91,26,0,7);q.fill();
-  q.fillStyle='#d86460';q.beginPath();q.arc(512,91,24,Math.PI,0);q.fill();
-  px(q,488,88,48,6,pal[5]);q.fillStyle=pal[5];q.beginPath();q.arc(512,91,9,0,7);q.fill();
-  q.fillStyle='#fff4df';q.beginPath();q.arc(512,91,5,0,7);q.fill();
-  for(const x of [332,688]){
-   px(q,x,112,13,130,pal[5]);px(q,x-19,103,52,69,pal[4]);
-   px(q,x-15,110,44,7,pal[1]);px(q,x-13,136,39,6,'#fff7df');
+  // Symmetrical ascents to central plaza.
+  for(const side of [-1,1]){
+   const x=side<0?275:1170;
+   rect(q,x,330,90,281,p.shadow);rect(q,x+9,330,72,281,p.wall);
+   for(let k=0;k<12;k++){let yy=335+k*21;rect(q,x+9,yy,72,9,p.light);rect(q,x+9,yy+10,72,8,p.shadow);}
+   rect(q,x-4,324,98,12,p.light);
   }
-  for(let i=0;i<12;i++){let x=i*93-7;
-   px(q,x,237,33,7,pal[5]);px(q,x+3,231,24,8,'#69a479');
-   px(q,x+9,225,8,8,i%2?'#fae8a3':'#ec9e98');
+  // Central Pokémon civic center with large curved roof and clean doors.
+  outline(q,558,224,420,286,p.wall);
+  poly(q,[[525,260],[558,206],[602,175],[934,175],[978,206],[1011,260]],p.roof2);
+  poly(q,[[530,246],[601,185],[935,185],[1006,246]],p.roof);
+  rect(q,530,246,480,20,p.shadow);rect(q,537,250,466,8,p.light);
+  // Poké Ball crest is architecture, not a fake character.
+  circ(q,769,219,73,p.shadow);circ(q,769,219,64,p.light);circ(q,769,219,59,'#fff0df');
+  q.fillStyle='#d95e5e';q.beginPath();q.arc(769,219,56,Math.PI,0);q.fill();
+  rect(q,713,214,112,12,p.shadow);circ(q,769,220,18,p.shadow);circ(q,769,220,11,p.light);
+  for(const x of [583,839])windows(q,x,288,3,2,30,52);
+  rect(q,705,373,132,134,p.shadow);rect(q,713,381,116,125,p.glass);
+  rect(q,763,381,12,124,p.shadow);rect(q,713,388,116,6,p.light);
+  // Shops / awnings; decor is architecture only.
+  for(let side=0;side<2;side++){
+   let x=side?1060:120;
+   outline(q,x,367,228,137,p.wall);
+   windows(q,x+24,397,5,2,38,34);
+   awning(q,x+10,349,208,side?[p.roof,p.light]:[p.accent,p.light]);
+   rect(q,x+26,448,176,47,p.shadow);rect(q,x+34,451,160,40,p.glass);
   }
+  // Banner poles, warm street lamps and flower terraces.
+  for(const x of [65,420,1115,1450]){
+   rect(q,x,302,13,225,p.wood);rect(q,x-8,290,29,13,p.light);
+   rect(q,x-12,305,40,62,p.accent);rect(q,x-5,311,25,8,p.light);
+   rect(q,x-4,347,24,7,'#f1d8af');
+  }
+  for(const x of [36,375,1165,1500]){
+   rect(q,x,410,11,168,p.shadow);rect(q,x-7,395,25,27,p.wood);
+   rect(q,x-5,400,21,19,'#ffe4a0');rect(q,x-9,391,30,6,p.light);
+  }
+  for(let i=0;i<14;i++)flower(q,16+i*114,561);
+  // Enough clear terrace in front for real animated PMD spectator sprites.
+  rect(q,0,581,1536,7,p.light);rect(q,0,588,1536,7,p.shadow);
  });
- make(landscape,420,160,0,65,-200);
- make(skyline,270,87,0,29,-123);
- make(main,101,28.2,0,12,-HZ-34);
- const rail=canvas(256,64,q=>{
-  px(q,0,26,256,38,pal[5]);px(q,0,30,256,24,pal[3]);px(q,0,26,256,5,pal[1]);
-  for(let i=0;i<13;i++){px(q,i*20,0,5,30,pal[5]);px(q,i*20+4,8,13,17,pal[4]);}
+ const make=(c,w,h,x,y,z,rot=0)=>{
+  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.magFilter=t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;SCENIC_TEXTURES.push(t);
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t,transparent:true,alphaTest:.025,side:THREE.DoubleSide,depthWrite:false,fog:false,toneMapped:false}));
+  m.position.set(x,y,z);m.rotation.y=rot;root.add(m);return m;
+ };
+ const bg=make(sky,465,165,0,70,-210),town=make(skyline,304,105,0,33,-122);
+ const stage=make(tribune,96,44,0,12.2,-HZ-34);
+ // Polygonal masonry on sides, no crowd barriers intersecting the pitch.
+ const side=canvas(512,160,q=>{
+  rect(q,0,30,512,125,p.shadow);rect(q,0,38,512,110,p.wall);
+  for(let i=0;i<15;i++){let x=i*36;rect(q,x,32,4,120,p.shadow);rect(q,x+2,40,30,6,p.light);}
+  rect(q,0,23,512,15,p.light);
+  for(let i=0;i<9;i++)flower(q,20+i*58,35);
  });
- const l=make(rail,52,8,-HX-8,2.5,-4);l.rotation.y=Math.PI/2;
- const rr=make(rail,52,8,HX+8,2.5,-4);rr.rotation.y=-Math.PI/2;
- const floorCanvas=canvas(256,256,q=>{
-  px(q,0,0,256,256,pal[3]);
-  for(let y=0;y<256;y+=25)for(let x=-16+(y%50?15:0);x<256;x+=43){
-   px(q,x,y,42,24,pal[5]);px(q,x+3,y+3,36,18,pal[3]);
-   px(q,x+6,y+5,21,2,pal[1]);
+ make(side,55,8.5,-HX-7,3.0,-2,Math.PI/2);
+ make(side,55,8.5,HX+7,3.0,-2,-Math.PI/2);
+ const ground=canvas(256,256,q=>{
+  rect(q,0,0,256,256,p.ground);
+  for(let y=0;y<256;y+=30)for(let x=-30+(y%60?17:0);x<256;x+=46){
+   rect(q,x,y,45,29,p.shadow);rect(q,x+2,y+2,41,25,p.ground);
+   rect(q,x+4,y+4,36,3,p.light);
   }
+  for(let i=0;i<330;i++)rect(q,rng()*256,rng()*256,1+rng()*3,1+rng()*2,i%2?p.light:p.shadow);
  });
- const floorT=new THREE.CanvasTexture(floorCanvas);floorT.encoding=THREE.sRGBEncoding;floorT.magFilter=floorT.minFilter=THREE.NearestFilter;floorT.wrapS=floorT.wrapT=THREE.RepeatWrapping;floorT.repeat.set(13,11);SCENIC_TEXTURES.push(floorT);
- const floor=new THREE.Mesh(new THREE.PlaneGeometry(250,175),new THREE.MeshBasicMaterial({map:floorT}));
- floor.rotation.x=-Math.PI/2;floor.position.set(0,-1.52,-55);root.add(floor);
- // Ambient animation: moving fabric with no fictional characters.
- const flags=[];
- for(const x of [-40,40]){
-  const f=canvas(48,80,q=>{px(q,10,0,5,80,pal[5]);px(q,15,13,29,39,pal[4]);px(q,19,18,21,7,pal[1]);px(q,19,36,21,5,pal[3]);});
-  flags.push(make(f,3,5,x,15,-HZ-33));
- }
- BIO.anims.push((dt,t)=>{flags.forEach((f,i)=>{f.rotation.y=Math.sin(t*1.4+i)*.13;});});
+ const tex=new THREE.CanvasTexture(ground);tex.encoding=THREE.sRGBEncoding;tex.magFilter=tex.minFilter=THREE.NearestFilter;tex.generateMipmaps=false;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(12,9);SCENIC_TEXTURES.push(tex);
+ const terrain=new THREE.Mesh(new THREE.PlaneGeometry(310,220),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}));
+ terrain.rotation.x=-Math.PI/2;terrain.position.set(0,-1.52,-65);root.add(terrain);
+ // Canvas sprites for distant clouds/flags: these are buildings/weather, not living creatures.
+ const flag=canvas(64,96,q=>{rect(q,16,0,6,96,p.shadow);rect(q,22,17,33,51,p.accent);rect(q,27,23,23,8,p.light);rect(q,28,43,22,7,p.wall)});
+ const flags=[-40,40].map(x=>make(flag,3.6,5.5,x,16.4,-HZ-35));
+ BIO.anims.push((dt,T)=>{
+  bg.position.x=Math.sin(T*.015)*.8;town.position.x=Math.sin(T*.026)*.3;
+  for(let i=0;i<flags.length;i++)flags[i].rotation.y=Math.sin(T*1.6+i*2.1)*.11;
+ });
 }
 
 // Modern illustrated stage router. All game rules, camera, controls and UI tabs unchanged.
