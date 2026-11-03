@@ -337,7 +337,7 @@ body.netHost .wzModes,body.netGuest .wzModes{display:none}
 #wiz #stadiumPick [data-stadium=city]{--bg:linear-gradient(180deg,#5b91b7,#97b56c 150%)}#wiz #stadiumPick [data-stadium=sunset]{--bg:linear-gradient(180deg,#2a2050,#ff9b5a)}#wiz #stadiumPick [data-stadium=classic]{--bg:linear-gradient(180deg,#294a74,#9cc0df)}
 #wiz #stadiumPick [data-stadium=beach]{--bg:linear-gradient(180deg,#1f7ae0,#f5d48a)}#wiz #stadiumPick [data-stadium=volcano]{--bg:linear-gradient(180deg,#14070b,#ff5a1f)}#wiz #stadiumPick [data-stadium=arctic]{--bg:linear-gradient(180deg,#7fd0f0,#f1fbff)}
 #wiz #stadiumPick [data-stadium=space]{--bg:linear-gradient(180deg,#0a0420,#7a3cff)}#wiz #stadiumPick [data-stadium=desert]{--bg:linear-gradient(180deg,#e0a85a,#f7d98a)}
-#wiz #weatherPick{display:none!important;gap:8px;flex-wrap:wrap;margin:0!important;max-width:100%!important;align-self:stretch}
+#wiz #weatherPick{display:flex!important;gap:7px;flex-wrap:wrap;margin:6px 0 0!important;max-width:100%!important;align-self:stretch}
 #wiz #weatherPick button{flex:0 0 auto;padding:8px 14px;border-radius:999px;font:800 12px Nunito,sans-serif;background:#ffffff12;border:1px solid #ffffff2a;color:#e6f0ff;box-shadow:none}
 #wiz #weatherPick button.on{background:#ffd23f;color:#1b2340;border-color:#fff3b0}
 #wzSum{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:stretch}
@@ -538,6 +538,15 @@ button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
   backdrop-filter:blur(2px);
  }
 }
+/* Selector climático compacto, visible también en horizontal pequeño */
+#wiz #wzWeather{display:block;width:100%}
+#wiz #weatherPick button{flex:1 1 94px!important;min-width:0;font:800 11px Nunito,sans-serif!important;padding:7px 9px!important;white-space:nowrap}
+#wiz #weatherPick button.on{outline:2px solid #fff0b0;outline-offset:0}
+@media(max-height:410px){
+ #wiz #wzWeather{max-height:75px;overflow-y:auto}
+ #wiz #weatherPick{gap:4px!important}
+ #wiz #weatherPick button{flex:1 1 90px!important;padding:4px 7px!important;font-size:10px!important}
+}
 /* Orientación horizontal obligatoria para la interfaz móvil. */
 #landscapeGate{display:none;position:fixed;inset:0;z-index:20000;box-sizing:border-box;background:radial-gradient(ellipse at center,#243a70 0%,#09142e 70%);color:#fff;align-items:center;justify-content:center;flex-direction:column;gap:13px;padding:calc(18px + env(safe-area-inset-top)) 22px calc(18px + env(safe-area-inset-bottom));text-align:center}
 #landscapeGate .rotatePhone{width:74px;height:122px;border:6px solid #bdeeff;border-radius:17px;display:grid;place-items:center;box-shadow:0 0 0 4px #0b1b3a,0 0 30px #44ddff55;transform:rotate(-90deg);animation:phoneTurn 2.5s ease-in-out infinite alternate;font:34px sans-serif}
@@ -598,7 +607,7 @@ button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
 <div id="l4Cfg"><div class="l4row"><b style="color:#ffd23f">P1 · Eq.1</b><select id="l4s0"></select></div><div class="l4row"><b style="color:#7dff8a">P2 · Eq.1</b><select id="l4s1"></select></div><div class="l4row"><b style="color:#66e0ff">P3 · Eq.2</b><select id="l4s2"></select></div><div class="l4row"><b style="color:#ff7ad9">P4 · Eq.2</b><select id="l4s3"></select></div>
 <small id="l4Warn"></small><small><b>Teclado A:</b> WASD mover · Shift correr · F tiro (mantén) · G pase · T pase aéreo · R placaje · Q poder<br><b>Teclado B:</b> Flechas mover · Shift der. correr · / tiro (mantén) · . pase · , pase aéreo · ; placaje · P poder<br><b>Mando:</b> stick mover · LB correr · RT tiro (mantén) · A pase · RB pase aéreo · B placaje · Y poder<br>Cada jugador maneja a su Pokémon fijo; un puesto en «CPU» (o con el mando desconectado) lo juega la IA. Con un solo teclado, para 4 humanos conviene usar mandos: algunos teclados no registran tantas teclas a la vez. No funciona en online.</small></div>
 <div class="pickLbl">ESTADIO ÚNICO · 2D</div><div id="stadiumPick" aria-label="Estadio Ciudad"><button type="button" data-stadium="city" class="on">🏙️ Ciudad PMD</button></div>
-<div id="weatherPick" hidden><button type="button" data-weather="clear" class="on">☀️ Despejado</button><button type="button" data-weather="cloudy">☁️ Nublado</button><button type="button" data-weather="rain">🌧️ Lluvia</button><button type="button" data-weather="storm">⛈️ Tormenta</button><button type="button" data-weather="fog">🌫️ Niebla</button><button type="button" data-weather="snow">❄️ Nieve</button><button type="button" data-weather="auto">🎲 Cambiante</button></div>
+<div id="weatherPick" aria-label="Seleccionar clima"><button type="button" data-weather="clear" class="on">☀️ Despejado</button><button type="button" data-weather="cloudy">☁️ Nublado</button><button type="button" data-weather="rain">🌧️ Lluvia</button><button type="button" data-weather="storm">⛈️ Tormenta</button><button type="button" data-weather="fog">🌫️ Niebla</button><button type="button" data-weather="snow">❄️ Nieve</button><button type="button" data-weather="auto">🎲 Cambiante</button></div>
 <div id="cols"><section><h3>Tu equipo</h3><div class="grid" id="g0"></div></section><section><h3>Rival</h3><div class="grid" id="g1"></div></section></div>
 <div id="spriteCredit" style="font:11px Nunito,sans-serif;color:#e6efff;opacity:.82;max-width:620px">Sprites estilo Pokémon Mystery Dungeon: PMD Sprite Repository / colaboradores (CC BY-NC 4.0). Créditos de artistas en el repositorio.</div><div id="netBar"></div><button id="go">¡Jugar!</button><button id="readyBtn" type="button">✅ ¡Estoy listo!</button><button id="bdOpen" type="button">🛠️ Armar equipo (6 Pokémon)</button><button id="onlineBtn" type="button">🌐 Jugar online (código de sala)</button></div>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
@@ -3136,14 +3145,14 @@ let cinematicSlowSkip=0;
    <div class="wzBar"><div id="wzTabs"></div><div id="wzBd"></div></div>
    <div class="wzSide"><button data-side="0" class="on">Tu equipo</button><button data-side="1">Rival</button></div><div id="wzCols"></div></section>
   <section class="wzPane" data-step="3"><h2>Elige el estadio</h2><p class="wzSub">Cada mundo tiene eventos y clima propio durante el partido</p>
-   <div class="wzLbl">ESTADIO</div><div id="wzSt"></div><p class="wzSub" style="margin-top:8px">🌦️ El clima cambia automáticamente según el estadio.</p></section>
+   <div class="wzLbl">ESTADIO</div><div id="wzSt"></div><div class="wzLbl" style="margin-top:12px">CLIMA DE LA CANCHA</div><div id="wzWeather"></div><p class="wzSub" style="margin-top:6px">Elige un clima fijo o «Cambiante» para que evolucione durante el partido.</p></section>
   <section class="wzPane" data-step="4"><h2>¡Todo listo!</h2><p class="wzSub">Revisa tu partido y pulsa jugar</p><div id="wzSum"></div><div id="wzChips"></div></section>
  </div>
  <div id="wzNet"></div>
  <div class="wzFoot"><button id="wzBack" type="button">‹ Atrás</button><div class="cr" id="wzCr"></div><div id="wzMain"><button id="wzNext" type="button">Siguiente ›</button></div></div>`;
  menu.appendChild(wiz);
  const mv=(id,to)=>{const e=$(id),t=$(to);if(e&&t)t.appendChild(e)};
- mv('l4Cfg','wzL4');mv('tabs','wzTabs');mv('bdOpen','wzBd');mv('cols','wzCols');mv('stadiumPick','wzSt');mv('netBar','wzNet');mv('readyBtn','wzMain');mv('go','wzMain');
+ mv('l4Cfg','wzL4');mv('tabs','wzTabs');mv('bdOpen','wzBd');mv('cols','wzCols');mv('stadiumPick','wzSt');mv('weatherPick','wzWeather');mv('netBar','wzNet');mv('readyBtn','wzMain');mv('go','wzMain');
  const cr=$('spriteCredit');if(cr){$('wzCr').innerHTML=cr.innerHTML;$('wzCr').style.display='block'}
  // etiquetas de estadios y clima: emoji grande arriba
  document.querySelectorAll('#stadiumPick button').forEach(b=>{const m=b.textContent.trim().match(/^(\S+)\s+(.*)$/);if(m)b.innerHTML='<span style="font-size:26px;line-height:1;margin-bottom:2px">'+m[1]+'</span><span>'+m[2]+'</span>'});
@@ -3153,7 +3162,7 @@ let cinematicSlowSkip=0;
   const tm=(t,i)=>t?`<div class="tm" style="--c:${hex(t.c)}"><b>${t.n}</b><small>${t.t||''}${i===0&&L4.mode===4?' · Equipo 1':''}</small><div class="sp">${t.p.slice(0,3).map(id=>`<img src="${spr(id)}" alt="">`).join('')}</div></div>`:'<div class="tm"><b>—</b></div>';
   const _h=tm(T[0],0)+'<div class="vs">VS</div>'+(net&&NET.role==='guest'||net?`<div class="tm" style="--c:${T[1]?hex(T[1].c):'#fff'}"><b>${net&&!NET.peerTeam?'Rival online':T[1].n}</b><small>${net?'Online':T[1].t||''}</small><div class="sp">${net&&!NET.peerTeam?'<span style="font-size:34px">🌐</span>':T[1].p.slice(0,3).map(id=>`<img src="${spr(id)}" alt="">`).join('')}</div></div>`:tm(T[1],1));
   const on=s=>{const b=document.querySelector(s+' button.on');return b?b.textContent.replace(/\s+/g,' ').trim():'—'};
-  const _c='<span>'+(net?'🌐 Online':L4.mode===4?'👥 2 vs 2 local':'🎮 1 jugador')+'</span><span>'+on('#stadiumPick')+'</span><span>🌦️ Clima dinámico</span>';
+  const _c='<span>'+(net?'🌐 Online':L4.mode===4?'👥 2 vs 2 local':'🎮 1 jugador')+'</span><span>'+on('#stadiumPick')+'</span><span>'+ (WXmode==='auto'?'🎲 Clima cambiante':(WXN[WXk]?WXN[WXk][0]+' '+WXN[WXk][1]:'🌦️ Clima')) +'</span>';
   if(wiz._sh!==_h){wiz._sh=_h;$('wzSum').innerHTML=_h}if(wiz._sc!==_c){wiz._sc=_c;$('wzChips').innerHTML=_c}
  }
  function go(n){
