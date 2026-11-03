@@ -1,834 +1,571 @@
-/* Poké Strikers · VOLCÁN PMD — reconstrucción integral
- * Diseño aprobado: entrada central + alas/gradas laterales + primer plano,
- * todos ilustrados sobre la misma retícula de píxeles que Ciudad PMD.
- * La cancha usa una superficie de obsidiana aparte, sin cambiar su física.
+/* Poké Strikers · Estadio Volcán Mystery Dungeon · geometría y arte NUEVOS
+ * Fase 1: escenario estático. No usa la ciudad, gradas ni decorados anteriores.
+ * Los únicos personajes de la escena son los sprites Pokémon del juego y los
+ * entrenadores oficiales de Pokémon Showdown colocados por el juego.
  */
 (function(global){
 'use strict';
 function build(o){
  const {THREE,cityG,HX,HZ,GW,apron,pitchMat,SCENIC_TEXTURES}=o;
- const scene=new THREE.Group();scene.name='ESTADIO_VOLCAN_PMD_REHECHO';cityG.add(scene);
- let seed=81721;function rand(){seed=(seed*16807)%2147483647;return(seed/2147483647);}
+ const scene=new THREE.Group();scene.name='ESTADIO_VOLCAN_PMD_CIUDAD_BASE';cityG.add(scene);
+ let seed=18473;const rand=()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483647};
  const C={
-  ink:'#30283e',dark:'#403248',stone:'#6e5867',stone2:'#836a75',light:'#b49793',
-  shine:'#ddbbac',ash:'#493648',ash2:'#644354',lava:'#f26536',hot:'#ff9a43',
-  core:'#ffd276',red:'#b94a4e',red2:'#dc6c5b',cream:'#fff1d8',
-  sky:'#543c67',sky2:'#ae6475',mount:'#342c46'
+  sky:'#58436b',sky2:'#ab6b79',cloud:'#a4849a',cloudShadow:'#604b66',
+  mountain:'#755668',mountainShade:'#41354f',mountainLight:'#9a737d',
+  ink:'#332941',stone:'#9f8691',stoneLight:'#d7b5ab',stoneDark:'#695364',
+  roof:'#9d4c50',roofLight:'#d07964',roofDark:'#5d394c',banner:'#b84b4e',
+  tree:'#8a4754',treeLight:'#f37b4b',treeDark:'#4d3548',wood:'#634759',
+  water:'#e96a3a',waterLight:'#ffcc76',field:'#5d4c61',field2:'#534259',
+  marking:'#fff2df',flower:'#ef6a3e',flower2:'#ffca71',green2:'#8b574f'
  };
- const canvas=(w,h,draw)=>{const c=document.createElement('canvas');c.width=w;c.height=h;const q=c.getContext('2d');q.imageSmoothingEnabled=false;draw(q,w,h);return c;};
- const rect=(q,x,y,w,h,col)=>{q.fillStyle=col;q.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h));};
- const poly=(q,pts,col)=>{q.fillStyle=col;q.beginPath();q.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)q.lineTo(pts[i][0],pts[i][1]);q.closePath();q.fill();};
- const circ=(q,x,y,r,col)=>{q.fillStyle=col;q.beginPath();q.arc(x,y,r,0,Math.PI*2);q.fill();};
- function mkTex(c){const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.magFilter=t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;SCENIC_TEXTURES.push(t);return t;}
- function plane(img,w,h,x,y,z,parent=scene){
-  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({
-   map:mkTex(img),transparent:true,alphaTest:.018,depthWrite:false,side:THREE.DoubleSide,toneMapped:false,fog:false
-  }));
-  m.position.set(x,y,z);parent.add(m);return m;
+ const canvas=(w,h,fn)=>{
+  const c=document.createElement('canvas');c.width=w;c.height=h;
+  const q=c.getContext('2d');q.imageSmoothingEnabled=false;fn(q,w,h);return c;
+ };
+ const r=(q,x,y,w,h,col)=>{q.fillStyle=col;q.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h))};
+ const poly=(q,pts,col)=>{q.fillStyle=col;q.beginPath();q.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)q.lineTo(pts[i][0],pts[i][1]);q.closePath();q.fill()};
+ const circle=(q,x,y,rad,col)=>{q.fillStyle=col;q.beginPath();q.arc(x,y,rad,0,Math.PI*2);q.fill()};
+ function cloud(q,x,y,scale=1){
+  for(const [dx,dy,w,h] of [[-58,10,87,25],[-33,-7,79,34],[18,-23,83,50],[54,-2,64,27]])
+   r(q,x+dx*scale+4,y+dy*scale+6,w*scale,h*scale,C.cloudShadow);
+  for(const [dx,dy,w,h] of [[-58,10,87,25],[-33,-7,79,34],[18,-23,83,50],[54,-2,64,27]])
+   r(q,x+dx*scale,y+dy*scale,w*scale,h*scale,C.cloud);
  }
- function bricks(q,x,y,w,h,scale=1){
-  const bw=45*scale,bh=20*scale;
-  for(let row=0;row<Math.ceil(h/bh);row++){
-   const yy=y+row*bh;
-   rect(q,x,yy,w,3*scale,C.ink);
-   rect(q,x,yy+3*scale,w,2*scale,C.light);
-   for(let xx=x-bw+(row%2)*bw*.5;xx<x+w;xx+=bw){
-    const sx=Math.max(x,xx);if(sx>x+w)continue;
-    rect(q,sx,yy+5*scale,3*scale,bh-5*scale,C.ink);
-    if((row+Math.round(xx/bw))%4===0)rect(q,sx+8*scale,yy+8*scale,14*scale,2*scale,C.shine);
-   }
+ function pine(q,x,y,s=1){
+  r(q,x-6*s,y-20*s,12*s,25*s,C.wood);
+  for(let i=0;i<3;i++)poly(q,[[x-28*s,y-(20+i*18)*s],[x,y-(67+i*14)*s],[x+28*s,y-(20+i*18)*s]],i%2?C.tree:C.treeDark);
+  poly(q,[[x-17*s,y-76*s],[x,y-111*s],[x+17*s,y-76*s]],C.treeLight);
+ }
+ function tree(q,x,y,s=1){
+  // Basalto y obsidiana en la misma escala y posiciones que los árboles PMD.
+  r(q,x-40*s,y-12*s,80*s,12*s,C.ink);
+  for(const [dx,w,h] of [[-27,35,61],[-4,46,86],[25,29,51]]){
+   poly(q,[[x+(dx-w*.42)*s,y],[x+(dx-w*.36)*s,y-h*.58*s],
+     [x+dx*s,y-h*s],[x+(dx+w*.32)*s,y-h*.64*s],
+     [x+(dx+w*.55)*s,y]],C.ink);
+   poly(q,[[x+(dx-w*.28)*s,y-5*s],[x+(dx-w*.21)*s,y-h*.53*s],
+     [x+(dx-5)*s,y-h*.86*s],[x+(dx+7)*s,y-h*.32*s],
+     [x+(dx+w*.34)*s,y-5*s]],C.stoneDark);
+   r(q,x+(dx-5)*s,y-h*.59*s,4*s,16*s,C.stoneLight);
+   if((dx|0)%2)r(q,x+(dx+8)*s,y-20*s,3*s,12*s,C.flower);
   }
  }
- function cutArch(q,x,y,w,h,lit=false){
-  rect(q,x-6,y+25,w+12,h-17,C.ink);
-  poly(q,[[x-6,y+28],[x+5,y+5],[x+w*.23,y-5],[x+w*.5,y-14],
-          [x+w*.77,y-5],[x+w-5,y+5],[x+w+6,y+28]],C.ink);
-  rect(q,x+4,y+27,w-8,h-21,lit?'#8c3b3f':'#282233');
-  poly(q,[[x+4,y+30],[x+13,y+11],[x+w*.5,y],[x+w-13,y+11],[x+w-4,y+30]],lit?'#9d4641':'#282233');
-  if(lit){
-   rect(q,x+12,y+35,w-24,h-40,C.lava);
-   for(let i=0;i<5;i++)rect(q,x+16+i*(w-32)/5,y+41+(i%3)*7,4,h-47,C.hot);
-   rect(q,x+w*.49,y+36,5,h-42,C.core);
+ function flowers(q,x,y){
+  // Cristales de magma en el mismo tamaño de props que las flores de Ciudad.
+  r(q,x-17,y-7,34,9,C.ink);r(q,x-14,y-11,28,7,C.stone);
+  for(let i=0;i<3;i++){
+   const xx=x-11+i*11,base=y-11,h=10+(i%2)*8;
+   poly(q,[[xx-6,base],[xx-5,base-h*.5],[xx,base-h],
+     [xx+6,base-h*.5],[xx+7,base]],C.ink);
+   poly(q,[[xx-4,base-1],[xx-3,base-h*.48],[xx,base-h+3],
+     [xx+3,base-h*.45],[xx+3,base-1]],i%2?C.flower2:C.flower);
+   r(q,xx-1,base-h+5,2,Math.max(2,h*.35),C.waterLight);
   }
-  rect(q,x-11,y+h-5,w+22,9,C.light);
-  rect(q,x-13,y+h+3,w+26,6,C.ink);
  }
- function torch(q,x,y,s=1){
-  rect(q,x-20*s,y+20*s,40*s,43*s,C.ink);
-  rect(q,x-16*s,y+24*s,32*s,30*s,C.stone);
-  rect(q,x-24*s,y+14*s,48*s,12*s,C.light);
-  poly(q,[[x-17*s,y+15*s],[x-20*s,y-4*s],[x-5*s,y-24*s],
-          [x+2*s,y-12*s],[x+10*s,y-39*s],[x+22*s,y-1*s],[x+15*s,y+15*s]],C.lava);
-  poly(q,[[x-9*s,y+13*s],[x-5*s,y-6*s],[x+6*s,y-22*s],[x+13*s,y+12*s]],C.hot);
-  poly(q,[[x-3*s,y+12*s],[x+3*s,y-9*s],[x+7*s,y+13*s]],C.core);
-  rect(q,x-27*s,y+61*s,54*s,8*s,C.ink);
+ function window(q,x,y,w=20,h=27){
+  r(q,x-3,y-3,w+6,h+6,C.ink);r(q,x,y,w,h,C.water);
+  r(q,x+3,y+3,6,h*.36,C.waterLight);r(q,x+w-4,y,4,h,C.ink);
+  r(q,x,y+h-5,w,5,C.stoneLight);
+  // Vidrios divididos, marcos en madera y brillo diagonal discreto.
+  r(q,x+w/2-1,y,3,h,C.ink);
+  r(q,x,y+h*.52,w,3,C.ink);
+  for(let k=0;k<3;k++)r(q,x+3+k*3,y+3+k*4,6,2,'rgba(235,250,255,.6)');
+  r(q,x-3,y+h+3,w+6,3,C.stoneDark);
+
  }
- function banner(q,x,y,scale=1){
-  const s=scale;
-  rect(q,x-25*s,y,50*s,6*s,C.ink);rect(q,x-22*s,y+3*s,44*s,4*s,C.shine);
-  poly(q,[[x-19*s,y+8*s],[x+19*s,y+8*s],[x+19*s,y+100*s],[x,y+121*s],[x-19*s,y+100*s]],C.ink);
-  poly(q,[[x-14*s,y+13*s],[x+14*s,y+13*s],[x+14*s,y+95*s],[x,y+110*s],[x-14*s,y+95*s]],C.red);
-  rect(q,x-11*s,y+25*s,22*s,4*s,C.shine);
-  circ(q,x,y+62*s,12*s,C.cream);circ(q,x,y+62*s,7*s,C.red);
-  rect(q,x-11*s,y+60*s,22*s,4*s,C.cream);circ(q,x,y+62*s,3*s,C.cream);
- }
- function lavaFall(q,x,y,w,h){
-  rect(q,x-9,y-5,w+18,h+10,C.ink);rect(q,x,y,w,h,'#ac393f');
-  for(let i=0;i<12;i++){
-   const xx=x+3+i*(w-6)/12;
-   rect(q,xx,y+(i%4)*5,4+rand()*3,h-(i%3)*11,i%3===0?C.hot:C.lava);
-   if(i%3===0)rect(q,xx+1,y+9,2,h-18,C.core);
+ function building(q,x,base,w,h,opt={}){
+  const y=base-h;const roof=opt.roof||C.roof;
+  r(q,x-5,y+6,w+10,h+3,C.ink);r(q,x,y,w,h,opt.wall||C.stone);
+  poly(q,[[x-11,y+11],[x+12,y-16],[x+w-14,y-16],[x+w+12,y+11]],C.roofDark);
+  poly(q,[[x-8,y+8],[x+15,y-15],[x+w-17,y-15],[x+w+8,y+8]],roof);
+  r(q,x,y+10,w,5,C.roofLight);r(q,x-3,base-7,w+6,8,C.stoneLight);
+  // Tejas vistas, imposta, piedra imperfecta y reflejos: pixel art a escala nativa.
+  for(let ry=y-12;ry<y+8;ry+=6)for(let rx=x+4+(ry%12?8:0);rx<x+w-5;rx+=17){
+   r(q,rx,ry,13,2,ry%12?C.roofLight:C.roofDark);
+   r(q,rx+2,ry+3,10,1,'rgba(255,218,174,.38)');
   }
-  rect(q,x-9,y+h-4,w+18,10,C.hot);
-  for(let i=0;i<8;i++)rect(q,x-12+rand()*(w+24),y+h+3+rand()*9,3+rand()*8,3,C.lava);
- }
- function crest(q,x,y,s=1){
-  circ(q,x,y,26*s,C.ink);circ(q,x,y,21*s,C.shine);
-  circ(q,x,y,16*s,C.red);circ(q,x,y,13*s,C.cream);
-  rect(q,x-19*s,y-3*s,38*s,7*s,C.ink);
-  circ(q,x,y,8*s,C.ink);circ(q,x,y,5*s,C.cream);
- }
- function tower(q,x,y,s=1){
-  const w=121*s,h=285*s;
-  rect(q,x-w/2,y,w,h,C.ink);
-  rect(q,x-w/2+8*s,y+8*s,w-16*s,h-18*s,C.stone);
-  bricks(q,x-w/2+10*s,y+19*s,w-20*s,h-28*s,s*.82);
-  rect(q,x-w/2-13*s,y-20*s,w+26*s,25*s,C.ink);
-  rect(q,x-w/2-9*s,y-17*s,w+18*s,17*s,C.light);
+  for(let by=y+16;by<base-9;by+=13){
+   r(q,x+2,by,w-4,1,'rgba(117,81,92,.26)');
+   for(let bx=x+3+((by/13|0)%2)*14;bx<x+w-6;bx+=29)
+    r(q,bx,by+2,1,9,'rgba(116,83,83,.18)');
+  }
+  r(q,x+4,base-14,w-8,2,'rgba(255,236,193,.75)');
   for(let k=0;k<5;k++){
-   rect(q,x-w/2-6*s+k*27*s,y-50*s,21*s,31*s,C.ink);
-   rect(q,x-w/2-2*s+k*27*s,y-47*s,14*s,23*s,C.stone2);
+   const px=x+7+rand()*(w-14),py=y+22+rand()*Math.max(1,h-48);
+   r(q,px,py,3+rand()*6,2,'rgba(247,229,199,.32)');
   }
-  for(const yy of [y+62*s,y+164*s]){
-   cutArch(q,x-22*s,yy,44*s,56*s,true);
+
+  const cols=Math.max(1,Math.floor((w-15)/29)),rows=Math.max(1,Math.floor((h-25)/43));
+  for(let iy=0;iy<rows;iy++)for(let ix=0;ix<cols;ix++){
+   const xx=x+12+ix*(w-24)/cols,yy=y+28+iy*38;
+   if(yy+29<base)window(q,xx,yy,17,23);
   }
-  rect(q,x-w/2-10*s,y+h-11*s,w+20*s,17*s,C.ink);
-  rect(q,x-w/2-5*s,y+h-8*s,w+10*s,6*s,C.shine);
- }
- function stairs(q,x,y,w,steps=9){
-  for(let i=0;i<steps;i++){
-   const ww=w+i*11,yy=y+i*14;
-   rect(q,x-ww/2-7,yy+1,ww+14,18,C.ink);
-   rect(q,x-ww/2,yy,ww,14,i%2?C.stone:C.stone2);
-   rect(q,x-ww/2+3,yy+2,ww-6,3,C.shine);
-   rect(q,x-ww/2+3,yy+11,ww-6,3,'#473746');
+  if(opt.shop){
+   r(q,x+8,base-37,w-16,32,C.ink);r(q,x+11,base-34,w-22,27,C.water);
+   r(q,x+17,base-30,12,13,C.waterLight);r(q,x+5,base-48,w-10,17,C.roofDark);
+   for(let i=0;i<Math.floor((w-10)/17);i++)r(q,x+6+i*17,base-47,16,15,i%2?C.stoneLight:roof);
   }
-  poly(q,[[x-w/2-20,y],[x-w/2-5,y],[x-w/2-5-steps*6,y+steps*14],
-          [x-w/2-33-steps*6,y+steps*14]],C.light);
-  poly(q,[[x+w/2+5,y],[x+w/2+20,y],[x+w/2+33+steps*6,y+steps*14],
-          [x+w/2+5+steps*6,y+steps*14]],C.light);
  }
- function rock(q,x,y,s=1){
-  poly(q,[[x-39*s,y+20*s],[x-30*s,y-23*s],[x-11*s,y-46*s],
-          [x+16*s,y-35*s],[x+37*s,y-14*s],[x+46*s,y+18*s]],C.ink);
-  poly(q,[[x-30*s,y+14*s],[x-25*s,y-21*s],[x-9*s,y-37*s],
-          [x+9*s,y-26*s],[x+14*s,y+18*s]],C.stone);
-  poly(q,[[x+10*s,y-29*s],[x+28*s,y-17*s],[x+36*s,y+13*s],
-          [x+14*s,y+15*s]],C.stone2);
-  rect(q,x-18*s,y-20*s,18*s,4*s,C.light);
-  rect(q,x-41*s,y+19*s,87*s,7*s,C.ink);
+ function clockTower(q,x,base){
+  r(q,x-31,base-214,62,214,C.ink);r(q,x-26,base-210,52,205,C.stone);
+  r(q,x-38,base-227,76,19,C.roofDark);r(q,x-33,base-231,66,17,C.roof);
+  r(q,x-24,base-257,48,26,C.ink);r(q,x-18,base-252,36,21,C.stoneLight);
+  r(q,x-5,base-268,10,13,C.roof);
+  circle(q,x,base-176,28,C.ink);circle(q,x,base-176,23,C.stoneLight);
+  r(q,x-2,base-195,4,22,C.ink);r(q,x,base-177,13,4,C.ink);
+  window(q,x-12,base-123,24,33);window(q,x-12,base-60,24,36);
  }
- function crystal(q,x,y,s=1){
-  poly(q,[[x-16*s,y+14*s],[x-21*s,y-11*s],[x-7*s,y-42*s],
-          [x+4*s,y-13*s],[x+4*s,y+16*s]],C.lava);
-  poly(q,[[x-8*s,y+14*s],[x-7*s,y-29*s],[x+3*s,y-13*s],[x+12*s,y+15*s]],C.hot);
-  poly(q,[[x+4*s,y+16*s],[x+16*s,y-19*s],[x+30*s,y-6*s],[x+28*s,y+16*s]],C.lava);
-  rect(q,x-25*s,y+15*s,57*s,6*s,C.ink);
- }
- // Superficie independiente: mismos límites y marcas que Ciudad, temática volcánica.
- const paving=canvas(1024,614,q=>{
-  rect(q,0,0,1024,614,'#493a4c');
-  for(let row=0;row<25;row++){
-   const yy=row*26,shift=(row%2)*33;
-   for(let col=-1;col<17;col++){
-    const xx=col*66+shift;
-    const shades=['#554556','#5b4b5c','#645264','#514154','#5d4a5c'];
-    rect(q,xx+2,yy+2,62,22,shades[Math.floor(rand()*shades.length)]);
-    rect(q,xx+6,yy+4,48,2,'rgba(207,164,161,.13)');
-    rect(q,xx+8+rand()*35,yy+14+rand()*5,9+rand()*11,2,'rgba(30,23,39,.20)');
+ // Pixel tiles based on the actual visual reference, not a retextured old model.
+ const pavement=canvas(1024,614,(q)=>{
+  // Adoquín de plaza PMD: bloques de piedra cálida, juntas suaves y desgaste natural.
+  // El mismo material continúa bajo las líneas de la cancha y en la zona exterior.
+  r(q,0,0,1024,614,'#aa929a');
+  const stones=['#675668','#705d70','#766273','#655568','#756071','#806879','#716073','#6d566b'];
+  const bw=63,bh=29;
+  for(let row=0;row<Math.ceil(614/bh);row++){
+   const yy=row*bh,shift=(row%2)*Math.floor(bw/2);
+   for(let col=-1;col<=Math.ceil(1024/bw);col++){
+    const xx=col*bw+shift,colr=stones[Math.floor(rand()*stones.length)];
+    // Bordes desiguales, sin cuadrícula brillante ni aspecto de baldosas de baño.
+    r(q,xx+2,yy+2,bw-4,bh-4,colr);
+    r(q,xx+4,yy+3,bw-8,2,'rgba(225,188,168,.22)');
+    r(q,xx+3,yy+bh-5,bw-6,2,'rgba(34,21,45,.25)');
+    if(rand()<.57)r(q,xx+7+rand()*29,yy+9+rand()*10,7+rand()*15,2,'rgba(26,20,38,.23)');
+    if(rand()<.24)r(q,xx+8+rand()*33,yy+5+rand()*11,3+rand()*7,2,'rgba(252,238,218,.30)');
+    if(rand()<.16){
+     const cx=xx+14+rand()*32,cy=yy+9+rand()*10;
+     r(q,cx,cy,12,1,'rgba(117,87,103,.15)');
+     r(q,cx+9,cy+1,2,4,'rgba(117,87,103,.12)');
+    }
    }
   }
-  // Ríos finos de magma, no fajas brillantes que impidan leer la pelota.
-  for(let k=0;k<36;k++){
+  // Finas fisuras de lava integradas en los adoquines, sin ruido excesivo.
+  for(let k=0;k<38;k++){
    let x=rand()*1024,y=rand()*614;
    q.beginPath();q.moveTo(x,y);
-   for(let j=0;j<4;j++){x+=8+rand()*26;y+=(rand()-.5)*30;q.lineTo(x,y);}
-   q.strokeStyle='#342a41';q.lineWidth=6;q.stroke();
-   q.strokeStyle=k%3===0?'#fa8d4a':'#c25741';q.lineWidth=2.3;q.stroke();
-   if(k%3===0){q.strokeStyle='#ffbc69';q.lineWidth=.9;q.stroke();}
+   for(let j=0;j<4;j++){x+=3+rand()*21;y+=(rand()-.5)*19;q.lineTo(x,y);}
+   q.strokeStyle='#35293d';q.lineWidth=3.2;q.stroke();
+   q.strokeStyle=k%3===0?'#ffb16b':'#d16b50';q.lineWidth=1.15;q.stroke();
+  }
+  // Zonas de uso: polvo y bordes erosionados discretos, no patrones repetitivos.
+  for(let i=0;i<390;i++){
+   const x=rand()*1024,y=rand()*614;
+   r(q,x,y,2+rand()*5,1,rand()<.5?'rgba(30,21,37,.20)':'rgba(219,161,142,.18)');
   }
  });
- const pitch=canvas(1024,614,q=>{
-  q.drawImage(paving,0,0);
-  q.strokeStyle=C.cream;q.lineWidth=6;
-  q.strokeRect(10,10,1004,594);
+ const pitchC=canvas(1024,614,(q)=>{
+  // Continuous textured stone court: same logical 60 × 36 playing field.
+  q.drawImage(pavement,0,0);
+  for(let i=0;i<230;i++){
+   let x=rand()*1024,y=rand()*614;r(q,x,y,3+rand()*9,1+rand()*3,'rgba(98,75,87,.13)');
+  }
+  q.strokeStyle=C.marking;q.lineWidth=6;q.strokeRect(10,10,1004,594);
   q.beginPath();q.moveTo(512,10);q.lineTo(512,604);q.stroke();
   q.strokeRect(10,168,164,278);q.strokeRect(850,168,164,278);
   q.strokeRect(10,237,55,140);q.strokeRect(959,237,55,140);
   q.beginPath();q.arc(512,307,88,0,Math.PI*2);q.stroke();
-  circ(q,512,307,7,C.cream);
-  circ(q,104,307,5,C.cream);circ(q,920,307,5,C.cream);
-  crest(q,512,307,23/26);
+  circle(q,512,307,7,C.marking);
+  for(const x of [104,920])circle(q,x,307,5,C.marking);
  });
+ // Be very explicit about replacing the playing surface and the apron.
+ const mkTex=(c)=>{
+  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;
+  t.magFilter=t.minFilter=THREE.NearestFilter;t.anisotropy=1;t.generateMipmaps=false;
+  return t;
+ };
  if(pitchMat.map&&pitchMat.map.userData&&pitchMat.map.userData.pmdOwned)pitchMat.map.dispose();
- const pitchTex=mkTex(pitch);pitchTex.userData.pmdOwned=true;
- pitchMat.map=pitchTex;pitchMat.color.setHex(0xffffff);pitchMat.needsUpdate=true;
+ const pt=mkTex(pitchC);pt.userData.pmdOwned=true;pitchMat.map=pt;pitchMat.color.setHex(0xffffff);
+ pitchMat.needsUpdate=true;SCENIC_TEXTURES.push(pt);
  if(apron.material.map&&apron.material.map.userData&&apron.material.map.userData.pmdOwned)apron.material.map.dispose();
- const apronTex=mkTex(paving);apronTex.userData.pmdOwned=true;
- apronTex.wrapS=apronTex.wrapT=THREE.RepeatWrapping;
- apronTex.repeat.set((HX*2+16)/(HX*2),(HZ*2+18)/(HZ*2));
- apron.material.map=apronTex;apron.material.color.setHex(0xffffff);
- apron.material.needsUpdate=true;apron.visible=true;
- // 1. Fondo ambiental: un volcán central y acantilados con cascadas.
- const sky=canvas(1536,640,q=>{
-  const grad=q.createLinearGradient(0,0,0,640);
-  grad.addColorStop(0,'#563a67');grad.addColorStop(.55,'#aa6278');grad.addColorStop(1,'#e59c80');
-  q.fillStyle=grad;q.fillRect(0,0,1536,640);
-  for(let i=0;i<48;i++){
-   const x=rand()*1536,y=50+rand()*230;
-   rect(q,x,y,46+rand()*130,8+rand()*13,i%2?'#74516d':'#8f5a70');
-   rect(q,x+13,y-10,50+rand()*92,9,'#7c526a');
-  }
-  poly(q,[[0,575],[0,358],[114,300],[222,356],[329,278],[440,390],[590,320],
-          [722,405],[854,329],[993,374],[1110,298],[1245,361],[1370,291],[1536,345],[1536,575]],'#43334c');
-  poly(q,[[420,576],[548,402],[655,289],[709,184],[757,161],[815,204],[874,311],[1039,579]],C.mount);
-  poly(q,[[539,567],[650,321],[711,200],[752,189],[789,251],[874,421],[922,566]],'#624457');
-  poly(q,[[698,203],[719,189],[754,188],[788,212],[762,222],[722,222]],C.lava);
-  poly(q,[[719,199],[744,193],[776,207],[754,212]],C.core);
-  for(const side of [-1,1]){
-   const xx=768+side*160;
-   poly(q,[[xx,280],[xx-side*28,360],[xx-side*55,427],[xx-side*45,500]],'#772e3c');
-   poly(q,[[xx,287],[xx-side*28,364],[xx-side*51,419],[xx-side*44,500]],C.lava);
-   poly(q,[[xx-side*8,313],[xx-side*36,394],[xx-side*43,467]],C.hot);
-  }
-  for(const [x,y,w,h] of [[130,353,70,210],[1304,342,73,227]]){
-   poly(q,[[x-80,540],[x-39,y-46],[x+w+35,y-55],[x+w+70,570]],'#362b41');
-   lavaFall(q,x,y,w,h);
-  }
- });
- plane(sky,174,58,0,-8,-62);
- // 2. Fachada central dibujada como un único conjunto detallado.
- const entrance=canvas(1536,650,q=>{
-  // Detrás del templo hay terrazas de basalto: no bloques de geometría 3D.
-  for(const side of [-1,1]){
-   const center=768+side*590;
-   for(let j=0;j<5;j++){
-    const xx=center+side*j*46,top=230+j*26;
-    rect(q,xx-52,top,115,420,C.ink);rect(q,xx-47,top+8,106,406,C.stone);
-    bricks(q,xx-45,top+15,100,375,.9);
-   }
-  }
-  // Muros laterales alineados a la fachada, con ladrillos a la misma escala.
-  for(const [x,w] of [[0,470],[1066,470]]){
-   rect(q,x,333,w,317,C.ink);rect(q,x+8,341,w-16,296,C.stone);
-   bricks(q,x+10,344,w-20,292,.85);
-   rect(q,x,320,w,18,C.ink);rect(q,x+5,324,w-10,10,C.light);
-   for(let i=0;i<6;i++){
-    const bx=x+12+i*(w-24)/6;
-    rect(q,bx,297,40,26,C.ink);rect(q,bx+4,300,32,20,C.stone2);
-   }
-  }
-  rect(q,436,252,664,398,C.ink);rect(q,445,260,646,381,C.stone);
-  bricks(q,448,270,640,365,.9);
-  poly(q,[[418,292],[465,248],[542,247],[597,211],[681,210],
-          [711,163],[827,163],[857,210],[944,211],[992,247],[1066,248],[1119,292]],C.ink);
-  poly(q,[[434,281],[482,251],[552,251],[604,219],[691,219],
-          [716,176],[822,176],[850,219],[934,219],[981,251],[1054,251],[1101,281]],C.light);
-  poly(q,[[454,278],[508,259],[583,259],[627,233],[705,231],
-          [727,192],[807,192],[832,231],[910,233],[951,259],[1023,259],[1081,278]],C.stone2);
-  rect(q,432,287,674,18,C.ink);rect(q,449,291,638,9,C.shine);
-  tower(q,518,192,.82);tower(q,1018,192,.82);
-  // Arco central luminoso y entradas laterales.
-  cutArch(q,647,337,242,272,true);
-  cutArch(q,562,407,67,123,true);cutArch(q,909,407,67,123,true);
-  for(const xx of [635,901]){
-   rect(q,xx-9,323,18,279,C.ink);rect(q,xx-5,326,10,269,C.light);
-  }
-  // Entrada con escalera monumental, profundamente escalonada en píxeles.
-  stairs(q,768,509,210,10);
-  crest(q,768,259,1.5);
-  // Brillos y frontones laterales.
-  for(const x of [464,1072]){
-   banner(q,x,325,1.13);
-   torch(q,x+((x<768)?66:-66),520,.88);
-  }
-  for(const x of [403,1133]){rock(q,x,588,1.27);crystal(q,x+(x<768?-34:32),622,1.0);}
-  // Lámparas junto al acceso, visibles a escala cinematográfica.
-  for(const x of [597,938])torch(q,x,524,.90);
-
-  // Fachada ceremonial detallada, como los paneles de referencia aprobados.
-  rect(q,575,99,386,80,C.ink);rect(q,584,108,368,64,C.light);
-  rect(q,592,116,352,48,C.red);rect(q,598,122,340,36,'#633747');
-  rect(q,600,123,336,4,C.hot);
-  q.font='bold 40px monospace';q.textAlign='center';q.textBaseline='middle';
-  q.lineWidth=5;q.strokeStyle=C.ink;q.strokeText('ESTADIO VOLCÁN',768,143,320);
-  q.fillStyle=C.cream;q.fillText('ESTADIO VOLCÁN',768,143,320);
-  // Torres auxiliares con almenas y hornacinas iluminadas.
-  for(const side of [-1,1]){
-   const x0=768+side*290;
-   for(let i=0;i<5;i++){
-    const x=x0+side*i*47;
-    rect(q,x-17,234,35,45,C.ink);rect(q,x-12,241,25,35,C.stone2);
-    rect(q,x-19,229,41,12,C.light);
-    rect(q,x-7,250,14,21,i%2?C.lava:'#382838');
-    if(i%2)rect(q,x-3,258,5,13,C.core);
-   }
-   // Cadenas de hierro en suspensión entre las torres.
-   for(let i=0;i<12;i++){
-    const u=i/11,x=768+side*(135+u*272),y=299+Math.sin(u*Math.PI)*42;
-    q.lineWidth=8;q.strokeStyle=C.ink;
-    q.beginPath();q.ellipse(x,y,8,5,side*.15,0,Math.PI*2);q.stroke();
-    q.lineWidth=2.4;q.strokeStyle=C.shine;
-    q.beginPath();q.ellipse(x,y,8,4,side*.15,0,Math.PI*2);q.stroke();
-   }
-   // Nichos tallados y pequeños retablos Poké Ball.
-   const x=768+side*360;
-   rect(q,x-32,397,64,116,C.ink);rect(q,x-27,402,54,103,C.stone2);
-   bricks(q,x-25,408,50,89,.37);crest(q,x,459,.54);
-   torch(q,x+side*64,430,.55);
-   for(let j=0;j<32;j++){
-    const xx=x+(rand()-.5)*200,yy=356+rand()*220;
-    rect(q,xx,yy,3+rand()*13,2,j%4===0?C.shine:j%3===0?C.ink:C.stone2);
-   }
-  }
-  // Portón con reja visible delante de las llamas y dintel decorado.
-  for(let i=0;i<11;i++){
-   const x=668+i*20;
-   rect(q,x,392,6,178,'#332437');
-   rect(q,x+2,396,2,164,'#836377');
-   rect(q,x-2,413,10,7,C.shine);
-  }
-  rect(q,665,432,209,13,C.ink);rect(q,670,436,199,4,C.shine);
-  rect(q,666,569,206,11,C.ink);
-  // Friso de ventanas de fuego en la base de la fortaleza.
-  for(const x of [461,494,527,1008,1041,1074]){
-   rect(q,x-15,551,30,73,C.ink);rect(q,x-10,558,21,57,C.stone2);
-   rect(q,x-7,566,15,43,C.lava);rect(q,x-3,574,7,27,C.hot);
-   rect(q,x-18,546,37,10,C.light);
-  }
-  rect(q,0,631,1536,19,C.ink);rect(q,0,631,1536,6,C.light);
- });
- plane(entrance,106,45,0,3,-40);
-
- // 3. GRANDE TRIBUNA ILUSTRADA: tres filas de asientos verificables.
- // El público NO está dibujado en la textura: son sprites PMD del juego.
- const standPanel=(side)=>canvas(1088,920,q=>{
-  const outer=side<0?85:1003,inner=side<0?1003:85;
-  // Acantilado escalonado y línea de cumbres, lejos de las tribunas.
-  poly(q,[[0,920],[0,281],[64,233],[103,172],[173,226],[257,140],
-          [332,208],[414,158],[507,250],[591,179],[670,268],[751,206],
-          [845,253],[923,207],[1014,250],[1088,207],[1088,920]],C.ink);
-  poly(q,[[0,920],[0,301],[74,251],[117,189],[185,240],[264,167],
-          [341,233],[424,178],[516,278],[587,207],[677,297],[748,237],
-          [847,280],[932,234],[1023,282],[1088,247],[1088,920]],C.stone);
-  for(let i=0;i<155;i++){
-   const px=rand()*1088,py=210+rand()*620;
-   rect(q,px,py,7+rand()*21,2+rand()*3,i%3===0?C.light:C.ash);
-  }
-  // Dos torres y arco alejados de la fila superior; forman la silueta del estadio.
-  const outside=side<0?104:984,inside=side<0?962:126;
-  tower(q,outside,228,.88);
-  tower(q,inside,255,.66);
-  // Columnas cortas y capitel, anexados a la fachada.
-  for(const x of [215,871]){
-   rect(q,x-29,268,58,278,C.ink);rect(q,x-22,279,44,262,C.stone2);
-   bricks(q,x-18,281,38,253,.56);
-   rect(q,x-34,256,68,26,C.ink);rect(q,x-29,261,58,14,C.light);
-   rect(q,x-32,524,64,20,C.ink);
-  }
-  // Cascada de lava situada claramente entre las torres.
-  lavaFall(q,side<0?155:841,296,84,297);
-  // Tres graderías con peldaños, respaldos, divisores, arcos y zócalos.
-  rect(q,166,368,763,525,C.ink);
-  rect(q,176,379,743,497,C.stone);
-  bricks(q,179,389,739,490,.74);
-  for(let row=0;row<3;row++){
-   const yy=402+row*143,stagger=row%2?22:0;
-   // Plataforma sobresaliente bajo el público, resaltada como en Ciudad.
-   rect(q,173,yy-20,754,19,C.ink);
-   rect(q,179,yy-15,741,6,C.shine);
-   rect(q,176,yy+91,749,20,C.ink);
-   rect(q,178,yy+93,746,7,C.light);
-   rect(q,182,yy+103,740,7,C.stone2);
-   // Asientos distribuidos de forma exacta y sin personajes falsos.
-   for(let seat=0;seat<16;seat++){
-    const xx=196+seat*44+stagger;
-    if(xx>889)continue;
-    rect(q,xx,yy+14,31,30,C.ink);
-    rect(q,xx+4,yy+19,23,20,'#58465c');
-    rect(q,xx+3,yy+41,27,7,C.stone2);
-    rect(q,xx+6,yy+23,18,3,'#8d7083');
-   }
-   // Arquería bajo los peldaños, con pequeñas ventanas de lava.
-   for(let k=0;k<11;k++){
-    const xx=193+k*67;
-    rect(q,xx,yy+113,50,23,C.ink);
-    rect(q,xx+5,yy+115,39,15,k%3===0?'#a84e42':'#504055');
-    if(k%3===0)rect(q,xx+12,yy+117,18,10,C.hot);
-   }
-  }
-  // Pasarela de servicio central y escaleras originales de las láminas aprobadas.
-  const stairsX=side<0?844:246;
-  stairs(q,stairsX,376,70,13);
-  for(const x of [side<0?763:329,side<0?955:137]){
-   rect(q,x-22,374,45,440,C.ink);
-   rect(q,x-16,382,33,420,C.stone2);
-   for(let yy=393;yy<797;yy+=57){
-    rect(q,x-18,yy,38,7,C.ink);
-    rect(q,x-15,yy+1,33,3,C.light);
-   }
-  }
-  // Muro frontal, dos largos corredores y un remate con pilares ornamentados.
-  rect(q,161,840,784,63,C.ink);
-  rect(q,172,845,765,49,C.stone2);
-  for(let x=187;x<937;x+=71){
-   cutArch(q,x,855,39,25,true);
-   rect(q,x-4,883,46,8,C.ink);
-  }
-  rect(q,152,818,798,31,C.ink);rect(q,159,822,785,11,C.shine);
-  for(let x=162;x<943;x+=84){
-   rect(q,x,788,34,48,C.ink);rect(q,x+6,796,22,36,C.stone);
-   rect(q,x-4,784,43,12,C.light);
-  }
-  // Monumentos, banderas y braseros colocados en pilares, no sobre espectadores.
-  banner(q,side<0?300:788,264,1.22);
-  banner(q,side<0?948:140,553,.9);
-  for(const [x,y,s] of [[side<0?140:948,585,1.15],[side<0?956:132,848,.95],
-                         [side<0?346:742,345,.75]])torch(q,x,y,s);
-  for(const x of [side<0?55:1033,side<0?324:760])rock(q,x,888,.85);
-  crystal(q,side<0?78:1010,894,1.15);
-  // Muro exterior lateral lleno de detalle en el fondo, no color plano.
-  for(let j=0;j<20;j++){
-   const x=12+j*55;
-   rect(q,x,900,44,5,C.ink);
-   if(j%3===0)rect(q,x+12,906,7,11,C.hot);
-  }
- });
- // Las imágenes comparten el mismo tamaño lógico de pixel que la fachada.
- plane(standPanel(-1),44,32,-44.7,13.5,-32);
- plane(standPanel(1),44,32,44.7,13.5,-32);
- // Barandillas delante de los pies, por fila, con separación de Pokémon.
- const railArt=canvas(832,76,q=>{
-  for(let y=0;y<76;y+=19){
-   rect(q,0,y,832,19,y%38===0?C.stone:C.stone2);
-   rect(q,0,y,832,3,C.light);
-  }
-  rect(q,0,28,832,20,C.ink);
-  rect(q,0,30,832,7,C.shine);
-  for(let i=0;i<23;i++){
-   const x=i*39;
-   rect(q,x,8,13,60,C.ink);
-   rect(q,x+3,12,7,51,C.stone2);
-   rect(q,x-4,0,19,12,C.light);
-   if(i%4===0){
-    rect(q,x+23,38,12,11,'#9d453f');rect(q,x+27,39,5,8,C.hot);
-   }
-  }
-  rect(q,0,65,832,11,C.ink);rect(q,0,67,832,4,C.light);
- });
- for(const side of [-1,1]){
-  for(const yy of [5.5,10.5,15.5]){
-   const r=plane(railArt,31.7,1.35,side*41.2,yy,-26.15);
-   r.renderOrder=4;r.material.depthTest=false;
-  }
- }
- // 4. Edificaciones pequeñas y decoración cerca de las bandas, como Ciudad.
- const prop=canvas(128,152,q=>{
-  rect(q,17,117,95,25,C.ink);rect(q,20,120,90,15,C.stone);
-  rect(q,24,108,82,12,C.shine);
-  for(let i=0;i<3;i++)rock(q,25+i*35,101,.35);
-  crystal(q,37,120,.6);crystal(q,99,118,.46);
-  banner(q,72,11,.66);
- });
- for(const side of [-1,1])for(const z of [-12,7]){
-  plane(prop,5.2,6.3,side*(HX+6),3.15,z);
- }
-
- // Plaza exterior amplia y continua, para no mostrar el color vacío del cielo
- // por debajo y a ambos costados del campo durante la panorámica inclinada.
- const plazaGround=canvas(1024,1024,q=>{
-  rect(q,0,0,1024,1024,'#4c3b4b');
-  for(let row=0;row<46;row++){
-   const yy=row*23,shift=row%2?31:0;
-   for(let col=-1;col<18;col++){
-    const xx=col*62+shift;
-    rect(q,xx+2,yy+2,58,19,['#665061','#725767','#5a465a','#786071'][(row+col+12)%4]);
-    rect(q,xx+3,yy+3,52,2,'#9c7a80');
-    if((row*7+col)%5===0)rect(q,xx+9,yy+11,14,2,'#453544');
-   }
-  }
-  // Vetas discontinuas incandescentes, no una cuadrícula uniforme.
-  for(let i=0;i<54;i++){
-   let x=rand()*1024,y=rand()*1024;
-   q.beginPath();q.moveTo(x,y);
-   for(let j=0;j<4;j++){x+=9+rand()*12;y+=(rand()-.5)*22;q.lineTo(x,y);}
-   q.strokeStyle='#352636';q.lineWidth=4;q.stroke();
-   q.strokeStyle=i%3?'#b64b3d':'#ed7c3e';q.lineWidth=1.7;q.stroke();
-  }
- });
- const plazaTex=mkTex(plazaGround);plazaTex.wrapS=plazaTex.wrapT=THREE.RepeatWrapping;
- plazaTex.repeat.set(1.38,1.35);
- const plazaMesh=new THREE.Mesh(new THREE.PlaneGeometry(148,138),
-  new THREE.MeshBasicMaterial({map:plazaTex,side:THREE.DoubleSide,depthWrite:true}));
- plazaMesh.rotation.x=-Math.PI/2;plazaMesh.position.set(0,-.085,8);
- scene.add(plazaMesh);
- // Muros de contención y lava dibujada alrededor, como piezas de escenario.
- const lavaChannel=canvas(512,96,q=>{
-  rect(q,0,0,512,96,C.ink);rect(q,0,9,512,78,'#993b3a');
-  for(let i=0;i<41;i++){
-   const x=i*13,w=7+rand()*12,y=19+rand()*24;
-   rect(q,x,y,w,46,C.lava);
-   rect(q,x+2,y+9,w*.47,18,C.hot);
-   if(i%4===0)rect(q,x+3,y+12,3,20,C.core);
-  }
-  rect(q,0,0,512,10,C.stone2);rect(q,0,83,512,12,C.ink);
- });
- const lavaTex=mkTex(lavaChannel);
- const lavaMat=new THREE.MeshBasicMaterial({map:lavaTex,side:THREE.DoubleSide});
- for(const z of [-25.5,26.5]){
-  const m=new THREE.Mesh(new THREE.PlaneGeometry(92,3.2),lavaMat);
-  m.rotation.x=-Math.PI/2;m.position.set(0,-.016,z);scene.add(m);
- }
- for(const x of [-38,38]){
-  const m=new THREE.Mesh(new THREE.PlaneGeometry(3.0,56),lavaMat);
-  m.rotation.x=-Math.PI/2;m.position.set(x,-.015,0);scene.add(m);
- }
-
-
- // Gran canal de lava y camino inferior, enteramente ilustrados y fuera del juego.
- // Ocupa el hueco que quedaba del color del cielo en la animación inclinada.
- const riverArt=canvas(1152,576,q=>{
-  rect(q,0,0,1152,576,C.ink);
-  // Borde superior de muralla: 16-bit, mismo tamaño de sillar que la fortaleza.
-  rect(q,0,0,1152,96,C.stone);
-  bricks(q,0,1,1152,95,.70);
-  rect(q,0,0,1152,11,C.light);
-  rect(q,0,83,1152,18,C.ink);
-  // Tres canales que entran desde arcos en el muro.
-  for(const x of [177,575,974]){
-   rect(q,x-55,18,110,100,C.ink);
-   poly(q,[[x-55,81],[x-46,31],[x-23,12],[x+23,12],[x+46,31],[x+55,81]],C.ink);
-   rect(q,x-42,64,84,40,'#923738');
-   for(let k=0;k<9;k++){
-    rect(q,x-35+k*8,65+(k%3)*4,6,52,k%2?C.hot:C.lava);
-    if(k%3===0)rect(q,x-33+k*8,72,2,40,C.core);
-   }
-  }
-  // Ribera de magma vibrante, crujidos, espuma, remolinos y piedra flotante.
-  rect(q,0,107,1152,274,'#7e343b');
-  rect(q,0,116,1152,255,C.lava);
-  for(let i=0;i<280;i++){
-   const x=rand()*1152,y=122+rand()*247,w=6+rand()*46;
-   rect(q,x,y,w,4+rand()*8,i%4===0?C.core:i%2===0?C.hot:'#dc4e35');
-   if(i%9===0)rect(q,x+5,y+4,w*.65,2,'#ffe8a3');
-  }
-  for(let i=0;i<16;i++){
-   const x=rand()*1152,y=140+rand()*200;
-   circ(q,x,y,8+rand()*17,'#eb8244');
-   circ(q,x,y,5+rand()*10,'#ffcb70');
-   circ(q,x,y,3+rand()*5,'#f4753b');
-  }
-  for(const [x,y,s] of [[85,197,1.4],[268,255,1.0],[406,189,1.6],
-                         [701,266,1.8],[846,193,1.2],[1040,252,1.4]]){
-   rock(q,x,y,s);rock(q,x+46*s,y+11*s,s*.6);
-   rect(q,x-46*s,y+26*s,92*s,5,C.hot);
-  }
-  // Margen inferior, pavimento y alfombra ceremonial de llegada.
-  rect(q,0,390,1152,186,C.ink);rect(q,0,401,1152,175,C.stone);
-  bricks(q,0,407,1152,162,.86);
-  rect(q,0,392,1152,15,C.light);
-  // Puente central de piedra corta el río a lo largo del eje del templo.
-  rect(q,506,101,141,476,C.ink);
-  rect(q,518,102,117,474,C.stone2);
-  bricks(q,522,107,109,459,.71);
-  for(let k=0;k<15;k++){
-   const y=116+k*30;
-   rect(q,510,y,132,8,C.ink);rect(q,517,y+1,119,3,C.shine);
-  }
-  rect(q,525,413,102,150,C.red);
-  rect(q,534,422,84,135,'#7f3947');
-  crest(q,574,498,.98);
-  // Entrada del primer plano con cadenas y pilastras a ambos extremos.
-  for(const x of [104,279,873,1048]){
-   rect(q,x-28,407,57,125,C.ink);
-   rect(q,x-22,412,45,112,C.stone2);
-   rect(q,x-34,403,69,15,C.light);
-   rect(q,x-35,524,71,12,C.ink);
-   for(let yy=429;yy<521;yy+=17)rect(q,x-17,yy,36,3,C.light);
-  }
-  for(const x of [78,1074]){
-   rock(q,x,530,1.2);crystal(q,x+30,554,.84);
-  }
- });
- const riverTexture=mkTex(riverArt);
- const riverMesh=new THREE.Mesh(new THREE.PlaneGeometry(122,31),
-  new THREE.MeshBasicMaterial({map:riverTexture,side:THREE.DoubleSide,depthWrite:true}));
- riverMesh.rotation.x=-Math.PI/2;riverMesh.position.set(0,-.032,HZ+23);
- scene.add(riverMesh);
-
- // 5. Primer plano ilustrado; se retira al terminar la cámara cinematográfica.
- const foreground=new THREE.Group();scene.add(foreground);
- const foregroundArt=canvas(1536,300,q=>{
-  // Pared frontal baja, sin cortar el centro de la entrada.
-  rect(q,0,153,1536,147,C.ink);rect(q,0,160,1536,132,C.stone);
-  bricks(q,5,165,1526,119,.92);
-  rect(q,0,144,1536,24,C.ink);rect(q,0,147,1536,12,C.shine);
-  for(let i=0;i<21;i++){
-   const x=i*77;
-   rect(q,x,100,38,49,C.ink);rect(q,x+6,104,26,38,C.stone2);
-   rect(q,x-6,96,51,12,C.light);
-  }
-  // Vista de la plaza inferior con grietas y escaleras ornamentales.
+ const at=mkTex(pavement);at.userData.pmdOwned=true;at.wrapS=at.wrapT=THREE.RepeatWrapping;
+ at.repeat.set((HX*2+16)/(HX*2),(HZ*2+12+6)/(HZ*2));apron.material.map=at;apron.material.color.setHex(0xffffff);
+ apron.material.needsUpdate=true;SCENIC_TEXTURES.push(at);
+ apron.visible=true;
+ // Skyline: three true layers (sky, town, architectural foreground).
+ const sky=canvas(1536,600,q=>{
+  for(let y=0;y<600;y+=25)r(q,0,y,1536,25,y<260?C.sky:y<420?C.sky2:'#c5e2d9');
+  for(let i=0;i<15;i++)cloud(q,35+i*111+(rand()-.5)*42,35+rand()*148,.42+rand()*.65);
   for(let i=0;i<9;i++){
-   const x=178+i*155;
-   rect(q,x,176,40,4,C.ink);
-   rect(q,x+11,180,4,45,C.lava);
-   rect(q,x+14,200,2,27,C.hot);
+   let x=i*204-70,peak=286+rand()*74;
+   poly(q,[[x-140,600],[x-80,peak+72],[x,peak-76],[x+83,peak+76],[x+160,600]],C.mountainShade);
+   poly(q,[[x-80,peak+72],[x,peak-76],[x+35,peak+27],[x+9,peak+130]],C.mountain);
+   poly(q,[[x-55,peak+55],[x,peak-76],[x+15,peak-36],[x-7,peak+62]],C.mountainLight);
   }
-  crest(q,768,190,1.0);
-  for(const x of [111,1425]){torch(q,x,117,1.18);}
-  for(const x of [271,1265]){banner(q,x,146,.62);}
-  for(const x of [35,1500])rock(q,x,257,1.15);
-  for(const x of [183,1353])crystal(q,x,273,.85);
  });
- plane(foregroundArt,112,12,0,3.5,HZ+8,foreground);
+ const town=canvas(1536,540,q=>{
+  // Each facade has distinct roof, window depth and staggered silhouette.
+  for(let i=0;i<16;i++){
+   const x=i*102-25,h=174+(i*37)%105;
+   building(q,x,530,94,h,{roof:i%3===0?'#ad5a64':i%2?C.roof:C.roof2,shop:i%4===2});
+  }
+  clockTower(q,1183,529);
+  for(let i=0;i<17;i++)tree(q,43+i*99,540,.5+(i%3)*.06);
+ });
+ // New spectator architecture, intentionally EMPTY of hand-drawn creatures;
+ // all visible Pokémon spectators are actual SpriteCollab assets.
+ const tribune=canvas(1536,570,q=>{
+  r(q,0,510,1536,60,C.ink);r(q,0,515,1536,46,C.stoneDark);
+  for(let row=0;row<3;row++){
+   const y=393+row*40;
+   r(q,0,y,1536,33,C.stoneDark);r(q,0,y+5,1536,23,C.stone);
+   r(q,0,y+33,1536,7,C.ink);r(q,0,y+37,1536,3,C.stoneLight);
+   for(let x=0;x<1536;x+=64)r(q,x+row%2*30,y+12,54,2,'#b99a91');
+  }
+  // The side stairways from the reference sketch.
+  for(const xx of [332,1120]){
+   r(q,xx-11,330,106,178,C.ink);r(q,xx,331,83,175,C.stone);
+   for(let i=0;i<9;i++){r(q,xx,335+i*19,83,8,C.stoneLight);r(q,xx,345+i*19,83,5,C.stoneDark);}
+   r(q,xx-19,321,125,14,C.stoneLight);
+  }
+  // Pokémon Center: hand-painted brick architecture with real-depth pixels.
+  r(q,574,246,384,257,C.ink);r(q,584,251,364,247,C.stone);
+  poly(q,[[546,272],[585,213],[618,194],[913,194],[950,213],[988,272]],C.roofDark);
+  poly(q,[[553,264],[592,213],[622,203],[910,203],[941,213],[981,264]],C.roof);
+  r(q,549,267,438,19,C.ink);r(q,558,269,420,9,C.roofLight);
+  // Tejas del tejado del Centro Pokémon, ladrillos y canalones.
+  for(let yy=210;yy<261;yy+=9){
+   for(let xx=558+((yy/9|0)%2)*11;xx<970;xx+=24){
+    if((xx>575&&xx<945)&&yy>222){
+     r(q,xx,yy,19,3,yy%18?C.roofLight:C.roofDark);
+     r(q,xx+3,yy+3,13,1,'rgba(255,225,172,.45)');
+    }
+   }
+  }
+  r(q,554,282,430,6,C.stoneDark);
+  for(let yy=295;yy<495;yy+=16){
+   r(q,587,yy,357,2,'rgba(121,89,99,.20)');
+   for(let xx=595+((yy/16|0)%2)*22;xx<938;xx+=44)
+    r(q,xx,yy+2,2,11,'rgba(131,96,105,.19)');
+  }
+  for(let xx=595;xx<940;xx+=19)r(q,xx,481,13,5,'rgba(245,219,179,.48)');
 
- // Pórticos laterales y linternas de piedra del mismo set modular PMD.
- const porch=canvas(448,480,q=>{
-  poly(q,[[0,480],[0,242],[49,184],[92,214],[148,155],[201,203],
-          [246,178],[311,223],[362,173],[448,238],[448,480]],C.ink);
-  poly(q,[[8,469],[8,256],[58,201],[108,232],[154,175],[207,219],
-          [259,194],[317,245],[372,195],[441,257],[441,469]],C.stone);
-  for(let i=0;i<75;i++){
-   const x=rand()*448,y=215+rand()*236;
-   rect(q,x,y,8+rand()*18,2,i%4===0?C.light:C.ash);
+  r(q,607,286,319,6,C.stoneLight);
+  for(const x of [608,838]){r(q,x-9,312,95,135,C.stoneDark);window(q,x,326,27,63);window(q,x+48,326,27,63);}
+  // Entrance, door frame and highlights.
+  r(q,691,399,154,105,C.ink);r(q,700,408,136,96,C.water);
+  r(q,765,408,7,96,C.ink);r(q,708,414,56,10,C.waterLight);
+  r(q,781,414,46,10,C.waterLight);r(q,688,391,162,12,C.roof2);
+  // Puertas y marcos de entrada con sensación de profundidad.
+  r(q,702,397,133,7,C.roofLight);
+  r(q,700,406,6,95,C.ink);r(q,831,406,6,95,C.ink);
+  r(q,702,416,56,10,'#bbebea');r(q,781,416,42,8,'#b7ebf3');
+  r(q,711,435,5,53,'rgba(223,250,246,.65)');
+  r(q,819,431,4,49,'rgba(212,238,250,.5)');
+  r(q,758,465,5,9,'#e9cf83');r(q,773,465,5,9,'#e9cf83');
+  r(q,684,500,168,7,C.stoneLight);
+
+  // Architectural Poké Ball emblem (not a fabricated spectator).
+  circle(q,767,250,58,C.ink);circle(q,767,250,50,C.stoneLight);
+  circle(q,767,250,43,'#fff2e2');q.fillStyle=C.roof;
+  q.beginPath();q.arc(767,250,43,Math.PI,0);q.fill();
+  r(q,724,246,86,9,C.ink);circle(q,767,251,15,C.ink);circle(q,767,251,9,C.stoneLight);
+  // Stalls with striped awnings and wooden counters.
+  for(const [x,w] of [[117,200],[1218,204]]){
+   r(q,x,337,w,162,C.ink);r(q,x+6,344,w-12,150,C.stone);
+   r(q,x+22,380,w-44,98,C.wood);r(q,x+29,385,w-58,84,C.water);
+   r(q,x+11,348,w-22,31,C.roofDark);
+   for(let j=0;j<9;j++){const sx=x+11+j*(w-22)/9;
+    r(q,sx,348,(w-22)/9,29,j%2?C.stoneLight:C.roof);}
+   r(q,x+10,476,w-20,11,C.wood);
   }
-  cutArch(q,121,206,156,182,false);
-  bricks(q,19,391,409,74,.55);
-  rect(q,10,384,428,22,C.ink);rect(q,16,389,416,9,C.shine);
-  for(const x of [46,402]){
-   rect(q,x-21,317,43,113,C.ink);rect(q,x-16,327,33,93,C.stone2);
-   rect(q,x-29,304,58,18,C.light);torch(q,x,298,.91);
+  // Lanterns and blue flags, deliberately away from the pitch.
+  for(const x of [81,452,1088,1451]){
+   r(q,x-5,293,12,214,C.ink);r(q,x-3,300,8,202,C.wood);
+   r(q,x-15,281,33,18,C.ink);r(q,x-11,286,25,12,C.stoneLight);
+   r(q,x+10,313,58,97,C.ink);r(q,x+14,318,50,82,C.banner);
+   r(q,x+21,327,34,8,C.waterLight);r(q,x+22,359,32,7,C.stoneLight);
   }
-  for(const [x,y,s] of [[48,434,.8],[370,437,.9],[292,451,.5]])rock(q,x,y,s);
-  crystal(q,69,447,.72);crystal(q,377,446,.87);
-  banner(q,350,184,.75);crest(q,222,321,.6);
-  rect(q,0,467,448,13,C.ink);
+  for(let i=0;i<18;i++)flowers(q,36+i*85,497);
+  // Escaleras monumentales: pasamanos, huellas y zócalos sombreados.
+  for(const sx of [331,1119]){
+   r(q,sx-23,314,8,196,C.ink);r(q,sx-20,314,5,189,C.stoneLight);
+   r(q,sx+88,314,8,196,C.ink);r(q,sx+90,314,5,189,C.stoneLight);
+   for(let i=0;i<9;i++){
+    const yy=334+i*19;
+    r(q,sx+1,yy+7,82,4,'#ad8e89');
+    r(q,sx+3,yy+12,77,3,'rgba(80,67,84,.17)');
+   }
+  }
+  // Jardineras sobre pedestales, arbustos y flores a distintas alturas.
+  for(const x of [35,212,426,1000,1212,1462]){
+   r(q,x-36,446,72,47,C.ink);r(q,x-31,452,62,34,C.stone);
+   r(q,x-40,442,80,12,C.stoneLight);
+   r(q,x-26,438,54,9,C.treeDark);
+   for(let j=0;j<8;j++){
+    circle(q,x-30+j*9,436+(j%2)*3,7,j%2?C.tree:C.treeLight);
+    r(q,x-27+j*8,427-(j%3)*4,6,5,j%2?C.flower:C.flower2);
+   }
+  }
+  // Ornamental lanterns: frames and warm glass.
+  for(const x of [44,456,1078,1496]){
+   r(q,x-5,369,11,125,C.ink);r(q,x-3,374,6,119,C.wood);
+   r(q,x-18,351,35,35,C.ink);r(q,x-12,355,24,27,'#f4d38e');
+   r(q,x-8,359,11,15,'#fff2b5');r(q,x-19,349,37,7,C.stoneLight);
+  }
+  // Banderines de la ciudad y pilastras, no personajes artificiales.
+  for(const x of [261,497,1042,1282]){
+   r(q,x,343,10,142,C.ink);r(q,x+4,345,4,136,C.wood);
+   r(q,x+10,352,47,66,C.banner);
+   r(q,x+13,356,39,5,C.waterLight);r(q,x+16,390,30,4,C.stoneLight);
+  }
+
+  r(q,0,539,1536,13,C.stoneLight);r(q,0,553,1536,10,C.ink);
  });
+ const foreground=canvas(1024,160,q=>{
+  // Lower pixel stone balustrade and flower boxes (no character silhouettes).
+  r(q,0,112,1024,48,C.ink);r(q,0,116,1024,39,C.stone);
+  r(q,0,104,1024,13,C.stoneLight);
+  for(let i=0;i<33;i++){
+   const x=i*32;
+   r(q,x,105,6,55,C.ink);r(q,x+3,109,4,47,C.stoneDark);
+   if(i%3===0)flowers(q,x+19,115);
+  }
+ });
+ function plane(c,w,h,x,y,z,rot=0){
+  const texture=mkTex(c);SCENIC_TEXTURES.push(texture);
+  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,h),
+    new THREE.MeshBasicMaterial({map:texture,transparent:true,alphaTest:.01,side:THREE.DoubleSide,
+      depthWrite:false,toneMapped:false,fog:false}));
+  mesh.position.set(x,y,z);mesh.rotation.y=rot;scene.add(mesh);return mesh;
+ }
+ // Capas situadas para la nueva proyección ortográfica, sin fuga de perspectiva.
+ // La vista es fija: las capas se muestran completas sin mover la cámara.
+ // El conjunto está compacto: edificio + escaleras + gradas junto al borde norte.
+ // Capas paralelas, misma escala de lectura y sin bloques dispersos.
+ plane(sky,117,62,0,-12,-56);
+ plane(town,102,48,0,0,-44);
+ plane(tribune,91,29,0,11.5,-28);
+ // Side gardens are decor, not old stands. Keep outside the gameplay perimeter.
+ const garden=canvas(256,192,q=>{
+  r(q,0,164,256,28,C.stoneDark);
+  r(q,0,158,256,8,C.stoneLight);
+  for(let i=0;i<4;i++)tree(q,36+i*67,166,.38+(i%2)*.11);
+  for(let i=0;i<8;i++)flowers(q,17+i*31,169);
+ });
+ // Sin paneles laterales rotados ni baranda lejana: rompían la composición.
+ // El jardín está pintado dentro de las terrazas centrales, unido al estadio.
+ // Plazoleta lateral: piezas pixel-art genuinas con sombras, jardineras y pequeños movimientos.
+ // Todo se coloca fuera de los límites físicos de la cancha (|x| > HX o z > HZ).
+ const life=[];
+ function decorSprite(c,w,h,x,y,z,opt={}){
+  const texture=mkTex(c);SCENIC_TEXTURES.push(texture);
+  const material=new THREE.MeshBasicMaterial({map:texture,transparent:true,alphaTest:.08,
+   side:THREE.DoubleSide,depthWrite:false,toneMapped:false,fog:false});
+  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,h),material);
+  mesh.position.set(x,y,z);mesh.renderOrder=opt.order||2;scene.add(mesh);
+  return mesh;
+ }
+ const plantTex=canvas(128,104,q=>{
+  // Piedra y cerámica con vegetación en capas.
+  r(q,8,83,113,9,'rgba(52,62,77,.28)');
+  r(q,14,57,101,27,C.ink);r(q,19,59,91,21,C.stone);
+  r(q,16,54,96,9,C.stoneLight);r(q,24,77,84,5,C.stoneDark);
+  for(let j=0;j<13;j++){
+   const x=21+j*7;
+   r(q,x,45-(j%4)*4,11,14,j%3===0?C.treeDark:j%2?C.tree:C.treeLight);
+   r(q,x+3,41-(j%3)*7,7,8,j%4===0?C.flower2:j%3===0?C.flower:'#f6a5c4');
+   r(q,x+5,38-(j%3)*7,3,3,C.stoneLight);
+  }
+  r(q,38,64,9,2,'rgba(255,249,219,.42)');r(q,76,69,13,2,'rgba(255,249,219,.35)');
+ });
+ const bushTex=canvas(96,82,q=>{
+  r(q,9,72,77,6,'rgba(52,62,77,.20)');
+  for(let i=0;i<11;i++){
+   const x=15+i*6,y=39+(i%3)*5;
+   r(q,x,y,17,32,i%3===0?C.treeDark:i%2?C.tree:C.treeLight);
+   r(q,x+3,y-6,12,12,i%2?'#a6d477':'#67b687');
+   if(i%2===0)r(q,x+7,y-10,5,6,i%4?C.flower:C.flower2);
+  }
+ });
+ const lampTex=canvas(72,148,q=>{
+  r(q,29,135,21,7,'rgba(52,62,77,.23)');
+  r(q,32,45,9,93,C.ink);r(q,35,48,4,86,C.wood);
+  r(q,20,28,34,28,C.ink);r(q,24,33,26,20,'#f4ce85');
+  r(q,29,35,15,16,'#fff0b4');r(q,18,27,38,6,C.stoneLight);
+  r(q,27,19,22,9,C.ink);r(q,32,14,12,7,C.roofDark);
+  r(q,26,54,24,4,C.stoneDark);
+ });
+ const pennantTex=canvas(92,128,q=>{
+  r(q,20,12,6,110,C.ink);r(q,22,13,3,107,C.wood);
+  poly(q,[[26,20],[80,25],[73,78],[55,95],[29,78]],C.ink);
+  poly(q,[[29,24],[76,29],[70,75],[55,89],[32,74]],C.banner);
+  r(q,38,34,27,5,C.waterLight);r(q,41,48,20,4,C.stoneLight);
+  circle(q,52,64,8,C.stoneLight);circle(q,52,64,4,C.roofDark);
+ });
+ const benchTex=canvas(112,75,q=>{
+  r(q,9,65,94,5,'rgba(52,62,77,.24)');
+  r(q,18,14,78,29,C.ink);r(q,23,17,68,21,C.wood);
+  for(let i=0;i<3;i++)r(q,26,20+i*6,62,3,i===1?C.woodLight:C.stoneDark);
+  r(q,12,44,88,12,C.ink);r(q,18,46,76,7,C.woodLight);
+  r(q,23,53,8,14,C.ink);r(q,82,53,8,14,C.ink);
+ });
+ const decorShadowMat=new THREE.MeshBasicMaterial({color:0x59455e,transparent:true,opacity:.15,depthWrite:false});
+ function sideObject(tex,w,h,x,z,yOff=0,animate=false){
+  const shadow=new THREE.Mesh(new THREE.CircleGeometry(w*.43,12),decorShadowMat);
+  shadow.rotation.x=-Math.PI/2;shadow.position.set(x,.025,z);scene.add(shadow);
+  const m=decorSprite(tex,w,h,x,h/2+yOff,z);
+  if(animate)life.push({mesh:m,baseX:x,baseY:h/2+yOff,phase:rand()*6.28,amp:.035+rand()*.05});
+  return m;
+ }
+ // Bordes en ambos costados. No se ponen objetos detrás de las porterías.
  for(const side of [-1,1]){
-  const item=plane(porch,17,16,side*53,7,HZ+12,foreground);item.renderOrder=3;
+  const x=side*(HX+5.4);
+  for(const z of [-15.7,-8.5,8.5,15.7])sideObject(plantTex,5,3.7,x,z);
+  sideObject(benchTex,4.6,2.8,x,-2);
+  sideObject(bushTex,3.6,2.8,side*(HX+7),-12.5);
+  sideObject(bushTex,3.4,2.5,side*(HX+7),12.5);
+  const lamp=sideObject(lampTex,2.6,5.1,side*(HX+7),3);
+  life.push({mesh:lamp,phase:rand()*6.28,lamp:true});
+  sideObject(pennantTex,3.2,4.4,side*(HX+7.2),-5.7,0,true);
  }
- const lantern=canvas(128,240,q=>{
-  rect(q,50,84,27,155,C.ink);rect(q,54,89,19,142,C.stone2);
-  rect(q,32,63,64,54,C.ink);rect(q,38,70,52,42,C.lava);
-  rect(q,44,75,40,29,C.hot);rect(q,57,81,18,21,C.core);
-  rect(q,28,58,72,13,C.shine);
-  poly(q,[[28,59],[48,29],[64,10],[79,29],[100,59]],C.ink);
-  poly(q,[[40,53],[54,33],[64,21],[76,36],[88,53]],C.stone2);
-  rect(q,27,230,74,10,C.ink);
- });
- for(const x of [-40,-19,19,40])plane(lantern,2.7,5.2,x,3.1,HZ+7.4,foreground);
-
-
- // Humo térmico suave en los extremos de las gradas y el río.
- const smokeTex=mkTex(canvas(96,96,q=>{
-  for(const [x,y,r,color] of [[34,63,25,'rgba(114,85,100,.35)'],
-                              [59,46,28,'rgba(195,143,132,.25)'],
-                              [68,69,17,'rgba(66,47,70,.32)']]){
-   circ(q,x,y,r,color);
-  }
+ // El borde cercano funciona como una plaza transitada, sin cruzar la línea lateral.
+ for(const x of [-23,-13,13,23]){
+  sideObject(plantTex,4.4,3.1,x,HZ+3.8);
+ }
+ for(const x of [-28,28])sideObject(pennantTex,2.8,3.9,x,HZ+4.5,0,true);
+ // Luciérnagas de la plaza al atardecer: parpadeo mínimo, sin partículas sobre el campo.
+ const glows=[];
+ const glowTexture=mkTex(canvas(32,32,q=>{
+  for(let k=5;k>=1;k--)circle(q,16,16,k*3,k>3?'rgba(255,220,125,.06)':k>1?'rgba(255,234,145,.15)':'rgba(255,252,217,.6)');
  }));
- const smokeClouds=[];
- for(const side of [-1,1])for(let i=0;i<5;i++){
-  const x=side*(35+i*4.5),y=5+i*.9,z=i%2?HZ+20:-35;
-  const material=new THREE.SpriteMaterial({map:smokeTex,transparent:true,
-   opacity:.22,depthWrite:false});
-  const sp=new THREE.Sprite(material);sp.position.set(x,y,z);
-  sp.scale.set(3.8+i*.48,3.8+i*.48,1);scene.add(sp);
-  smokeClouds.push({sp,x,y,z,phase:rand()*7,speed:.24+rand()*.6,size:3.8+i*.48});
+ SCENIC_TEXTURES.push(glowTexture);
+ for(const side of [-1,1])for(const z of [-13,2,13]){
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTexture,transparent:true,
+   opacity:.37,depthWrite:false,blending:THREE.AdditiveBlending}));
+  const bx=side*(HX+5.7),by=2.3+rand()*1.7;
+  sp.position.set(bx,by,z);sp.scale.set(1.3,1.3,1);scene.add(sp);
+  glows.push({sp,bx,by,bz:z,phase:rand()*6.28});
  }
-
- const embers=[];
- const emberTex=mkTex(canvas(32,32,q=>{
-  rect(q,10,8,11,14,C.lava);rect(q,13,9,5,12,C.core);
- }));
- for(let i=0;i<24;i++){
-  const m=new THREE.Sprite(new THREE.SpriteMaterial({map:emberTex,transparent:true,opacity:.6,depthWrite:false}));
-  m.scale.set(.22+rand()*.3,.32+rand()*.38,1);
-  const x=(rand()-.5)*109,y=.6+rand()*7,z=-39+rand()*68;
-  m.position.set(x,y,z);scene.add(m);
-  embers.push({m,x,y,z,phase:rand()*8,speed:.25+rand()*.7});
- }
- // 6. Porterías cenitales blancas y acentos de equipo: consistencia visual.
- const white=new THREE.MeshBasicMaterial({color:0xfff1dc,depthTest:false,depthWrite:false});
- const net=new THREE.MeshBasicMaterial({color:0xe1c9cb,transparent:true,opacity:.66,depthTest:false,depthWrite:false});
- const accents=[0xe85e5d,0x62bce7].map(color=>new THREE.MeshBasicMaterial({color,depthTest:false,depthWrite:false}));
- const mark=(x,z,w,d,mat,y=.12)=>{
-  const m=new THREE.Mesh(new THREE.BoxGeometry(w,.014,d),mat);
-  m.position.set(x,y,z);m.renderOrder=10;scene.add(m);
- };
- for(const side of [-1,1]){
-  const accent=accents[side<0?0:1];
-  const cx=side*(HX+1.34),far=side*(HX+2.65);
-  mark(cx,0,2.7,GW*2+.7,net,.07);
-  mark(far,0,.3,GW*2+.9,white,.108);
-  mark(side*(HX+.1),0,.34,GW*2+.6,white,.128);
-  for(const zz of [-GW-.45,GW+.45]){
-   mark(cx,zz,2.95,.32,white,.12);
-   mark(cx,zz,2.45,.11,accent,.14);
-  }
-  for(let z=-GW+.35;z<GW;z+=.75)mark(cx,z,2.4,.045,net,.087);
-  for(let x=.5;x<2.6;x+=.5)mark(side*(HX+x),0,.055,GW*2,net,.087);
-  mark(side*(HX+.35),0,.14,GW*2-.15,accent,.145);
- }
- scene.userData.pmdSetIntro=mix=>{
-  // La decoración frontal se aleja y desvanece suavemente durante el giro.
-  const k=Math.max(0,Math.min(1,(mix-.40)/.36));
-  foreground.visible=k<.995;
-  foreground.position.y=-k*13;
-  foreground.traverse(o=>{
-   if(o.material&&o.material.opacity!==undefined)o.material.opacity=1-k;
-  });
- };
  scene.userData.pmdTick=(dt,t)=>{
-  const pulse=.92+.08*Math.sin(t*.0021);
-  riverMesh.material.color.setRGB(1,pulse,.86+.14*pulse);
-  lavaMat.color.setRGB(1,.86+.14*Math.sin(t*.0025+1),.88);
-  for(const s of smokeClouds){
-   const p=(t*.00015*s.speed+s.phase)%1;
-   s.sp.position.set(s.x+Math.sin(t*.0005+s.phase)*.65,s.y+p*3.2,s.z);
-   s.sp.scale.set(s.size*(1+p*.32),s.size*(1+p*.34),1);
-   s.sp.material.opacity=.25*Math.sin(Math.PI*p);
+  const tm=t*.001;
+  for(const a of life){
+   if(a.lamp)continue;
+   a.mesh.position.x=a.baseX+Math.sin(tm*1.2+a.phase)*a.amp;
+   a.mesh.position.y=a.baseY+Math.cos(tm*1.1+a.phase)*.025;
   }
-  for(const e of embers){
-   const p=(t*.00014*e.speed+e.phase)%1;
-   e.m.position.set(e.x+Math.sin(t*.0004+e.phase)*.55,e.y+p*6,e.z);
-   e.m.material.opacity=.5*Math.sin(p*Math.PI);
+  for(const a of glows){
+   a.sp.position.x=a.bx+Math.sin(tm*.65+a.phase)*.45;
+   a.sp.position.y=a.by+Math.sin(tm*.85+a.phase)*.32;
+   a.sp.material.opacity=.15+.22*(.5+.5*Math.sin(tm*2+a.phase));
   }
  };
+ // Small pixel-art goal frames, not the former mesh, using existing goal dimensions.
+ const goalTex=canvas(64,64,q=>{
+  for(let y=0;y<64;y+=8)for(let x=0;x<64;x+=8){
+   r(q,x,y,1,8,'#c5b0a0');r(q,x,y,8,1,'#fff4e7');
+  }
+ });
+ const netTexture=mkTex(goalTex);netTexture.wrapS=netTexture.wrapT=THREE.RepeatWrapping;netTexture.repeat.set(3,2);
+ SCENIC_TEXTURES.push(netTexture);
+ const postMat=new THREE.MeshBasicMaterial({color:0xfbf2e5});
+ const shadowMat=new THREE.MeshBasicMaterial({color:0x63788d});
+ for(const side of [-1,1]){
+  for(const zz of [-GW,GW]){
+   const post=new THREE.Mesh(new THREE.BoxGeometry(.36,3.6,.4),shadowMat);
+   post.position.set(side*HX,1.8,zz);scene.add(post);
+   const light=new THREE.Mesh(new THREE.BoxGeometry(.24,3.49,.41),postMat);
+   light.position.set(side*HX-side*.14,1.8,zz);scene.add(light);
+  }
+  const cross=new THREE.Mesh(new THREE.BoxGeometry(.38,.38,GW*2+.2),postMat);
+  cross.position.set(side*HX,3.6,0);scene.add(cross);
+  const net=new THREE.Mesh(new THREE.PlaneGeometry(GW*2,3.6),
+    new THREE.MeshBasicMaterial({map:netTexture,transparent:true,opacity:.9,side:THREE.DoubleSide,depthWrite:false}));
+  net.rotation.y=Math.PI/2;net.position.set(side*(HX+2.25),1.8,0);scene.add(net);
+ }
+ // PORTERÍAS CENITALES: geometría visual de alto contraste para la cámara superior.
+ // No cambia ni portería lógica ni colisiones.
+ const goalWhite=new THREE.MeshBasicMaterial({color:0xfff6de,depthTest:false,depthWrite:false});
+ const goalDark=new THREE.MeshBasicMaterial({color:0x34465f,depthTest:false,depthWrite:false});
+ const goalGrid=new THREE.MeshBasicMaterial({color:0xc7e7e8,transparent:true,opacity:.65,depthTest:false,depthWrite:false});
+ const goalAccent=[
+  new THREE.MeshBasicMaterial({color:0xf48a78,depthTest:false,depthWrite:false}),
+  new THREE.MeshBasicMaterial({color:0x63bde9,depthTest:false,depthWrite:false})
+ ];
+ function goalMark(x,z,w,d,mat,y=.09){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,.015,d),mat);
+  m.position.set(x,y,z);m.renderOrder=10;scene.add(m);
+ }
+ for(const side of [-1,1]){
+  const far=side*(HX+2.65),near=side*(HX+.10);
+  const accent=goalAccent[side<0?0:1];
+  goalMark(side*(HX+1.37),0,2.52,GW*2+.7,goalDark,.061);
+  goalMark(far,0,.30,GW*2+.9,goalWhite,.105);
+  for(const zz of [-GW-.45,GW+.45]){
+   goalMark(side*(HX+1.32),zz,2.95,.33,goalWhite,.108);
+   goalMark(side*(HX+1.32),zz,2.48,.12,accent,.116);
+  }
+  for(let zi=-GW+.35;zi<GW;zi+=.75)goalMark(side*(HX+1.4),zi,2.3,.055,goalGrid,.088);
+  for(let xx=.45;xx<2.6;xx+=.53)goalMark(side*(HX+xx),0,.055,GW*2-.12,goalGrid,.088);
+  goalMark(near,0,.35,GW*2+.65,goalWhite,.128);
+  goalMark(near+side*.22,0,.11,GW*2-.22,accent,.137);
+  for(const zz of [-GW,GW])goalMark(side*(HX+.07),zz,.54,.54,accent,.148);
+ }
  return scene;
 }
 
-/* Banquillo modular de piedra volcánica: el suelo, asiento, respaldo y barandas
- * se dibujan con la misma retícula pixel art que las tribunas. Los suplentes
- * se dibujan delante y con los pies anclados al nivel 1.30. */
-const benchMaps=new Map();
+// Banquillos también rediseñados desde cero. Sus Pokémon los carga el juego.
 function buildBench(o){
- const {THREE,dugG,cx,zSeat,team,color}=o;
- const ink='#30283e',stone='#6e5867',stone2='#836a75',shine='#ddbbac',
-       lava='#f26536',hot='#ff9a43',gold='#ffd276';
- const accent=team===0?'#b94a4e':'#538bbd';
- function pic(key,w,h,paint){
-  if(benchMaps.has(key))return benchMaps.get(key);
-  const cv=document.createElement('canvas');cv.width=w;cv.height=h;
-  const q=cv.getContext('2d');q.imageSmoothingEnabled=false;
-  const r=(x,y,w,h,col)=>{q.fillStyle=col;q.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h));};
-  paint(q,r);
-  const t=new THREE.CanvasTexture(cv);t.encoding=THREE.sRGBEncoding;
-  t.magFilter=t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;
-  benchMaps.set(key,t);return t;
- }
- const back=pic('back-'+team,768,310,(q,r)=>{
-  r(0,0,768,310,ink);r(11,9,746,290,stone);
-  for(let row=0;row<12;row++){
-   const y=16+row*22; r(14,y,740,3,ink);r(14,y+3,740,2,shine);
-   for(let x=18+(row%2)*30;x<745;x+=61){
-    r(x,y+6,4,14,ink);
-    if((x+row)%4===0)r(x+7,y+9,21,2,stone2);
-   }
-  }
-  r(0,0,768,23,ink);r(8,5,750,10,shine);
-  for(let x=6;x<765;x+=54){r(x,0,29,32,ink);r(x+5,3,20,23,stone2);r(x+9,6,11,5,shine);}
-  // Hornacinas volcánicas detrás de los suplentes.
-  for(const x of [48,181,314,447,580,706]){
-   r(x-27,95,54,111,ink);
-   q.fillStyle=ink;q.beginPath();q.moveTo(x-27,108);q.lineTo(x-10,77);
-   q.lineTo(x+10,77);q.lineTo(x+27,108);q.fill();
-   r(x-15,107,30,82,'#472e43');r(x-8,121,16,66,lava);
-   r(x-3,129,6,52,hot);r(x-32,196,65,10,shine);
-  }
-  r(6,257,756,32,ink);r(13,261,741,10,stone2);
-  for(let x=30;x<730;x+=89){r(x,261,14,30,ink);r(x+4,262,7,21,shine);}
- });
- const top=pic('seat-stone',512,160,(q,r)=>{
-  r(0,0,512,160,stone2);
-  for(let row=0;row<10;row++){
-   const y=row*16;
-   for(let i=-1;i<15;i++){
-    const x=i*42+(row%2)*21;
-    r(x+1,y+1,40,14,(i+row)%3===0?'#715967':(i+row)%2===0?'#8c7380':'#655064');
-    r(x+4,y+3,29,2,'#b49793');
-    r(x+5,y+12,34,2,ink);
-   }
-  }
- });
- const front=pic('front-'+team,768,128,(q,r)=>{
-  r(0,0,768,128,ink);r(7,10,753,109,stone);
-  for(let row=0;row<5;row++){
-   const y=17+row*20;r(9,y,750,4,ink);
-   for(let x=(row%2)*26;x<768;x+=65){
-    r(x,y+5,4,15,'#443449');r(x+10,y+8,36,2,stone2);
-   }
-  }
-  r(0,4,768,13,ink);r(0,6,768,6,shine);
-  for(let x=30;x<768;x+=97){
-   r(x,35,44,66,ink);r(x+6,39,32,53,'#803b40');
-   r(x+11,43,22,43,lava);r(x+16,49,12,30,hot);
-   r(x-4,99,52,10,ink);
-  }
-  r(0,115,768,13,ink);r(0,115,768,4,shine);
- });
- const rail=pic('rail-'+team,768,97,(q,r)=>{
-  // Solo piedra, travesaños y huecos alfa; no dibujar sobre el cuerpo del Pokémon.
-  for(let x=0;x<768;x+=79){
-   r(x,29,24,67,ink);r(x+5,32,14,58,stone2);r(x-5,24,34,13,shine);
-  }
-  r(0,46,768,15,ink);r(0,47,768,5,shine);
-  r(0,88,768,9,ink);r(0,89,768,3,stone2);
-  for(let x=51;x<744;x+=159){
-   r(x-11,58,24,24,accent);r(x-7,59,15,19,ink);
-   r(x-2,64,7,10,hot);
-  }
- });
- const mat=(t,transparent=false,depthTest=true)=>new THREE.MeshBasicMaterial({
-  map:t,transparent,alphaTest:transparent ? .05 : 0,
-  side:THREE.DoubleSide,depthWrite:!transparent,depthTest,toneMapped:false,fog:false
- });
- const plane=(w,h,x,y,z,t,order,transparent=false)=>{
-  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat(t,transparent));
-  m.position.set(x,y,z);m.renderOrder=order;dugG.add(m);return m;
+ const {THREE,dugG,centerX,frontZ,backZ,name,color,subs,maxSubs}=o;
+ const shade=(k)=>{const c=new THREE.Color(color);c.multiplyScalar(k);return '#'+c.getHexString()};
+ const team=shade(1),lite=shade(1.43),dark=shade(.53);
+ const ink='#34465f',wall='#e5c8a3',wood='#8f6652',woodLight='#c3986e';
+ const canvas=(w,h,fn)=>{let c=document.createElement('canvas');c.width=w;c.height=h;const q=c.getContext('2d');q.imageSmoothingEnabled=false;fn(q,w,h);return c};
+ const fill=(q,x,y,w,h,col)=>{q.fillStyle=col;q.fillRect(x,y,w,h)};
+ const t=(c)=>{
+  const v=new THREE.CanvasTexture(c);v.encoding=THREE.sRGBEncoding;
+  v.magFilter=v.minFilter=THREE.NearestFilter;v.generateMipmaps=false;
+  return v;
  };
- const blocks=new THREE.MeshBasicMaterial({color:0x423144,roughness:1});
- const edge=new THREE.Mesh(new THREE.BoxGeometry(20.5,1.0,3.8),blocks);
- edge.position.set(cx,.59,zSeat+.02);edge.renderOrder=1;dugG.add(edge);
- // Suelo: los sprites apoyan sus pies encima, no directamente en el muro.
- const floor=new THREE.Mesh(new THREE.PlaneGeometry(20.0,3.7),mat(top));
- floor.rotation.x=-Math.PI/2;floor.position.set(cx,1.11,zSeat);
- floor.renderOrder=2;dugG.add(floor);
- // Fachada posterior más lejana en Z para crear una grada real, no PNG sueltos.
- plane(20.7,8.0,cx,5.16,zSeat-2.25,back,1);
- // Tres asientos bajos con sombras, debajo de los suplentes.
- const seatMat=new THREE.MeshBasicMaterial({color:0x8a7080});
- for(const dx of [-1.45,2.95,7.35]){
-  const seat=new THREE.Mesh(new THREE.BoxGeometry(3.25,.26,1.4),seatMat);
-  seat.position.set(cx+dx,1.13,zSeat-1.0);
-  seat.renderOrder=2;dugG.add(seat);
- }
- plane(20.4,1.26,cx,.62,zSeat+1.98,front,3);
- // Barandilla baja ante los pies: perspectiva de gradería y oclusión de base.
- const safety=plane(20.4,1.2,cx,.82,zSeat+2.07,rail,6,true);
- safety.material.depthTest=false;safety.material.depthWrite=false;
- // Pilastras que dan remate arquitectónico al palco, fuera de los asientos.
- const pillarMat=new THREE.MeshBasicMaterial({color:0x6e5867});
- const capMat=new THREE.MeshBasicMaterial({color:0xb49793});
- for(const side of [-1,1]){
-  const x=cx+side*10.1;
-  const p=new THREE.Mesh(new THREE.BoxGeometry(.78,4.0,1.1),pillarMat);
-  p.position.set(x,2.2,zSeat+1.55);p.renderOrder=3;dugG.add(p);
-  const cap=new THREE.Mesh(new THREE.BoxGeometry(1.3,.34,1.4),capMat);
-  cap.position.set(x,4.24,zSeat+1.55);dugG.add(cap);
- }
- return true;
+ const front=canvas(256,116,(q)=>{
+  fill(q,0,0,256,116,ink);fill(q,5,5,246,105,wall);
+  for(let y=10;y<112;y+=14){fill(q,6,y,244,3,woodLight);for(let x=12+(y%28?10:0);x<255;x+=33)fill(q,x,y+3,2,9,wood);}
+  fill(q,0,105,256,11,wood);fill(q,0,105,256,4,woodLight);
+  // Central open arch — occupants remain authentic sprites placed in 3D.
+  fill(q,14,33,228,71,ink);fill(q,20,39,216,65,wood);
+  for(let x=20;x<240;x+=13)fill(q,x,39,3,65,shade(.31));
+  fill(q,20,39,216,6,woodLight);
+ });
+ const roof=canvas(512,96,(q)=>{
+  fill(q,0,0,512,96,ink);fill(q,4,4,504,88,dark);
+  for(let y=9;y<96;y+=22)for(let x=0;x<512;x+=29){
+   fill(q,x+(y%44?12:0),y,26,19,team);
+   fill(q,x+(y%44?12:0)+3,y+3,20,3,lite);
+  }
+  fill(q,0,84,512,12,ink);fill(q,0,84,512,5,lite);
+ });
+ const plaque=canvas(512,70,(q)=>{
+  fill(q,0,0,512,70,ink);fill(q,7,6,498,57,dark);
+  fill(q,14,12,484,45,team);fill(q,17,15,478,6,lite);
+  q.fillStyle='#fff5df';q.textAlign='center';q.textBaseline='middle';
+  q.font='bold 36px monospace';q.fillText(String(name).toUpperCase().slice(0,13),256,36);
+  q.font='bold 11px monospace';q.fillText('BANQUILLO',64,55);
+  q.fillText('CAMBIOS '+subs+'/'+maxSubs,432,55);
+ });
+ const texs=[t(front),t(roof),t(plaque)];
+ const material=map=>new THREE.MeshBasicMaterial({map,side:THREE.DoubleSide,transparent:true,alphaTest:.01,depthWrite:false});
+ const add=(w,h,x,y,z,tex,rotation=0)=>{
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),material(tex));
+  m.position.set(x,y,z);m.rotation.y=rotation;m.userData.own=1;dugG.add(m);return m;
+ };
+ add(16.4,6.4,centerX,3.2,backZ+.15,texs[0]);
+ add(17.9,3.25,centerX,6.0,frontZ-.5,texs[1]);
+ add(15.5,1.5,centerX,6.45,frontZ+.05,texs[2]);
+ // Supports and wooden benches, all freshly textured.
+ const woodTex=t(canvas(64,64,q=>{
+  fill(q,0,0,64,64,wood);for(let y=0;y<64;y+=16){
+   fill(q,0,y,64,4,woodLight);fill(q,0,y+15,64,2,ink);
+   for(let x=0;x<64;x+=21)fill(q,x+(y%32?9:0),y+4,3,10,'#755346');
+  }
+ }));
+ texs.push(woodTex);
+ const pillar=(x)=>{
+  const m=new THREE.Mesh(new THREE.BoxGeometry(.38,6.15,.4),new THREE.MeshBasicMaterial({map:woodTex}));
+  m.position.set(x,3.1,frontZ-.45);m.userData.own=1;dugG.add(m);
+ };
+ pillar(centerX-8.2);pillar(centerX+8.2);
+ add(12.5,.75,centerX+1,1.18,backZ+1.7,woodTex);
+ add(12.5,1.1,centerX+1,.65,backZ+1.85,woodTex);
+ return texs;
 }
 
 global.PMD_VOLCANO={build,buildBench};
