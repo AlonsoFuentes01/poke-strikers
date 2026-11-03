@@ -2772,11 +2772,45 @@ function buildCityV3(){
  for(let x=-146;x<=145;x+=28){
   if(Math.abs(x+55)<14||Math.abs(x-67)<14)continue;
   const z=-68.7;
-  block(2.8,.36,2.8,brick,x,groundY+.2,z);
-  block(2.1,.38,2.1,greens,x,groundY+.42,z);
+  block(3.25,.42,3.25,ink,x,groundY+.2,z);block(2.8,.36,2.8,brick,x,groundY+.44,z);
+  block(2.1,.35,2.1,greens,x,groundY+.75,z);
   trees.push({x,y:groundY+.35,z,w:7,h:11});
  }
- pixelBiomeInstances('city',trees);
+ // Árboles GBA 2D: una única silueta negra que conecta copa y tronco.
+ const treeCanvas=document.createElement('canvas');treeCanvas.width=96;treeCanvas.height=128;
+ const tq=treeCanvas.getContext('2d');
+ const px=(x,y,w,h,col)=>{tq.fillStyle=col;tq.fillRect(x,y,w,h);};
+ px(36,59,24,69,'#1b2b3a');px(40,63,16,65,'#875736');px(43,70,6,47,'#c98d4f');
+ // La parte inferior de la copa cubre la unión con el tronco: sin huecos.
+ for(const [x,y,w,h] of [[29,11,38,19],[17,23,61,25],[9,40,79,27],[17,64,63,20],[30,79,38,8]])
+  px(x,y,w,h,'#1b2b3a');
+ for(const [x,y,w,h] of [[31,15,34,18],[21,27,53,20],[13,44,71,21],[22,67,54,15],[34,79,30,4]])
+  px(x,y,w,h,'#268c55');
+ for(const [x,y,w,h] of [[31,18,24,10],[25,31,35,9],[17,46,47,12],[33,67,32,7]])
+  px(x,y,w,h,'#54c968');
+ for(const [x,y,w,h] of [[37,21,13,5],[28,37,14,6],[22,49,17,6],[58,53,13,6],[44,71,12,4]])
+  px(x,y,w,h,'#b1e36e');
+ const treeTex=new THREE.CanvasTexture(treeCanvas);
+ treeTex.encoding=THREE.sRGBEncoding;treeTex.magFilter=THREE.NearestFilter;
+ treeTex.minFilter=THREE.LinearFilter;treeTex.generateMipmaps=false;
+ SCENIC_TEXTURES.push(treeTex);
+ const treeMat=new THREE.MeshBasicMaterial({map:treeTex,transparent:true,alphaTest:.13,side:THREE.DoubleSide,depthWrite:false});
+ // Balanceo suave solo en la copa; un único draw call para todos los árboles.
+ treeMat.onBeforeCompile=sh=>{
+  sh.uniforms.uCityWind=BIO.T;
+  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uCityWind;')
+   .replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.x+=pow(uv.y,2.)*sin(uCityWind*1.4+instanceMatrix[3].x*.12)*.018;');
+ };
+ treeMat.customProgramCacheKey=()=> 'city-pixel-tree-v31';
+ const treeObjects=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),treeMat,trees.length);
+ const treeDummy=new THREE.Object3D();
+ trees.forEach((p,i)=>{
+  treeDummy.position.set(p.x,p.y+p.h*.5,p.z);
+  treeDummy.scale.set(p.w,p.h,1);treeDummy.rotation.set(0,0,0);
+  treeDummy.updateMatrix();treeObjects.setMatrixAt(i,treeDummy.matrix);
+  treeObjects.setColorAt(i,new THREE.Color(i%3===0?0xffffff:i%3===1?0xd7ffea:0xffefb3));
+ });
+ treeObjects.instanceMatrix.needsUpdate=true;treeObjects.frustumCulled=false;cgroup.add(treeObjects);
  for(const x of [-142,-96,-24,28,112,148]){
   add(new THREE.CylinderGeometry(.11,.14,9,6),metal,x,3.3,-42.6);
   block(2.7,.21,.42,metal,x+1.1,7.75,-42.6);
@@ -2791,6 +2825,64 @@ function buildCityV3(){
   pool.position.set(x,groundY+.116,-53+(rnd()-.5)*11);cgroup.add(pool);
  }
  BIO.anims.push(()=>{wetShine.opacity=Math.min(.24,WXc.rain*.14+wetAcc*.08);});
+// Calle con detalles GBA permanentes: plazas de aparcamiento y alcantarillas.
+ const roadInk=new THREE.MeshBasicMaterial({color:0x1b2d3b,side:THREE.DoubleSide});
+ const parking=new THREE.MeshBasicMaterial({color:0xe5e6c7});
+ for(const x of [-141,-123,-103,-85,-33,-14,7,25,88,109,130,150]){
+  block(.16,.025,3.1,parking,x,groundY+.16,-64.1);
+  block(7,.025,.16,parking,x+3.4,groundY+.16,-64.1);
+ }
+ const drains=new THREE.InstancedMesh(new THREE.CircleGeometry(.76,12),roadInk,12);
+ const drainDummy=new THREE.Object3D();
+ for(let i=0;i<12;i++){
+  drainDummy.position.set(-150+i*26,groundY+.17,-47.2-(i%3)*2.4);
+  drainDummy.rotation.set(-Math.PI/2,0,0);drainDummy.scale.set(1,.58,1);
+  drainDummy.updateMatrix();drains.setMatrixAt(i,drainDummy.matrix);
+ }
+ drains.instanceMatrix.needsUpdate=true;drains.frustumCulled=false;cgroup.add(drains);
+ // Bancas de madera, bien apoyadas sobre la vereda.
+ for(const x of [-114,-18,115]){
+  const z=-69.5;
+  block(3.4,.23,1.15,ink,x,groundY+1.3,z);
+  block(3.15,.17,.96,brick,x,groundY+1.43,z);
+  for(const dx of [-1.26,1.26])block(.19,1.25,.19,dark,x+dx,groundY+.72,z);
+  block(3.1,.17,.85,brick,x,groundY+2.25,z+.42);
+ }
+ // Bicicletas pixel-art apoyadas junto a comercios.
+ const bikeCanvas=document.createElement('canvas');bikeCanvas.width=96;bikeCanvas.height=58;
+ const bq=bikeCanvas.getContext('2d');
+ bq.strokeStyle='#1b2d3b';bq.lineWidth=6;
+ for(const x of [22,73]){bq.beginPath();bq.arc(x,42,13,0,Math.PI*2);bq.stroke();}
+ bq.strokeStyle='#f77c48';bq.lineWidth=5;bq.beginPath();
+ bq.moveTo(22,42);bq.lineTo(43,22);bq.lineTo(51,42);bq.lineTo(22,42);
+ bq.moveTo(43,22);bq.lineTo(73,42);bq.lineTo(51,42);bq.stroke();
+ bq.strokeStyle='#193343';bq.lineWidth=4;bq.beginPath();bq.moveTo(39,18);bq.lineTo(48,18);
+ bq.moveTo(68,14);bq.lineTo(73,42);bq.lineTo(77,13);bq.lineTo(86,13);bq.stroke();
+ const bikeTex=new THREE.CanvasTexture(bikeCanvas);bikeTex.encoding=THREE.sRGBEncoding;
+ bikeTex.magFilter=THREE.NearestFilter;SCENIC_TEXTURES.push(bikeTex);
+ const bikeMat=new THREE.MeshBasicMaterial({map:bikeTex,transparent:true,alphaTest:.06,side:THREE.DoubleSide});
+ for(const x of [-133,-6,126]){
+  const bike=new THREE.Mesh(new THREE.PlaneGeometry(4.4,2.6),bikeMat);
+  bike.position.set(x,groundY+1.32,-69.15);cgroup.add(bike);
+ }
+ const stopMetal=surface(0x344c58);
+ for(const x of [-66,75]){
+  add(new THREE.CylinderGeometry(.12,.13,6,6),stopMetal,x,groundY+3,-68);
+  block(2.3,2.1,.22,ink,x,groundY+6.35,-68);
+  block(1.95,1.75,.23,new THREE.MeshBasicMaterial({color:0xffd15a}),x,groundY+6.35,-67.86);
+ }
+ // Vehículos aparcados con colores vivos; el coche móvil continúa como evento.
+ for(const [i,x] of [-98,38,139].entries()){
+  const z=i===1?-62.3:-46.1;
+  const paint=surface([0x2ba39c,0xe56c52,0xf2bc50][i],.67);
+  block(4.5,1.2,1.92,ink,x,groundY+.8,z);
+  block(4.15,.99,1.7,paint,x,groundY+.88,z);
+  block(2.3,.75,1.55,ink,x-.2,groundY+1.67,z);
+  block(2.06,.58,1.49,surface(0x79bdd0),x-.2,groundY+1.72,z);
+  for(const dx of [-1.4,1.4])for(const dz of [-.95,.95])
+   add(new THREE.CylinderGeometry(.37,.37,.18,8),roadInk,x+dx,groundY+.39,z+dz).rotation.x=Math.PI/2;
+ }
+ 
  // Señales, contenedores y paradas, todos anclados a la vereda.
  const poster=document.createElement('canvas');poster.width=128;poster.height=64;
  const pq=poster.getContext('2d');pq.fillStyle='#3d6c6b';pq.fillRect(0,0,128,64);
