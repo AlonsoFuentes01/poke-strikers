@@ -382,6 +382,59 @@ body.netHost .wzModes,body.netGuest .wzModes{display:none}
 }
 @media(max-width:1100px){.wzHead{padding-right:116px}}
 @media(max-height:400px){#wiz .wzLbl{display:none!important}#wiz #stadiumPick button{height:50px;width:84px}#wiz #stadiumPick button span:first-child{font-size:16px!important}#wiz .wzHead{padding-top:4px;padding-bottom:4px}#wiz #stadiumPick{margin-bottom:4px!important}}
+
+/* ===== MYSTERY DUNGEON VISUAL EDITION · UI ONLY (layout and buttons preserved) ===== */
+:root{--md-ink:#25364b;--md-deep:#142539;--md-parchment:#fff1c8;--md-sand:#eac28d;--md-blue:#69bfe7;--md-red:#e76f57;--md-leaf:#77be79;--gold:#ffe09a}
+html,body{background:#2c496b;color:var(--md-parchment)}
+button{transition:filter .13s,transform .13s,box-shadow .13s}
+button:hover{filter:brightness(1.12) saturate(1.12)}
+button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
+#menu h1,#splashLogo b{color:#fff1b6;filter:drop-shadow(0 4px 0 #24394c)}
+#menu>div:nth-of-type(1){color:#f8e6bb;text-shadow:2px 2px #293d53}
+#menu,#wiz{color:#fff0c9}
+#tabs button,#modePick button,#stadiumPick button,.bindBtn,#go,#readyBtn,#onlineBtn,#bdOpen,
+#cfgBtns button,.bdBtns button,#netBar button,#wzNext,#wzPrev,#wzStart,.wzNav button{
+ border-radius:7px!important;border:3px solid #273c50!important;
+ box-shadow:inset 0 2px 0 #fff9c2a6,0 4px 0 #1f3447!important;
+ background:linear-gradient(180deg,#fff3c5,#dbb981)!important;color:#283d4b!important
+}
+#tabs button.on,#modePick button.on,#stadiumPick button.on,
+#go,#readyBtn.on,#wzStart{background:linear-gradient(#fff8c9,#ffc86d)!important;border-color:#9c533e!important}
+#tabs button.on,#stadiumPick button.on{transform:translateY(-2px)}
+#cols section,#cfgBox,#bdBox,#sbBox,#onBox,#wzCard,.wzPanel,#end{
+ background:linear-gradient(160deg,#36586e 0%,#274356 57%,#203548 100%)!important;
+ border:3px solid #e5bb7a!important;
+ box-shadow:inset 0 0 0 3px #1e3648,0 8px 0 #152a3c,0 16px 30px #081b2959!important;
+ border-radius:9px!important;
+}
+#cols section h3,#cfgBox h2,.cfgSec,.wzLbl{color:#ffe4a1;text-shadow:2px 2px #23374b}
+.card,#cols .card{background:linear-gradient(165deg,#e9dbc0,#c9c7ae)!important;color:#283d49;
+ border:2px solid #365469!important;border-radius:5px!important;box-shadow:inset 0 2px 0 #fffcde!important}
+.card.on{background:#ffdf91!important;border-color:#a96448!important;box-shadow:inset 0 0 0 2px #fff5b3!important}
+.card small,.card b{color:#30465a!important}
+.card img,#menuMonsters img,#pokeCard img,#g0 img,#g1 img,
+#bdBox img,#sbBox img,.sprite,.poke-sprite{image-rendering:pixelated!important;filter:drop-shadow(2px 3px 0 #223b5266)}
+#top .chip,#score,#clock,#envChip,#netChip,#powerHud,#keys,#mini{
+ border-radius:4px!important;border:2px solid #263d52!important;
+ box-shadow:inset 0 0 0 2px #e4c18a,0 4px 0 #20384d!important}
+#score{color:#fff6d0;background:#243b50!important;text-shadow:2px 2px #121e29}
+#clock,#envChip{color:#ffe6a8;background:#38576be8!important}
+#touch button,.actions button,.pad button,#powerBtn{border:3px solid #1c3348!important;border-radius:5px!important;
+ box-shadow:inset 0 2px #ffffff55,0 4px #1b2f43!important}
+.actions .shoot{background:#e66f58!important}.actions .pass{background:#57a7d2!important}
+#splash{background:linear-gradient(180deg,#18446d13 18%,#203e5d2a 65%,#162d49b8 100%)!important}
+#splashLogo small{color:#fff1c8}#pressStart{background:#315369ee;color:#ffebad;border:3px solid #e8c17e;border-radius:6px}
+#toast,#msg{text-shadow:3px 4px 0 #24374b,0 6px 13px #162d42}
+#wiz #stadiumPick button{image-rendering:pixelated;box-shadow:0 4px 0 #243a50!important}
+#wiz #stadiumPick button.on{border-color:#ecbe73!important}
+#cfg,.modal{backdrop-filter:blur(3px)}
+@keyframes mdLantern{0%,100%{filter:brightness(1)}50%{filter:brightness(1.16)}}
+#go,#wzStart,#readyBtn.on{animation:mdLantern 2.1s ease-in-out infinite}
+@media(max-height:380px),(max-width:760px){
+ #cols section,#cfgBox,#bdBox,#sbBox,#onBox,#wzCard{border-width:2px!important;box-shadow:0 4px 0 #192f41!important}
+ #tabs button,#modePick button,#stadiumPick button{border-width:2px!important}
+}
+
 </style></head><body>
 </div>
 <div id="vig"></div><div id="flash"></div><canvas id="mini" width="176" height="106"></canvas><div id="envChip"></div><div id="netChip"></div>
@@ -546,7 +599,7 @@ const BAL={
  101:{spd:.88,chg:1,pw:1.1,df:8}               // Electrode
 };
 const HX=30,HZ=18,GW=5.5,DZ=4,DUGX=13.5,DUGW=16,$=i=>document.getElementById(i),hex=c=>'#'+c.toString(16).padStart(6,'0'),cl=(v,a,b)=>Math.max(a,Math.min(b,v));
-const gx=t=>t?-HX:HX,d=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z),art=id=>`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+const gx=t=>t?-HX:HX,d=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z),art=id=>spr(id); // Always pixel sprites; PMD assets load first on the field.
 const team=v=>{const[a,b]=String(v).split('|');return{n:b,...(EXTRA[v]||(L[a]&&L[a][b]))}};
 const keys={};let padPrev=[];let power=0,powerBoost=0,possessionTicks=0;let P=[],B=null,score=[0,0],names=['',''],cols=[0,0],time=0,freeze=0,charge=0,sta=1,cheer=0,alt=false,ready=false,over=false,crowd=[];
 let cameraCue=null,impactCue=0,goalCelebration=null,lastGoalShooter=null;
@@ -720,8 +773,8 @@ async function loadPMDSprite(p){
   // Keep animation cells from the same row; most walk cycles have 4–8 frames.
   p.spriteRows=rows;p.fig.visible=false;
  }catch(e){
-  // Reliable visual fallback: official artwork sprite, still rendered as a flat field character.
-  const t=loader.load(art(p.id));t.encoding=THREE.sRGBEncoding;
+  // Pixel-art fallback (PokeAPI game sprite), never a large smooth official illustration.
+  const t=loader.load(spr(p.id));t.encoding=THREE.sRGBEncoding;t.magFilter=THREE.NearestFilter;t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;
   await loadStats(p);const H2=spriteTargetH(p.heightDm)*1.15;p.hr=cl(H2*.38,1.0,1.5);const m=new THREE.Mesh(new THREE.PlaneGeometry(H2,H2),new THREE.MeshBasicMaterial({map:t,transparent:true,side:THREE.DoubleSide,depthWrite:false}));
   m.position.y=H2*.5;p.spOY=H2*.5;m.renderOrder=3;p.g.add(m);p.spriteMesh=m;p.spriteFallback=true;
  }
