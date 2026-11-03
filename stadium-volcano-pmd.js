@@ -206,7 +206,7 @@ function build(o){
    lavaFall(q,x,y,w,h);
   }
  });
- plane(sky,122,54,0,-8,-62);
+ plane(sky,174,58,0,-8,-62);
  // 2. Fachada central dibujada como un único conjunto detallado.
  const entrance=canvas(1536,650,q=>{
   // Detrás del templo hay terrazas de basalto: no bloques de geometría 3D.
@@ -296,8 +296,8 @@ function build(o){
   rock(q,side<0?90:610,573,1.0);
   crystal(q,side<0?136:560,573,.7);
  });
- plane(sidePanel(-1),48,39,-47,3,-32);
- plane(sidePanel(1),48,39,47,3,-32);
+ plane(sidePanel(-1),62,39,-52,3,-32);
+ plane(sidePanel(1),62,39,52,3,-32);
 
  // 3b. Gradas bajas bien delimitadas y atestadas de arquitectura pixel art.
  // Estas son las plataformas en que se colocan los sprites reales desde index.html.
@@ -327,8 +327,23 @@ function build(o){
   rect(q,0,236,768,20,C.ink);rect(q,0,237,768,7,C.shine);
  });
  for(const side of [-1,1]){
-  // Plano al fondo de la fila de espectadores, separado de la puerta central.
+  // Plano de las gradas por detrás de los espectadores.
   plane(standFrame,27,11.4,side*45.3,7.5,-28.8);
+ }
+ // Barandillas por delante de los sprites para evitar espectadores flotando.
+ const seatRail=canvas(768,88,q=>{
+  rect(q,0,33,768,55,C.ink);
+  rect(q,0,38,768,37,C.stone);
+  for(let x=0;x<768;x+=47){
+   rect(q,x,7,14,80,C.ink);rect(q,x+3,12,8,66,C.stone2);
+   rect(q,x-5,0,24,14,C.light);
+  }
+  rect(q,0,23,768,13,C.ink);rect(q,0,25,768,5,C.shine);
+  rect(q,0,71,768,9,C.ink);rect(q,0,72,768,3,C.light);
+ });
+ for(const side of [-1,1]){
+  const rail=plane(seatRail,27.3,3.4,side*45.3,3.95,-25.9);
+  rail.renderOrder=4;rail.material.depthTest=false;
  }
 
  // 4. Edificaciones pequeñas y decoración cerca de las bandas, como Ciudad.
@@ -418,7 +433,7 @@ function build(o){
   for(const x of [35,1500])rock(q,x,257,1.15);
   for(const x of [183,1353])crystal(q,x,273,.85);
  });
- plane(foregroundArt,112,22,0,5,HZ+7,foreground);
+ plane(foregroundArt,112,12,0,3.5,HZ+8,foreground);
  const embers=[];
  const emberTex=mkTex(canvas(32,32,q=>{
   rect(q,10,8,11,14,C.lava);rect(q,13,9,5,12,C.core);
