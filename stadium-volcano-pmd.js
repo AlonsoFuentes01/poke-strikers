@@ -569,14 +569,163 @@ function build(o){
   ash.push({m,x:(rnd()-.5)*118,y:2+rnd()*16,z:-25-rnd()*38,phase:rnd()*10,speed:.2+rnd()*.65});
  }
 
+
+ // Alas volcánicas CINEMATOGRÁFICAS. Se sitúan junto a las bandas (x=±35),
+ // no a x=±50 donde el encuadre de apertura las cortaba.
+ // Escenografía dedicada a la introducción: desaparece al mirar la cancha desde arriba.
+ const cinemaWings=new THREE.Group();cinemaWings.name='ALAS_VOLCANICAS_DE_ENTRADA';group.add(cinemaWings);
+ const wingGlows=[],wingBanners=[];
+ const basaltTex=tex(canvas(256,384,q=>{
+  // Roca vertical con gradientes en escalones y sillares fracturados.
+  fill(q,0,0,256,384,'#241b2a');
+  poly(q,[[0,384],[0,59],[17,44],[30,17],[73,3],[113,25],[155,8],[203,29],[239,17],[256,48],[256,384]],'#473644');
+  poly(q,[[18,380],[18,91],[44,58],[92,55],[122,76],[144,45],[179,64],[229,43],[242,85],[242,380]],'#66505d');
+  for(let row=0;row<14;row++){
+   const y=55+row*25;
+   fill(q,18,y,221,4,'#251c2c');fill(q,18,y+4,221,2,'#93727d');
+   for(let x=18+(row%2)*25;x<240;x+=52){
+    fill(q,x,y+7,4,18,'#302332');
+    fill(q,x+8,y+10,18,2,row%3?'#745762':'#9c7779');
+    if((row*3+x)%5<2)fill(q,x+32,y+15,8,3,'#382a39');
+   }
+  }
+  // Contrafuertes angulares y grietas profundas.
+  for(const x of [18,69,185,234]){
+   poly(q,[[x-10,384],[x-7,92],[x,60],[x+11,90],[x+15,384]],'#2d2232');
+   fill(q,x-8,102,18,5,'#8b6b73');
+   for(let y=124;y<358;y+=46)fill(q,x-9,y,20,4,'#977984');
+  }
+  const crack=(xx,yy,dx,dy)=>{
+   q.lineWidth=7;q.strokeStyle='#241b2a';q.beginPath();q.moveTo(xx,yy);
+   q.lineTo(xx+dx*.4,yy+dy*.34);q.lineTo(xx+dx*.1,yy+dy*.66);q.lineTo(xx+dx,yy+dy);q.stroke();
+   q.strokeStyle='#f17842';q.lineWidth=3;q.stroke();
+   q.strokeStyle='#ffd28a';q.lineWidth=1;q.stroke();
+  };
+  crack(45,124,19,130);crack(194,170,-17,157);crack(121,260,19,78);
+  // Nichos con brillo naranja y rejas oscuras.
+  for(const [x,y] of [[107,93],[107,204],[63,310],[164,310]]){
+   fill(q,x-17,y-14,34,59,'#211929');
+   poly(q,[[x-17,y-14],[x,y-32],[x+17,y-14]],'#211929');
+   fill(q,x-11,y-9,22,47,'#a44c39');
+   fill(q,x-7,y-8,14,40,'#f47c45');
+   fill(q,x-3,y+6,6,25,'#ffcc7e');
+   fill(q,x-15,y-10,5,50,'#2c2130');fill(q,x+10,y-10,5,50,'#2c2130');
+   fill(q,x-21,y+38,42,6,'#b18b87');
+  }
+  // Almenas recortadas y placas metálicas.
+  for(let x=5;x<252;x+=31){
+   fill(q,x,7+(x%3)*4,24,32,'#241a2b');
+   fill(q,x+3,12+(x%3)*4,17,22,'#67505e');
+   fill(q,x+6,16+(x%3)*4,12,3,'#a88b8b');
+  }
+  for(let i=0;i<25;i++){
+   const x=20+rnd()*210,y=40+rnd()*332;
+   fill(q,x,y,3+rnd()*9,2,i%4===0?'#c6a09a':'#322535');
+  }
+ }));
+ const streamTex=tex(canvas(80,320,q=>{
+  fill(q,0,0,80,320,'#431e2a');
+  poly(q,[[7,0],[67,0],[74,65],[64,109],[72,167],[62,223],[74,320],[3,320],[15,257],[9,192],[15,136],[5,69]],'#c44631');
+  poly(q,[[18,0],[56,0],[61,70],[50,144],[59,206],[54,320],[18,320],[28,255],[20,188],[27,117]],'#f67a39');
+  for(let k=0;k<6;k++){
+   const x=21+k*7;
+   fill(q,x,(k%3)*23,3,283,'#ffb95a');
+   if(k%2===0)fill(q,x+1,50+(k%3)*19,2,203,'#ffe0a0');
+  }
+  fill(q,0,304,80,8,'#ffab59');
+ }));
+ const bridgeTex=tex(canvas(256,112,q=>{
+  fill(q,0,0,256,112,'#241a2c');
+  for(let row=0;row<4;row++){
+   const y=row*27;
+   fill(q,0,y,256,5,'#9d7b7f');
+   for(let x=(row%2)*24;x<256;x+=53){
+    fill(q,x,y+6,4,19,'#241a2c');
+    fill(q,x+6,y+9,29,2,'#a07e83');
+   }
+  }
+  for(let x=9;x<250;x+=34){
+   fill(q,x,0,22,17,'#b28b86');fill(q,x+4,2,13,9,'#4c3848');
+  }
+  fill(q,0,99,256,13,'#b18b87');
+ }));
+ const wingBannerTex=tex(canvas(64,150,q=>{
+  poly(q,[[5,4],[59,4],[59,113],[32,144],[5,113]],'#251a2b');
+  poly(q,[[11,9],[53,9],[53,109],[32,131],[11,109]],'#9b3a43');
+  fill(q,16,21,32,5,'#e49c65');fill(q,16,28,32,3,'#e7bc7d');
+  q.fillStyle='#ffd194';q.beginPath();q.arc(32,71,14,0,7);q.fill();
+  q.fillStyle='#8e3740';q.beginPath();q.arc(32,71,9,0,7);q.fill();
+  fill(q,19,69,26,4,'#f9c681');
+ }));
+ function wingFace(texture,w,h,x,y,z,target=cinemaWings){
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),
+   new THREE.MeshBasicMaterial({map:texture,transparent:true,alphaTest:.015,side:THREE.DoubleSide,depthWrite:false,toneMapped:false,fog:false}));
+  m.position.set(x,y,z);target.add(m);return m;
+ }
+ for(const side of [-1,1]){
+  // Tres escalas: ala lejana, santuario intermedio y contrafuerte frontal.
+  for(const [x,z,scale] of [[side*40,-28,.88],[side*35,-8,1.05],[side*37,12,.87]]){
+   wingFace(basaltTex,13*scale,20*scale,x,10*scale,z);
+   // Basamento irregular con profundidad palpable.
+   propBlock(11*scale,2.3*scale,5*scale,x,1.15*scale,z+1.3,stoneDark,cinemaWings);
+   propBlock(12*scale,.45*scale,5.5*scale,x,2.6*scale,z+1.4,stoneTop,cinemaWings);
+   for(let j=0;j<4;j++){
+    const rx=x+side*((j-1.5)*2.2);
+    const m=new THREE.Mesh(new THREE.DodecahedronGeometry((.65+rnd()*.7)*scale,0),j%2?stoneMain:stoneFace);
+    m.position.set(rx,.65,z+2.7+rnd()*1.2);m.scale.set(1.1,.7,1);cinemaWings.add(m);
+   }
+  }
+  // Puente elevado y arco lateral, enmarcan sin cruzar la zona central.
+  wingFace(bridgeTex,11.6,4.6,side*35.6,11.3,-17);
+  for(const [x,z] of [[side*33,-17],[side*40,-17]]){
+   propBlock(1.6,9.4,2.4,x,4.7,z,stoneDark,cinemaWings);
+   propBlock(1.25,8.7,2.1,x,5,z+.3,stoneFace,cinemaWings);
+   propBlock(2.3,.5,2.8,x,9.5,z,stoneTop,cinemaWings);
+  }
+  // Dos cascadas auténticas a la vista, no escondidas detrás de la fachada.
+  const leftFall=wingFace(streamTex,2.7,12.5,side*32.4,7.2,-8+2);
+  const frontFall=wingFace(streamTex,2.2,9.1,side*33.6,5.3,15);
+  extraLava.push({m:leftFall,phase:rnd()*6},{m:frontFall,phase:rnd()*6});
+  // Estandartes ceremoniales y antorchas individuales.
+  for(const [x,z,y] of [[side*35,-18,10],[side*36,9,11]]){
+   const m=wingFace(wingBannerTex,2.6,5.6,x,y,z+2);
+   wingBanners.push({m,phase:rnd()*7});
+   propBlock(3.1,.18,.5,x,y+2.95,z+2,trimMat,cinemaWings);
+  }
+  for(const [x,z] of [[side*33,-18],[side*34,1],[side*34,19]]){
+   propBlock(2.0,3.2,2.2,x,1.65,z,stoneDark,cinemaWings);
+   propBlock(2.6,.5,2.7,x,3.25,z,stoneTop,cinemaWings);
+   const flameFx=wingFace(tex(flame),2.35,3.4,x,5.2,z+1.25);
+   const glow=new THREE.PointLight(0xff823c,.25,9);
+   glow.position.set(x,4.5,z);cinemaWings.add(glow);
+   wingGlows.push({flameFx,glow,phase:rnd()*6});
+  }
+  // Rocas densas en los extremos inferiores, lejos de los jugadores.
+  for(let j=0;j<15;j++){
+   const x=side*(31+rnd()*15),z=-20+rnd()*40;
+   const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(.65+rnd()*1.35,0),j%3?stoneMain:stoneFace);
+   rock.position.set(x,.65+rnd()*.65,z);rock.rotation.set(rnd()*2,rnd()*5,rnd());
+   rock.scale.set(1.4,.85,1.1);cinemaWings.add(rock);
+  }
+ }
+
  group.userData.pmdSetIntro=mix=>{
   // Objetos bajos y cercanos desaparecen cuando la cámara termina de subir.
   const k=Math.max(0,Math.min(1,(mix-.45)/.35));
   foregroundG.visible=k<.95;
   foregroundG.position.y=-k*17;
+  // Alas solo para presentación: deben desaparecer antes de la vista cenital.
+  cinemaWings.visible=k<.95;
+  cinemaWings.position.y=-k*19;
  };
 
  group.userData.pmdTick=(dt,t)=>{
+  for(const b of wingBanners)b.m.rotation.y=Math.sin(t*.0017+b.phase)*.055;
+  for(const f of wingGlows){
+   const p=Math.sin(t*.008+f.phase);
+   f.flameFx.scale.set(1+p*.06,1+Math.sin(t*.012+f.phase)*.12,1);
+   f.glow.intensity=.20+.12*(.5+.5*p);
+  }
   for(const a of ash){
    const p=(t*.00015*a.speed+a.phase)%1;
    a.m.position.set(a.x+Math.sin(t*.0005+a.phase)*1.4,a.y+p*8,a.z);
