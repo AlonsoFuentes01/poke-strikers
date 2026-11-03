@@ -2965,6 +2965,71 @@ function buildCityV3(){
   block(3.6,2.3,2.3,dark,x,groundY+1.15,-41.1);
   block(3.8,.18,2.5,brick,x,groundY+2.4,-41.1);
  }
+ // Pokémon del barrio: caminantes pequeños, independientes del partido.
+ // Reutilizan Walk-Anim.png de SpriteCollab cargado por crowdAnimFor (con fallback
+ // a sprites oficiales de PokeAPI). Los pasos son sólo decorativos en la vereda.
+ const streetSpecies=[25,52,133,16,43,58,7,54,19,37,1,39,74,27,63,100,43,133];
+ const walkerCount=innerWidth<850?12:streetSpecies.length;
+ const pedestrians=[];
+ for(let i=0;i<walkerCount;i++){
+  const id=streetSpecies[i],entry=crowdAnimFor(id),height=1.9+(i%4)*.23;
+  const fallback=loader.load(spr(id),t=>{
+   t.encoding=THREE.sRGBEncoding;t.magFilter=THREE.NearestFilter;
+   t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;
+  });
+  SCENIC_TEXTURES.push(fallback);
+  const material=new THREE.SpriteMaterial({map:fallback,transparent:true,alphaTest:.07,depthWrite:false,fog:false});
+  const sprite=new THREE.Sprite(material);
+  const cross=(i===2||i===9),direction=i%3===0?-1:1;
+  const baseZ=i%2===0?-68.1:-40.7;
+  const startX=cross?(i===2?-55:67):-146+i*(292/(walkerCount-1));
+  sprite.position.set(startX,groundY+height*.62,baseZ);
+  sprite.scale.set(height*1.24,height*1.28,1);
+  sprite.renderOrder=1;cgroup.add(sprite);
+  pedestrians.push({sprite,material,entry,height,cross,dir:cross?1:direction,
+   speed:.65+(i%5)*.24,baseZ,startX,baseY:groundY+height*.62,
+   step:0,frame:0,fitted:false,pause:Math.random()*4,phase:i*1.21});
+ }
+ BIO.anims.push((dt,T)=>{
+  for(const p of pedestrians){
+   // Cambia desde la imagen fija al caminar de PMD cuando sus frames estén listos.
+   if(p.entry.ready&&p.entry.frames.length){
+    if(!p.fitted&&p.entry.box){
+     const b=p.entry.box,visibleHeight=Math.max(8,b.y1-b.y0+1);
+     const k=p.height/visibleHeight;
+     p.sprite.scale.set(Math.min(3.8,p.entry.fw*k),p.entry.fh*k,1);
+     p.baseY=groundY+(b.y1+1-p.entry.fh/2)*k+.05;
+     p.fitted=true;
+    }
+    p.step+=dt;
+    if(p.step>.15){
+     p.step=0;p.frame=(p.frame+1)%p.entry.frames.length;
+     if(p.material.map!==p.entry.frames[p.frame]){
+      p.material.map=p.entry.frames[p.frame];p.material.needsUpdate=true;
+     }
+    }
+   }
+   if(p.pause>0)p.pause-=dt;
+   else{
+    if(p.cross){
+     p.sprite.position.z+=p.dir*p.speed*dt;
+     if(p.sprite.position.z>=-41||p.sprite.position.z<=-68){
+      p.dir*=-1;p.pause=2+Math.random()*4;
+     }
+    }else{
+     p.sprite.position.x+=p.dir*p.speed*dt;
+     if(p.sprite.position.x>147||p.sprite.position.x<-147){
+      p.sprite.position.x=Math.max(-147,Math.min(147,p.sprite.position.x));
+      p.dir*=-1;p.pause=.9+Math.random()*3;
+     }
+    }
+    if(Math.random()<dt*.028)p.pause=.5+Math.random()*2;
+   }
+   // La escala y la dirección se aplican al sprite, no al modelo del jugador.
+   p.sprite.scale.x=Math.abs(p.sprite.scale.x)*(p.dir<0?-1:1);
+   p.sprite.position.y=p.baseY+(p.pause>0?0:Math.abs(Math.sin(T*8+p.phase))*.095);
+  }
+ });
  // Evento: Meowth realmente posa en un balcón de la calle.
  let anchor=buildings.find(b=>!b.back&&b.x<-70&&b.x>-121);
  if(!anchor)anchor=buildings.find(b=>!b.back);
