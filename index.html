@@ -2896,18 +2896,62 @@ function buildCityV3(){
   block(2.3,2.1,.22,ink,x,groundY+6.35,-68);
   block(1.95,1.75,.23,new THREE.MeshBasicMaterial({color:0xffd15a}),x,groundY+6.35,-67.86);
  }
- // Vehículos aparcados con colores vivos; el coche móvil continúa como evento.
+ // Autos 2.5D con ilustraciones de píxeles, contorno negro, ventanas y ruedas.
+ // Un volumen muy fino debajo de cada sprite permite profundidad sin cubos feos.
+ const cityCarPalettes=[
+  ['#f77c53','#d45144','#ffd38a'],['#48c0b7','#23858a','#b6f4dd'],
+  ['#f1c459','#c08a37','#ffefd0'],['#7294df','#435eae','#d3ebff']
+ ];
+ const makeCarTexture=(palette)=>{
+  const [paint,shade,highlight]=palette;
+  const c=document.createElement('canvas');c.width=160;c.height=88;
+  const q=c.getContext('2d');q.imageSmoothingEnabled=false;
+  const px=(x,y,w,h,color)=>{q.fillStyle=color;q.fillRect(x,y,w,h)};
+  const ink='#172b39',glass='#75bed5',deep='#274d69';
+  // Sombra y cuerpo escalonado con borde sólido.
+  px(13,71,136,5,'#192e3d55');
+  px(8,39,146,27,ink);px(15,32,134,31,ink);
+  px(31,22,94,18,ink);px(41,15,69,10,ink);
+  px(13,41,139,20,paint);px(19,35,129,12,paint);
+  px(35,25,86,17,paint);px(45,18,63,11,paint);
+  px(15,51,134,10,shade);px(24,38,110,4,highlight);
+  // Ventanas integradas a la carrocería (no prismas celestes).
+  px(47,24,27,16,ink);px(78,24,35,16,ink);
+  px(50,26,23,12,glass);px(81,26,29,12,deep);
+  px(52,28,8,4,'#d7f7fa');px(84,27,8,5,'#9dd9ef');
+  px(76,22,4,22,ink);px(92,43,3,13,shade);
+  // Puerta, tiradores, faros, parrilla y placa.
+  px(72,43,3,15,ink);px(78,47,11,3,ink);
+  px(18,46,4,8,'#fff4d4');px(12,47,5,7,'#ffe8a5');
+  px(142,46,6,8,'#ffdec6');px(144,45,5,5,'#f56b4b');
+  px(15,57,17,4,ink);px(130,57,15,4,ink);px(68,59,24,3,highlight);
+  // Ruedas con silueta cuadrada pixel-art, conectadas a la carrocería.
+  for(const x of [34,117]){
+   px(x-16,55,32,17,ink);px(x-13,59,26,13,'#293d4d');
+   px(x-8,61,16,10,'#7d96a1');px(x-4,63,8,6,'#e8d8b8');
+   px(x-11,70,22,3,ink);
+  }
+  px(22,44,5,4,'#ffffff88');px(116,38,4,3,'#ffffff66');
+  const tex=new THREE.CanvasTexture(c);tex.encoding=THREE.sRGBEncoding;
+  tex.magFilter=THREE.NearestFilter;tex.minFilter=THREE.LinearFilter;
+  tex.generateMipmaps=false;SCENIC_TEXTURES.push(tex);return tex;
+ };
+ const carMaps=cityCarPalettes.map(makeCarTexture);
+ const carUnder=new THREE.MeshBasicMaterial({color:0x172c3a,transparent:true,opacity:.22,depthWrite:false});
+ const carShell=cityCarPalettes.map((pal,i)=>surface([0xa34e40,0x327e83,0xc39240,0x425f9a][i],.94));
+ const makeCityCar=(n,x,z,scale=1)=>{
+  const group=new THREE.Group();group.position.set(x,groundY+.06,z);group.scale.setScalar(scale);cgroup.add(group);
+  const shadow=new THREE.Mesh(new THREE.CircleGeometry(1,16),carUnder);
+  shadow.rotation.x=-Math.PI/2;shadow.scale.set(2.8,.87,1);shadow.position.y=.12;group.add(shadow);
+  const shell=new THREE.Mesh(new THREE.BoxGeometry(4.15,1.05,1.0),carShell[n%4]);
+  shell.position.set(0,1.0,-.28);group.add(shell);
+  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:carMaps[n%4],transparent:true,alphaTest:.07,depthWrite:false,fog:false}));
+  sprite.scale.set(6.15,3.38,1);sprite.position.set(0,1.55,.4);group.add(sprite);
+  return group;
+ };
  for(const [i,x] of [-98,38,139].entries()){
-  const z=i===1?-62.3:-46.1;
-  const paint=surface([0x2ba39c,0xe56c52,0xf2bc50][i],.67);
-  block(4.5,1.2,1.92,ink,x,groundY+.8,z);
-  block(4.15,.99,1.7,paint,x,groundY+.88,z);
-  block(2.3,.75,1.55,ink,x-.2,groundY+1.67,z);
-  block(2.06,.58,1.49,surface(0x79bdd0),x-.2,groundY+1.72,z);
-  for(const dx of [-1.4,1.4])for(const dz of [-.95,.95])
-   add(new THREE.CylinderGeometry(.37,.37,.18,8),roadInk,x+dx,groundY+.39,z+dz).rotation.x=Math.PI/2;
+  makeCityCar(i,x,i===1?-61.9:-46.4,.92);
  }
- 
  // Señales, contenedores y paradas, todos anclados a la vereda.
  const poster=document.createElement('canvas');poster.width=128;poster.height=64;
  const pq=poster.getContext('2d');pq.fillStyle='#3d6c6b';pq.fillRect(0,0,128,64);
@@ -2943,15 +2987,9 @@ function buildCityV3(){
  const balconyY=anchor?anchor.y*.53+1.2:11;
  meowth.position.set(anchor?anchor.x:-95,balconyY,anchor?anchor.frontZ+2.3:-73);
  meowth.scale.set(4.5,4.5,1);meowth.visible=false;cgroup.add(meowth);
- // Evento: auto sobre la CALLE, no flotando sobre un fondo plano.
- const carGroup=new THREE.Group();carGroup.visible=false;cgroup.add(carGroup);
- const carBody=surface(0x9e4b43,.7),carGlass=surface(0x8ba3a5,.48),tire=surface(0x37383a);
- const cb=new THREE.Mesh(new THREE.BoxGeometry(4.2,1.25,1.9),carBody);cb.position.y=.87;carGroup.add(cb);
- const cabin=new THREE.Mesh(new THREE.BoxGeometry(2.25,.72,1.66),carGlass);cabin.position.set(-.2,1.78,0);carGroup.add(cabin);
- for(const dx of [-1.32,1.32])for(const dz of [-1.01,1.01]){
-  const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.38,.38,.21,8),tire);
-  wheel.rotation.x=Math.PI/2;wheel.position.set(dx,.48,dz);carGroup.add(wheel);
- }
+ // El vehículo aleatorio comparte las mismas ilustraciones GBA.
+ const carGroup=makeCityCar(3,-158,-55.7,.97);
+ carGroup.visible=false;
  let stage='idle',wait=11,active=0;
  BIO.anims.push((dt,T)=>{
   wait-=dt;
