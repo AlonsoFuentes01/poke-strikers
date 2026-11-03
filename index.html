@@ -448,6 +448,57 @@ button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
 @keyframes mdSpriteLift{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 #cols .card.on img,#wzSummary img{animation:mdSpriteLift 1.8s steps(3) infinite}
 
+
+/* ===== PMD WIZARD FINISH · visual only, existing flow retained ===== */
+#wiz{
+ background:linear-gradient(180deg,#416b75f4 0%,#2a4b60f7 38%,#1d354af9 100%)!important;
+ border:4px solid #eac58a!important;border-radius:10px!important;
+ box-shadow:inset 0 0 0 3px #213a4d,inset 0 7px 0 #ffffff1c,0 8px 0 #182d3e,0 22px 42px #0b1f32a6!important;
+ backdrop-filter:none!important
+}
+#wiz .wzHead{border-bottom:4px solid #1f394d;background:linear-gradient(90deg,#31586c,#48797b 52%,#2c5064)}
+#wiz .wzLogo{color:#fff0b8;text-shadow:2px 3px 0 #20394c;letter-spacing:.08em}
+#wiz .wzSteps li{border-radius:5px;color:#e4d8b5}
+#wiz .wzSteps li i{border-radius:3px;background:#253f52;border:2px solid #d6b27f;color:#fff4cb}
+#wiz .wzSteps li.on{background:#fff0bb1f;color:#fff6db}
+#wiz .wzSteps li.on i{background:#ffdf91;color:#283e4d;border-color:#815e47}
+#wiz .wzSteps li.done i{background:#76b881;border-color:#244d51}
+#wiz .wzBody{background:repeating-linear-gradient(0deg,transparent 0 31px,#f8ddae06 31px 32px)}
+#wiz .wzPane h2{color:#fff0c2;text-shadow:2px 3px 0 #1a3548}
+#wiz .wzPane .wzSub{color:#d3e7d7}
+#wiz .wzModes .mc{
+ background:linear-gradient(160deg,#e9dcba,#c9c9a9)!important;
+ border:3px solid #283e4f!important;border-radius:7px!important;
+ color:#283e4c!important;box-shadow:inset 0 3px 0 #fff9de,0 5px 0 #172d40
+}
+#wiz .wzModes .mc b{color:#264455}
+#wiz .wzModes .mc small{color:#455c61}
+#wiz .wzModes .mc.on{background:linear-gradient(#fff1ba,#e2b77d)!important;border-color:#8e624e!important;box-shadow:inset 0 2px #fff8d5,0 5px 0 #543d3d}
+#wiz #cols section{background:linear-gradient(#25465c,#1e3b4e)!important;border:3px solid #ba996d!important;border-radius:7px!important;box-shadow:inset 0 0 0 2px #142d41!important}
+#wiz #tabs button,#wiz #bdOpen,#wiz .wzSide button,#wiz #weatherPick button,#wiz #wzBack,#wiz #wzNext{
+ border:2px solid #22394b!important;border-radius:5px!important;
+ background:linear-gradient(#f7edce,#d3c29a)!important;color:#273d4c!important;
+ box-shadow:inset 0 2px 0 #fff8e0,0 3px 0 #172d40!important;text-shadow:none!important
+}
+#wiz #tabs button.on,#wiz #weatherPick button.on,#wiz .wzSide button.on,
+#wiz #wzNext{background:linear-gradient(#ffeeb4,#eab870)!important;border-color:#845844!important}
+#wiz .card{border-radius:4px!important}
+#wiz #wzSum .tm{border-radius:6px;background:linear-gradient(#365d6e,#25465c);box-shadow:inset 0 0 0 2px #203a4f}
+#wiz #wzSum .tm small{color:#deebd5}
+#wiz #wzChips span{border-radius:4px;border:2px solid #cfb181;background:#25465c;color:#fff1c8}
+#wiz .wzFoot{background:#1a3449;border-top:3px solid #d2ac76}
+#wiz #stadiumPick button{border-radius:5px!important}
+@media(max-height:400px),(max-width:760px){
+ #wiz{border-width:2px!important;box-shadow:inset 0 0 0 1px #213a4d,0 4px 0 #182d3e!important}
+ #wiz .wzHead{border-bottom-width:2px}
+ #wiz .wzFoot{border-top-width:2px}
+ #wiz .wzModes .mc{border-width:2px!important;box-shadow:0 2px 0 #172d40}
+ #wiz #cols section{border-width:2px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ #wiz .wzPane,#wiz .wzModes .mc,#wiz #stadiumPick button{animation:none!important;transition:none!important}
+}
+
 </style></head><body>
 </div>
 <div id="vig"></div><div id="flash"></div><canvas id="mini" width="176" height="106"></canvas><div id="envChip"></div><div id="netChip"></div>
