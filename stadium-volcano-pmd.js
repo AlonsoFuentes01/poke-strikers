@@ -708,5 +708,128 @@ function build(o){
  };
  return scene;
 }
-global.PMD_VOLCANO={build};
+
+/* Banquillo modular de piedra volcánica: el suelo, asiento, respaldo y barandas
+ * se dibujan con la misma retícula pixel art que las tribunas. Los suplentes
+ * se dibujan delante y con los pies anclados al nivel 1.30. */
+const benchMaps=new Map();
+function buildBench(o){
+ const {THREE,dugG,cx,zSeat,team,color}=o;
+ const ink='#30283e',stone='#6e5867',stone2='#836a75',shine='#ddbbac',
+       lava='#f26536',hot='#ff9a43',gold='#ffd276';
+ const accent=team===0?'#b94a4e':'#538bbd';
+ function pic(key,w,h,paint){
+  if(benchMaps.has(key))return benchMaps.get(key);
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+  const q=cv.getContext('2d');q.imageSmoothingEnabled=false;
+  const r=(x,y,w,h,col)=>{q.fillStyle=col;q.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h));};
+  paint(q,r);
+  const t=new THREE.CanvasTexture(cv);t.encoding=THREE.sRGBEncoding;
+  t.magFilter=t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;
+  benchMaps.set(key,t);return t;
+ }
+ const back=pic('back-'+team,768,310,(q,r)=>{
+  r(0,0,768,310,ink);r(11,9,746,290,stone);
+  for(let row=0;row<12;row++){
+   const y=16+row*22; r(14,y,740,3,ink);r(14,y+3,740,2,shine);
+   for(let x=18+(row%2)*30;x<745;x+=61){
+    r(x,y+6,4,14,ink);
+    if((x+row)%4===0)r(x+7,y+9,21,2,stone2);
+   }
+  }
+  r(0,0,768,23,ink);r(8,5,750,10,shine);
+  for(let x=6;x<765;x+=54){r(x,0,29,32,ink);r(x+5,3,20,23,stone2);r(x+9,6,11,5,shine);}
+  // Hornacinas volcánicas detrás de los suplentes.
+  for(const x of [48,181,314,447,580,706]){
+   r(x-27,95,54,111,ink);
+   q.fillStyle=ink;q.beginPath();q.moveTo(x-27,108);q.lineTo(x-10,77);
+   q.lineTo(x+10,77);q.lineTo(x+27,108);q.fill();
+   r(x-15,107,30,82,'#472e43');r(x-8,121,16,66,lava);
+   r(x-3,129,6,52,hot);r(x-32,196,65,10,shine);
+  }
+  r(6,257,756,32,ink);r(13,261,741,10,stone2);
+  for(let x=30;x<730;x+=89){r(x,261,14,30,ink);r(x+4,262,7,21,shine);}
+ });
+ const top=pic('seat-stone',512,160,(q,r)=>{
+  r(0,0,512,160,stone2);
+  for(let row=0;row<10;row++){
+   const y=row*16;
+   for(let i=-1;i<15;i++){
+    const x=i*42+(row%2)*21;
+    r(x+1,y+1,40,14,(i+row)%3===0?'#715967':(i+row)%2===0?'#8c7380':'#655064');
+    r(x+4,y+3,29,2,'#b49793');
+    r(x+5,y+12,34,2,ink);
+   }
+  }
+ });
+ const front=pic('front-'+team,768,128,(q,r)=>{
+  r(0,0,768,128,ink);r(7,10,753,109,stone);
+  for(let row=0;row<5;row++){
+   const y=17+row*20;r(9,y,750,4,ink);
+   for(let x=(row%2)*26;x<768;x+=65){
+    r(x,y+5,4,15,'#443449');r(x+10,y+8,36,2,stone2);
+   }
+  }
+  r(0,4,768,13,ink);r(0,6,768,6,shine);
+  for(let x=30;x<768;x+=97){
+   r(x,35,44,66,ink);r(x+6,39,32,53,'#803b40');
+   r(x+11,43,22,43,lava);r(x+16,49,12,30,hot);
+   r(x-4,99,52,10,ink);
+  }
+  r(0,115,768,13,ink);r(0,115,768,4,shine);
+ });
+ const rail=pic('rail-'+team,768,97,(q,r)=>{
+  // Solo piedra, travesaños y huecos alfa; no dibujar sobre el cuerpo del Pokémon.
+  for(let x=0;x<768;x+=79){
+   r(x,29,24,67,ink);r(x+5,32,14,58,stone2);r(x-5,24,34,13,shine);
+  }
+  r(0,46,768,15,ink);r(0,47,768,5,shine);
+  r(0,88,768,9,ink);r(0,89,768,3,stone2);
+  for(let x=51;x<744;x+=159){
+   r(x-11,58,24,24,accent);r(x-7,59,15,19,ink);
+   r(x-2,64,7,10,hot);
+  }
+ });
+ const mat=(t,transparent=false,depthTest=true)=>new THREE.MeshBasicMaterial({
+  map:t,transparent,alphaTest:transparent?.05:0,
+  side:THREE.DoubleSide,depthWrite:!transparent,depthTest,toneMapped:false,fog:false
+ });
+ const plane=(w,h,x,y,z,t,order,transparent=false)=>{
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat(t,transparent));
+  m.position.set(x,y,z);m.renderOrder=order;dugG.add(m);return m;
+ };
+ const blocks=new THREE.MeshBasicMaterial({color:0x423144,roughness:1});
+ const edge=new THREE.Mesh(new THREE.BoxGeometry(20.5,1.0,3.8),blocks);
+ edge.position.set(cx,.59,zSeat+.02);edge.renderOrder=1;dugG.add(edge);
+ // Suelo: los sprites apoyan sus pies encima, no directamente en el muro.
+ const floor=new THREE.Mesh(new THREE.PlaneGeometry(20.0,3.7),mat(top));
+ floor.rotation.x=-Math.PI/2;floor.position.set(cx,1.11,zSeat);
+ floor.renderOrder=2;dugG.add(floor);
+ // Fachada posterior más lejana en Z para crear una grada real, no PNG sueltos.
+ plane(20.7,8.0,cx,5.16,zSeat-2.25,back,1);
+ // Tres asientos bajos con sombras, debajo de los suplentes.
+ const seatMat=new THREE.MeshBasicMaterial({color:0x8a7080});
+ for(const dx of [-3.9,.45,4.85]){
+  const seat=new THREE.Mesh(new THREE.BoxGeometry(3.25,.26,1.4),seatMat);
+  seat.position.set(cx+dx,1.13,zSeat-1.0);
+  seat.renderOrder=2;dugG.add(seat);
+ }
+ plane(20.4,1.26,cx,.62,zSeat+1.98,front,3);
+ // Barandilla baja ante los pies: perspectiva de gradería y oclusión de base.
+ const safety=plane(20.4,1.2,cx,.82,zSeat+2.07,rail,6,true);
+ safety.material.depthTest=false;safety.material.depthWrite=false;
+ // Pilastras que dan remate arquitectónico al palco, fuera de los asientos.
+ const pillarMat=new THREE.MeshBasicMaterial({color:0x6e5867});
+ const capMat=new THREE.MeshBasicMaterial({color:0xb49793});
+ for(const side of [-1,1]){
+  const x=cx+side*10.1;
+  const p=new THREE.Mesh(new THREE.BoxGeometry(.78,4.0,1.1),pillarMat);
+  p.position.set(x,2.2,zSeat+1.55);p.renderOrder=3;dugG.add(p);
+  const cap=new THREE.Mesh(new THREE.BoxGeometry(1.3,.34,1.4),capMat);
+  cap.position.set(x,4.24,zSeat+1.55);dugG.add(cap);
+ }
+ return true;
+}
+
+global.PMD_VOLCANO={build,buildBench};
 })(window);
