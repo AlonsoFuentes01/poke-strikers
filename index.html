@@ -927,93 +927,86 @@ const pitch=new THREE.Mesh(new THREE.PlaneGeometry(HX*2,HZ*2),pitchMat);pitch.ro
 // Mystery Dungeon · suelo distinto para cada estadio. Se pinta la misma cancha
 // (60x36 unidades), sin modificar colisiones, líneas de gol ni controles.
 let MD_PITCH_MODE='',MD_PITCH_TEXTURE=null;
+
+// Surface tiles drawn from scratch for the new PMD arena; no previous pitch bitmap.
 function mdPaintPitch(mode){
  if(MD_PITCH_MODE===mode)return;
  MD_PITCH_MODE=mode;
- const colors={
-  city:['#b6a48a','#c9b69c','#e5ccab','#716b63','#213d4b'],
-  classic:['#58a85a','#7cc969','#b4dc72','#3e8752','#244d42'],
-  sunset:['#ac875f','#c29b74','#ebc292','#805c5c','#473c50'],
-  beach:['#79be73','#a6d76d','#d3e494','#d4bc86','#3b796a'],
-  volcano:['#ba7450','#d39160','#ecaf70','#795548','#563949'],
-  arctic:['#9dc9d6','#b8dbe5','#e8f4ed','#74a6c3','#426b85'],
-  space:['#536d89','#6c86a4','#adc2c8','#324968','#213c58'],
-  desert:['#dca768','#f3c17d','#ffe0a1','#a5765d','#795241']
- }[mode]||['#58a85a','#7cc969','#b4dc72','#3e8752','#244d42'];
- const c=document.createElement('canvas');c.width=960;c.height=576;
- const q=c.getContext('2d');q.imageSmoothingEnabled=false;
- const box=(x,y,w,h,color)=>{q.fillStyle=color;q.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h));};
- let seed=3571+mode.length*69;for(const ch of mode)seed+=ch.charCodeAt(0)*9;
- const rnd=()=>{seed=seed*16807%2147483647;return(seed-1)/2147483646;};
- box(0,0,960,576,colors[0]);
- const natural=['classic','beach'].includes(mode);
- const stone=['city','sunset','volcano','desert'].includes(mode);
- if(natural){
-  for(let i=0;i<12;i++)box(i*80,0,80,576,i%2?colors[0]:colors[1]);
-  for(let i=0;i<9000;i++){
-   const x=rnd()*960,y=rnd()*576,sz=2+rnd()*6;
-   box(x,y,sz,1+rnd()*3,rnd()<.55?colors[2]:colors[3]);
+ const swatches={
+  city:['#baad9e','#d1bdab','#e3cdbc','#9e93a2','#f4e8d4'],
+  sunset:['#be977f','#dfb196','#f1cfad','#9a7480','#ffe5bc'],
+  classic:['#719d6a','#89b87a','#aed08f','#568a71','#d5e5a4'],
+  beach:['#dac18e','#eed6a2','#f6e6bd','#a4b9a3','#fff0d5'],
+  volcano:['#a17961','#c28d69','#dca479','#695260','#f2c796'],
+  desert:['#d1a46c','#e9be84','#f8d49e','#a57c60','#ffebc0'],
+  arctic:['#adced5','#cee5e5','#eaf4e9','#8db4c8','#ffffff'],
+  space:['#656e91','#8c91b4','#b1aed0','#4d567e','#d5d4ee']
+ };
+ const c=swatches[mode]||swatches.city,cv=document.createElement('canvas'),w=960,h=576;
+ cv.width=w;cv.height=h;let q=cv.getContext('2d');q.imageSmoothingEnabled=false;
+ let seed=2417;for(const ch of mode)seed+=ch.charCodeAt(0)*11;
+ const rnd=()=>{seed=seed*16807%2147483647;return(seed/2147483647)};
+ const r=(x,y,ww,hh,col)=>{q.fillStyle=col;q.fillRect(Math.round(x),Math.round(y),Math.ceil(ww),Math.ceil(hh))};
+ r(0,0,w,h,c[3]);
+ const grass=mode==='classic';
+ if(grass){
+  for(let y=0;y<h;y+=45)for(let x=0;x<w;x+=45){
+   r(x,y,45,45,((x+y)/45)%2?c[0]:c[1]);
+   for(let i=0;i<60;i++)r(x+rnd()*45,y+rnd()*45,1+rnd()*2,1+rnd()*3,i%3?c[2]:c[3]);
   }
-  if(mode==='beach'){
-   for(let i=0;i<3400;i++){const x=rnd()*960,y=rnd()*576;
-    if(x<82||x>875||y<52||y>516)box(x,y,2+rnd()*7,1+rnd()*3,colors[4]);
+ }else{
+  // Offset hand-cut flagstones; darker grout and multiple pixel highlights.
+  for(let y=-4;y<h+45;y+=45){
+   let offset=Math.floor(y/45)%2?27:-28;
+   for(let x=-67+offset;x<w+67;x+=68){
+    const n=rnd(),base=n<.23?c[0]:n<.62?c[1]:c[2];
+    r(x,y,66,43,c[3]);r(x+3,y+3,60,37,base);
+    r(x+5,y+5,55,3,c[4]);r(x+5,y+8,3,28,c[2]);
+    r(x+5,y+37,54,2,c[0]);
+    for(let k=0;k<16;k++){
+     const px=x+8+rnd()*50,py=y+10+rnd()*27;
+     r(px,py,1+rnd()*4,1+rnd()*2,rnd()>.5?c[0]:c[4]);
+    }
+    if(rnd()<.18)r(x+17+rnd()*20,y+16+rnd()*10,18+rnd()*9,2,c[3]);
    }
   }
- }else if(stone){
-  for(let y=0;y<576;y+=46)for(let x=-30+(Math.floor(y/46)%2)*26;x<960;x+=64){
-   const v=rnd();
-   box(x,y,61,43,colors[3]);
-   box(x+3,y+3,56,38,v<.3?colors[0]:v<.7?colors[1]:colors[2]);
-   box(x+5,y+5,49,3,colors[2]);
-   if(rnd()<.25){
-    box(x+15+rnd()*28,y+12+rnd()*14,12+rnd()*12,2,colors[3]);
-   }
-  }
-  if(mode==='volcano')for(let i=0;i<50;i++){
-   const x=rnd()*960,y=rnd()*576;
-   box(x,y,18+rnd()*22,2,'#f6c283');
-   box(x+5,y+3,3+rnd()*14,2,'#e46a3f');
-  }
- }else if(mode==='arctic'){
-  for(let y=0;y<576;y+=54)for(let x=-15+(y%108?20:0);x<960;x+=72){
-   box(x,y,70,51,colors[3]);
-   box(x+3,y+3,65,46,colors[(Math.floor(rnd()*3))]);
-   box(x+5,y+5,40,4,colors[2]);
-   box(x+33,y+23,20,2,colors[4]);
-  }
- }else if(mode==='space'){
-  for(let y=0;y<576;y+=52)for(let x=0;x<960;x+=64){
-   box(x,y,62,50,colors[4]);box(x+3,y+3,56,44,colors[(Math.floor(rnd()*3))]);
-   box(x+7,y+8,6,5,'#7fc8d6');
-   box(x+50,y+39,5,4,'#e4d6a2');
-  }
  }
- for(let i=0;i<2600;i++){
-  const x=rnd()*960,y=rnd()*576;
-  box(x,y,1+rnd()*5,1+rnd()*3,rnd()<.5?colors[3]:colors[2]);
- }
- // Los bordes y las líneas forman parte de la textura para evitar una nueva
- // geometría que tape el campo. Centro Poké Ball sutil (no altera el saque).
- q.strokeStyle='#fff8dd';q.lineWidth=5;q.strokeRect(10,10,940,556);
+ // Crisp football markings, preserved over new tiles.
+ q.strokeStyle='#fff9e9';q.lineWidth=5;q.lineJoin='miter';
+ q.strokeRect(10,10,940,556);
  q.beginPath();q.moveTo(480,10);q.lineTo(480,566);q.stroke();
  q.strokeRect(10,167,151,243);q.strokeRect(799,167,151,243);
  q.strokeRect(10,225,51,126);q.strokeRect(899,225,51,126);
  q.beginPath();q.arc(480,288,78,0,Math.PI*2);q.stroke();
- q.beginPath();q.arc(480,288,15,0,Math.PI*2);
- q.fillStyle='#f9ebc0';q.fill();q.strokeStyle=colors[4];q.lineWidth=4;q.stroke();
- const band=natural?colors[3]:colors[4];
- q.fillStyle=band;q.globalAlpha=.2;q.fillRect(401,283,158,8);q.globalAlpha=1;
- // Penumbra y desgaste alrededor de los arcos. No cubre marcas.
- for(let i=0;i<1200;i++){
-  const xx=rnd()<.5?14+rnd()*110:830+rnd()*110,yy=160+rnd()*250;
-  box(xx,yy,1+rnd()*7,1+rnd()*3,colors[3]);
+ q.beginPath();q.arc(480,288,11,0,Math.PI*2);q.fillStyle='#fff9e9';q.fill();
+ for(let i=0;i<2;i++){
+  let x=i?906:54;
+  q.fillStyle='#fff9e9';q.fillRect(x,281,8,8);
+ }
+ const t=new THREE.CanvasTexture(cv);
+ t.encoding=THREE.sRGBEncoding;t.magFilter=t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;
+ if(MD_PITCH_TEXTURE)MD_PITCH_TEXTURE.dispose();MD_PITCH_TEXTURE=t;
+ pitchMat.map=t;pitchMat.color.setHex(0xffffff);pitchMat.needsUpdate=true;
+}
+function mdPaintApron(mode){
+ const pal={
+  city:['#d9bd9e','#ebd2b4','#9c8390'],sunset:['#e0ae8e','#efd0a7','#a47680'],
+  classic:['#a6bd8f','#c9d6a0','#67876b'],beach:['#eddaab','#f7eac2','#b99d83'],
+  volcano:['#a88165','#c49b79','#6d5260'],desert:['#e4bc85','#f7d6a2','#a98161'],
+  arctic:['#c5e0e7','#eef7f7','#8dacbf'],space:['#8a89b7','#b2b0db','#57537d']
+ }[mode]||['#d9bd9e','#ebd2b4','#9c8390'];
+ const c=document.createElement('canvas');c.width=c.height=256;
+ const q=c.getContext('2d');q.imageSmoothingEnabled=false;
+ q.fillStyle=pal[2];q.fillRect(0,0,256,256);
+ for(let y=0;y<256;y+=28)for(let x=-28+(Math.floor(y/28)%2)*21;x<256;x+=47){
+  q.fillStyle=pal[0];q.fillRect(x+2,y+2,44,25);
+  q.fillStyle=pal[1];q.fillRect(x+4,y+4,39,4);
  }
  const t=new THREE.CanvasTexture(c);
- t.encoding=THREE.sRGBEncoding;t.magFilter=THREE.NearestFilter;
- t.minFilter=THREE.NearestFilter;t.anisotropy=1;t.generateMipmaps=false;
- if(MD_PITCH_TEXTURE)MD_PITCH_TEXTURE.dispose();
- MD_PITCH_TEXTURE=t;pitchMat.map=t;pitchMat.needsUpdate=true;
- pitchMat.color.setHex(0xffffff);
+ t.encoding=THREE.sRGBEncoding;t.magFilter=t.minFilter=THREE.NearestFilter;
+ t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(5,4);t.generateMipmaps=false;
+ if(apron.material.map)apron.material.map.dispose();
+ apron.material.map=t;apron.material.color.setHex(0xffffff);apron.material.needsUpdate=true;
 }
 
 const apC=document.createElement('canvas');apC.width=1024;apC.height=640;paintGrass(apC.getContext('2d'),1024,640);
@@ -5249,6 +5242,7 @@ const _bs=buildStadium;
 buildStadium=function(m){
  disposeCityV3();disposeWorldV31();disposeBeachV4();disposeMDWorld();disposeScenicTextures();
  mdPaintPitch(m);
+ mdPaintApron(m);
  stadiumMode=m;BIO.anims.length=0;cityG.clear();
  // Completely replace old visual construction.
  cityFloor.visible=false;
