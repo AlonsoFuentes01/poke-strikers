@@ -619,7 +619,7 @@ button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="./city-pmd-atlas.js?v=atlas-4d3e293"></script>
 <script src="./stadium-city-pmd.js"></script>
-<script src="./stadium-volcano-pmd.js?v=volcano-stands-plaza-p2"></script>
+<script src="./stadium-volcano-pmd.js?v=volcano-stands-plaza-p3"></script>
 <script src="./city-pmd-v3.js?v=goal-bench-intro-2"></script>
 <script>
 const L={
@@ -831,6 +831,7 @@ function showStadiumIntro(){
  if(title){title.textContent=stadiumMode==='volcano'?'🌋 ESTADIO VOLCÁN':'🏟️ ESTADIO CIUDAD';
  title.style.background=stadiumMode==='volcano'?'#472c3be8':'#243651dc';
  title.style.borderColor=stadiumMode==='volcano'?'#ffb05b':'#eed49b';}
+ stadiumIntro.style.top=stadiumMode==='volcano'?'13%':'24%';
  cameraTopMix=0;camIntroLeft=CAM_INTRO_SECONDS;cam.zoom=CAM_ZOOM_INTRO;
  targetZoom2D=CAM_ZOOM_INTRO;cam.updateProjectionMatrix();
  stadiumIntro.style.display='block';stadiumIntro.style.opacity='0';
