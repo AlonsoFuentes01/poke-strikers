@@ -1900,40 +1900,8 @@ function ctlTick(t){
  const H=spriteTargetH(u.heightDm||10);
  ctlMarker.visible=true;ctlMarker.position.set(u.g.position.x,H+1.05+Math.sin(t*.008)*.12,u.g.position.z);
 }
-// ================= ÁRBITRO: humano pixel-art que recorre la cancha sin intervenir en el juego =================
-const refTex=[0,1,2].map(fr=>{
- // Árbitro de "Liga Pokémon" (diseño original): gorra azul con insignia, chaqueta turquesa con emblema hexagonal, silbato y tarjeta.
- const c=document.createElement('canvas');c.width=20;c.height=32;const q=c.getContext('2d'),R_=(col,x,y,w,h)=>{q.fillStyle=col;q.fillRect(x,y,w,h)};
- R_('#2b63d6',5,1,10,3);R_('#1b44a0',5,3,10,1);R_('#fff',4,4,12,1);R_('#ffd23f',9,1,2,2);R_('#8a5a2b',5,5,1,2);R_('#8a5a2b',14,5,1,2);
- R_('#f2c79a',6,5,8,5);R_('#111',8,7,1,1);R_('#111',11,7,1,1);R_('#ffd23f',9,9,2,1);R_('#f2c79a',9,10,2,1);
- R_('#18b5a0',5,11,10,9);R_('#fff',8,11,4,1);R_('#ffd23f',8,14,4,3);R_('#c98a00',9,15,2,1);R_('#1c2a5a',5,19,10,1);
- R_('#18b5a0',3,11,2,6);R_('#18b5a0',15,11,2,6);R_('#ff8a1f',3,13,2,1);R_('#ff8a1f',15,13,2,1);
- R_('#f2c79a',3,17,2,2);R_('#f2c79a',15,17,2,2);R_('#e63946',16,18,3,3);
- R_('#1c2a5a',5,20,10,4);R_('#fff',5,20,1,4);R_('#fff',14,20,1,4);
- const lf=[[6,12],[7,11],[8,10]][fr];
- for(const x of lf){R_('#f2c79a',x,24,2,2);R_('#fff',x,26,2,3);R_('#18b5a0',x,28,2,1);R_('#e63946',x-1,29,4,2)}
- const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.magFilter=THREE.NearestFilter;t.minFilter=THREE.NearestFilter;return t;
-});
-const refH=2.5,refM=new THREE.Mesh(new THREE.PlaneGeometry(refH*20/32,refH),new THREE.MeshBasicMaterial({map:refTex[0],transparent:true,alphaTest:.05,side:2,depthWrite:false}));
-refM.position.y=refH/2;refM.renderOrder=3;
-const refSh=new THREE.Mesh(new THREE.CircleGeometry(.6,16),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.3}));refSh.rotation.x=-Math.PI/2;refSh.position.y=.04;
-const refG=new THREE.Group();refG.add(refM,refSh);refG.visible=false;S.add(refG);
-const refS={side:1,fr:0,tm:0,face:1,init:false};
-function refTick(dt,t){
- if(!ready){refG.visible=false;refS.init=false;return}
- refG.visible=true;if(!refS.init){refS.init=true;refG.position.set(0,0,9)}
- if(paused)dt=0;
- if(vb.z>5)refS.side=-1;if(vb.z<-5)refS.side=1;
- const fvr=fvNow();let tx=cl(vb.x*.8,-HX+6,HX-6),tz=cl(vb.z+refS.side*8,-HZ+3,HZ-3);
- if(fvr){tx=cl(fvr.bx+fvr.fx*3,-HX+3,HX-3);tz=cl(fvr.bz+(fvr.bz>0?7:-7),-HZ+2,HZ-2)}   // en el tiro libre se hace a un lado, fuera de la cámara
- const dx=tx-refG.position.x,dz=tz-refG.position.z,dist=Math.hypot(dx,dz);
- let moving=false;
- if(dist>1.6&&dt>0){const sp=Math.min(5.4,dist*1.3)*dt;refG.position.x+=dx/dist*sp;refG.position.z+=dz/dist*sp;moving=true;if(Math.abs(dx)>.4)refS.face=dx>0?1:-1}
- if(moving){refS.tm+=dt;if(refS.tm>.15){refS.tm=0;refS.fr=(refS.fr+1)%4}}else refS.fr=3;
- refM.material.map=refTex[[0,1,2,1,1][refS.fr]===undefined?1:[0,1,2,1][refS.fr%4]];if(refS.fr===3&&!moving)refM.material.map=refTex[1];
- refM.scale.x=refS.face;refM.rotation.y=FKCAM?Math.atan2(cam.position.x-refG.position.x,cam.position.z-refG.position.z):0;refM.position.y=refH/2+(moving?Math.abs(Math.sin(t*.012))*.1:0);
- if(typeof SPT!=='undefined')refM.material.color.copy(SPT);
-}
+// No synthetic human referee: only real trainers and Pokémon PMD sprites may appear.
+function refTick(){}
 renderBinds();keysHint();
 // ================= ENTORNO VISUAL: cielo, clima, daño de césped, minimapa =================
 const mixn=(a,b,k)=>a+(b-a)*k;
