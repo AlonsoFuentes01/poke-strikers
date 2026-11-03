@@ -2158,6 +2158,37 @@ function buildBiome(mode){
 }
 
 
+// Franjas LED animadas, visibles en las tribunas laterales sin alterar la cancha.
+function stadiumLedMaterial(color){
+ return new THREE.ShaderMaterial({
+  uniforms:{uTime:BIO.T,uColor:{value:new THREE.Color(color)}},
+  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader:`uniform float uTime;uniform vec3 uColor;varying vec2 vUv;
+  void main(){
+   float scan=pow(.5+.5*sin(vUv.x*45.-uTime*5.),8.);
+   float sweep=pow(.5+.5*sin(vUv.x*7.+uTime*2.3),12.);
+   float edge=smoothstep(.02,.16,vUv.y)*smoothstep(.02,.16,1.-vUv.y);
+   vec3 c=uColor*(.6+1.4*scan+1.7*sweep);
+   gl_FragColor=vec4(c,edge);
+  }`,
+  transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide
+ });
+}
+function stadiumLightShow(mode,glow){
+ const material=stadiumLedMaterial(glow);
+ // Dos grandes cintas LED, a los lados y fuera de la zona jugable.
+ for(const side of [-1,1]){
+  for(const y of [4.2,8.6]){
+   const strip=new THREE.Mesh(new THREE.PlaneGeometry(51,1.05),material);
+   strip.rotation.y=side*Math.PI/2;
+   strip.position.set(side*(HX+16.7),y,0);
+   cityG.add(strip);
+  }
+ }
+ // Arco luminoso detrás de la tribuna lejana; no tapa la acción.
+ const arch=new THREE.Mesh(new THREE.TorusGeometry(30,.3,6,72,Math.PI),new THREE.MeshBasicMaterial({color:glow,transparent:true,opacity:.85}));
+ arch.position.set(0,11,-HZ-20);cityG.add(arch);
+}
 // Shaders de arquitectura para los ocho estadios: juntas minerales y luz animada.
 function stadiumWallMaterial(base,accent){
  const mat=new THREE.MeshStandardMaterial({color:base,roughness:.82,metalness:.12,emissive:accent,emissiveIntensity:.12});
@@ -2257,9 +2288,9 @@ void main(){
  });
 }
 const _bs=buildStadium;buildStadium=function(m){
- if(BIOMES[m]){buildBiome(m);buildEnds(m);envApply();envChipUpdate();return}
+ if(BIOMES[m]){buildBiome(m);buildEnds(m);stadiumLightShow(m,BIOMES[m].glow);envApply();envChipUpdate();return}
  BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=cityFloorTex;cityFloor.material.needsUpdate=true;
- _bs(m);cityLife(m);buildEnds(m);envApply();envChipUpdate()};
+ _bs(m);cityLife(m);buildEnds(m);stadiumLightShow(m,m==='sunset'?0xff9d5c:m==='classic'?0x9bd9ff:0x2fd0ff);envApply();envChipUpdate()};
 cityLife('city');
 // Fondo de los arcos: gradas escalonadas, muro con franjas de luz, techo, vallas y skyline.
 function buildEnds(mode){
@@ -2285,7 +2316,7 @@ function buildEnds(mode){
   }
  }
 }
-buildEnds(stadiumMode);
+buildEnds(stadiumMode);stadiumLightShow(stadiumMode,0x2fd0ff);
 
 const DMW=1024,DMH=614,dmC=document.createElement('canvas');dmC.width=DMW;dmC.height=DMH;const dmq=dmC.getContext('2d');
 const dmT=srgb(new THREE.CanvasTexture(dmC));
