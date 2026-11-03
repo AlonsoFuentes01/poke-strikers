@@ -253,48 +253,78 @@ function build(o){
    for(let i=0;i<9;i++){r(q,xx,335+i*19,83,8,C.stoneLight);r(q,xx,345+i*19,83,5,C.stoneDark);}
    r(q,xx-19,321,125,14,C.stoneLight);
   }
-  // Pokémon Center: hand-painted brick architecture with real-depth pixels.
+  // Fortaleza del Volcán, exactamente en la posición y escala del Centro Pokémon.
+  // Una sola fachada compacta y coherente con las gradas, sin PNG dispersos.
   r(q,574,246,384,257,C.ink);r(q,584,251,364,247,C.stone);
-  poly(q,[[546,272],[585,213],[618,194],[913,194],[950,213],[988,272]],C.roofDark);
-  poly(q,[[553,264],[592,213],[622,203],[910,203],[941,213],[981,264]],C.roof);
-  r(q,549,267,438,19,C.ink);r(q,558,269,420,9,C.roofLight);
-  // Tejas del tejado del Centro Pokémon, ladrillos y canalones.
-  for(let yy=210;yy<261;yy+=9){
-   for(let xx=558+((yy/9|0)%2)*11;xx<970;xx+=24){
-    if((xx>575&&xx<945)&&yy>222){
-     r(q,xx,yy,19,3,yy%18?C.roofLight:C.roofDark);
-     r(q,xx+3,yy+3,13,1,'rgba(255,225,172,.45)');
-    }
+  poly(q,[[546,272],[585,213],[618,194],[913,194],[950,213],[988,272]],C.ink);
+  poly(q,[[554,265],[593,216],[624,203],[906,203],[942,216],[980,265]],C.roofDark);
+  poly(q,[[564,260],[600,223],[630,210],[904,210],[932,223],[970,260]],C.roof);
+  r(q,551,268,434,18,C.ink);r(q,559,271,417,8,C.roofLight);
+  for(let yy=210;yy<260;yy+=9){
+   for(let xx=558+((yy/9|0)%2)*11;xx<969;xx+=24){
+    r(q,xx,yy,19,3,yy%18?C.roofLight:C.roofDark);
+    r(q,xx+3,yy+4,12,1,C.stoneLight);
    }
   }
-  r(q,554,282,430,6,C.stoneDark);
-  for(let yy=295;yy<495;yy+=16){
-   r(q,587,yy,357,2,'rgba(121,89,99,.20)');
-   for(let xx=595+((yy/16|0)%2)*22;xx<938;xx+=44)
-    r(q,xx,yy+2,2,11,'rgba(131,96,105,.19)');
+  // Cada sillar, junta y borde conserva el grosor visual de Ciudad.
+  for(let yy=292;yy<497;yy+=15){
+   r(q,586,yy,359,2,C.stoneDark);
+   for(let xx=592+((yy/15|0)%2)*21;xx<938;xx+=43)
+    r(q,xx,yy+2,3,11,C.ink);
   }
-  for(let xx=595;xx<940;xx+=19)r(q,xx,481,13,5,'rgba(245,219,179,.48)');
-
-  r(q,607,286,319,6,C.stoneLight);
-  for(const x of [608,838]){r(q,x-9,312,95,135,C.stoneDark);window(q,x,326,27,63);window(q,x+48,326,27,63);}
-  // Entrance, door frame and highlights.
-  r(q,691,399,154,105,C.ink);r(q,700,408,136,96,C.water);
-  r(q,765,408,7,96,C.ink);r(q,708,414,56,10,C.waterLight);
-  r(q,781,414,46,10,C.waterLight);r(q,688,391,162,12,C.roof2);
-  // Puertas y marcos de entrada con sensación de profundidad.
-  r(q,702,397,133,7,C.roofLight);
-  r(q,700,406,6,95,C.ink);r(q,831,406,6,95,C.ink);
-  r(q,702,416,56,10,'#bbebea');r(q,781,416,42,8,'#b7ebf3');
-  r(q,711,435,5,53,'rgba(223,250,246,.65)');
-  r(q,819,431,4,49,'rgba(212,238,250,.5)');
-  r(q,758,465,5,9,'#e9cf83');r(q,773,465,5,9,'#e9cf83');
-  r(q,684,500,168,7,C.stoneLight);
-
-  // Architectural Poké Ball emblem (not a fabricated spectator).
-  circle(q,767,250,58,C.ink);circle(q,767,250,50,C.stoneLight);
-  circle(q,767,250,43,'#fff2e2');q.fillStyle=C.roof;
-  q.beginPath();q.arc(767,250,43,Math.PI,0);q.fill();
-  r(q,724,246,86,9,C.ink);circle(q,767,251,15,C.ink);circle(q,767,251,9,C.stoneLight);
+  // Dos torretas pequeñas integradas, no rascacielos independientes.
+  for(const xx of [609,917]){
+   r(q,xx-36,287,73,211,C.ink);r(q,xx-30,293,61,201,C.stone);
+   for(let yy=309;yy<486;yy+=16){
+    r(q,xx-28,yy,57,2,C.stoneDark);
+    for(let sx=xx-24+((yy/16|0)%2)*16;sx<xx+28;sx+=31)
+     r(q,sx,yy+3,3,12,C.ink);
+   }
+   r(q,xx-40,279,81,17,C.ink);r(q,xx-34,281,69,10,C.stoneLight);
+   for(let k=0;k<4;k++){
+    const sx=xx-34+k*21;
+    r(q,sx,263,16,20,C.ink);r(q,sx+3,266,10,13,C.stone);
+   }
+   window(q,xx-11,326,22,40);window(q,xx-11,417,22,39);
+  }
+  // Portal incandescente con un arco tallado a mano (misma escala PMD).
+  r(q,682,397,169,106,C.ink);
+  poly(q,[[681,414],[692,381],[719,362],[767,350],
+    [815,361],[843,382],[853,414]],C.ink);
+  poly(q,[[694,414],[703,389],[721,374],[767,364],
+    [813,373],[830,390],[840,414]],C.stoneLight);
+  r(q,700,416,135,86,C.water);
+  poly(q,[[701,417],[721,393],[765,377],
+    [812,392],[834,417]],C.flower);
+  for(let x=707;x<831;x+=15){
+   r(q,x,421,6,77,C.roofDark);r(q,x+2,426,2,68,C.ink);
+   if(((x/15)|0)%2===0)r(q,x+8,437,4,54,C.waterLight);
+  }
+  r(q,695,446,144,9,C.ink);r(q,700,449,134,3,C.stoneLight);
+  r(q,686,500,161,9,C.stoneLight);
+  // Emblema del club Poké Strikers: misma Poké Ball que en Ciudad.
+  circle(q,767,249,58,C.ink);circle(q,767,249,50,C.stoneLight);
+  circle(q,767,249,42,C.roof);
+  r(q,725,245,84,9,C.ink);circle(q,767,250,15,C.ink);
+  circle(q,767,250,9,C.stoneLight);
+  // Dos estandartes y antorchas adosados a la fortaleza.
+  for(const xx of [550,981]){
+   r(q,xx-5,313,12,189,C.ink);r(q,xx-2,319,6,180,C.stoneDark);
+   r(q,xx-11,304,24,13,C.stoneLight);
+   r(q,xx+6,336,42,78,C.ink);
+   r(q,xx+10,339,34,69,C.banner);
+   r(q,xx+14,348,27,5,C.waterLight);
+   r(q,xx+14,369,26,5,C.stoneLight);
+  }
+  for(const xx of [663,869]){
+   r(q,xx-17,459,35,36,C.ink);r(q,xx-12,461,25,29,C.stone);
+   poly(q,[[xx-10,457],[xx-11,438],[xx,418],
+    [xx+4,433],[xx+11,408],[xx+14,457]],C.water);
+   poly(q,[[xx-4,457],[xx-2,439],[xx+4,428],[xx+7,457]],C.waterLight);
+   r(q,xx-21,455,42,8,C.stoneLight);
+  }
+  for(let xx=594;xx<940;xx+=19)r(q,xx,486,13,4,C.stoneLight);
+  r(q,552,502,435,8,C.ink);r(q,560,501,419,4,C.stoneLight);
   // Stalls with striped awnings and wooden counters.
   for(const [x,w] of [[117,200],[1218,204]]){
    r(q,x,337,w,162,C.ink);r(q,x+6,344,w-12,150,C.stone);
