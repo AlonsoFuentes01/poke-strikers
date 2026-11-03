@@ -459,6 +459,34 @@ function build(o){
     new THREE.MeshBasicMaterial({map:netTexture,transparent:true,opacity:.9,side:THREE.DoubleSide,depthWrite:false}));
   net.rotation.y=Math.PI/2;net.position.set(side*(HX+2.25),1.8,0);scene.add(net);
  }
+ // PORTERÍAS CENITALES: geometría visual de alto contraste para la cámara superior.
+ // No cambia ni portería lógica ni colisiones.
+ const goalWhite=new THREE.MeshBasicMaterial({color:0xfff6de,depthTest:false,depthWrite:false});
+ const goalDark=new THREE.MeshBasicMaterial({color:0x34465f,depthTest:false,depthWrite:false});
+ const goalGrid=new THREE.MeshBasicMaterial({color:0xc7e7e8,transparent:true,opacity:.65,depthTest:false,depthWrite:false});
+ const goalAccent=[
+  new THREE.MeshBasicMaterial({color:0xf48a78,depthTest:false,depthWrite:false}),
+  new THREE.MeshBasicMaterial({color:0x63bde9,depthTest:false,depthWrite:false})
+ ];
+ function goalMark(x,z,w,d,mat,y=.09){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,.015,d),mat);
+  m.position.set(x,y,z);m.renderOrder=10;scene.add(m);
+ }
+ for(const side of [-1,1]){
+  const far=side*(HX+2.65),near=side*(HX+.10);
+  const accent=goalAccent[side<0?0:1];
+  goalMark(side*(HX+1.37),0,2.52,GW*2+.7,goalDark,.061);
+  goalMark(far,0,.30,GW*2+.9,goalWhite,.105);
+  for(const zz of [-GW-.45,GW+.45]){
+   goalMark(side*(HX+1.32),zz,2.95,.33,goalWhite,.108);
+   goalMark(side*(HX+1.32),zz,2.48,.12,accent,.116);
+  }
+  for(let zi=-GW+.35;zi<GW;zi+=.75)goalMark(side*(HX+1.4),zi,2.3,.055,goalGrid,.088);
+  for(let xx=.45;xx<2.6;xx+=.53)goalMark(side*(HX+xx),0,.055,GW*2-.12,goalGrid,.088);
+  goalMark(near,0,.35,GW*2+.65,goalWhite,.128);
+  goalMark(near+side*.22,0,.11,GW*2-.22,accent,.137);
+  for(const zz of [-GW,GW])goalMark(side*(HX+.07),zz,.54,.54,accent,.148);
+ }
  return scene;
 }
 
