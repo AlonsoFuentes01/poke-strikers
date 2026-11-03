@@ -45,10 +45,12 @@ function build(o){
   // Market stalls on either side of the central doors. No lamps on top of shops.
   addPlane('stall_red',10,-16.7,5.0,-25.6,-9);
   addPlane('stall_yellow',10,16.7,5.0,-25.6,-9);
-  // Seat ledges in front of shops; real animated PMD crowd loaded separately.
+  // Gradas del público a los lados; banquillos del juego sobre gradas centrales
+  // del propio atlas. Nada de marquesinas grandes pegadas encima del fondo.
   addPlane('stands_left',20,-34.3,3.35,-25.1,-8);
   addPlane('stands_right',20,34.3,3.35,-25.1,-8);
-  addPlane('stands_center',17,0,2.7,-25.1,-8);
+  addPlane('stands_center',16.8,-13.5,3.0,-24.7,-7);
+  addPlane('stands_center',16.8,13.5,3.0,-24.7,-7);
   // Flower rows and gates connect terraces to the playing field.
   for(const xx of [-37,-25,-11,11,25,37]){
     addPlane(xx<0?'flowers_pink':'flowers_yellow',5.0,xx,.75,-20.1,-6);
@@ -57,9 +59,39 @@ function build(o){
   addPlane('lamp_large',3.3,34,5,-23.4,-7);
   addPlane('banners',8.8,-44,7,-30,-11);
   addPlane('banners',8.8,44,7,-30,-11);
-  // Goal images reflect the V3 reference; gameplay goal volumes remain logical.
-  addPlane('goal_left',5.0,-HX-.45,2.75,0,2);
-  addPlane('goal_right',5.0,HX+.45,2.75,0,2);
+  // Porterías situadas EXACTAMENTE en x=±HX y z=±GW. El marco tiene
+  // la altura jugable original de 3.6. La red se construye por píxeles.
+  const goalPost=new THREE.MeshBasicMaterial({color:0xfff6e4,roughness:1});
+  const goalShadow=new THREE.MeshBasicMaterial({color:0x705774,roughness:1});
+  const netCanvas=document.createElement('canvas');
+  netCanvas.width=128;netCanvas.height=64;
+  const nq=netCanvas.getContext('2d');nq.clearRect(0,0,128,64);
+  for(let xx=0;xx<=128;xx+=12){nq.fillStyle='rgba(248,233,229,.83)';nq.fillRect(xx,0,2,64)}
+  for(let yy=0;yy<=64;yy+=10){nq.fillStyle='rgba(249,229,225,.76)';nq.fillRect(0,yy,128,2)}
+  const goalNet=new THREE.CanvasTexture(netCanvas);goalNet.encoding=THREE.sRGBEncoding;
+  goalNet.magFilter=goalNet.minFilter=THREE.NearestFilter;
+  goalNet.generateMipmaps=false;SCENIC_TEXTURES.push(goalNet);
+  function goalBox(w,h,d,material,x,y,z){
+   const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+   mesh.position.set(x,y,z);root.add(mesh);return mesh;
+  }
+  for(const side of [-1,1]){
+   // Sombra y marco: dos postes y travesaño que abrazan la abertura real.
+   for(const gz of [-GW,GW]){
+    goalBox(.36,3.6,.42,goalShadow,side*(HX+.11),1.8,gz+.11);
+    goalBox(.3,3.5,.30,goalPost,side*HX,1.75,gz);
+   }
+   goalBox(.32,.34,2*GW+.28,goalPost,side*HX,3.6,0);
+   // Cortina de red en el fondo, sin ocupar ni tapar el campo.
+   const net=new THREE.Mesh(new THREE.PlaneGeometry(2*GW,3.3),
+    new THREE.MeshBasicMaterial({map:goalNet,transparent:true,opacity:.84,
+     side:THREE.DoubleSide,depthWrite:false}));
+   net.rotation.y=Math.PI/2;net.position.set(side*(HX+1.85),1.74,0);
+   root.add(net);
+   for(const z of [-GW,GW]){
+    goalBox(.18,.18,1.2,goalShadow,side*(HX+.92),.14,z);
+   }
+  }
   // Near wall sits outside the field and never blocks the active players.
   addPlane('front_wall',79,0,-3.2,HZ+12,4);
   for(const x of [-32,-15,15,32])
