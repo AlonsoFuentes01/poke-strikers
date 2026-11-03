@@ -494,6 +494,78 @@ function build(o){
   m.rotation.x=-Math.PI/2;m.position.set(x,-.015,0);scene.add(m);
  }
 
+
+ // Gran canal de lava y camino inferior, enteramente ilustrados y fuera del juego.
+ // Ocupa el hueco que quedaba del color del cielo en la animación inclinada.
+ const riverArt=canvas(1152,576,q=>{
+  rect(q,0,0,1152,576,C.ink);
+  // Borde superior de muralla: 16-bit, mismo tamaño de sillar que la fortaleza.
+  rect(q,0,0,1152,96,C.stone);
+  bricks(q,0,1,1152,95,.70);
+  rect(q,0,0,1152,11,C.light);
+  rect(q,0,83,1152,18,C.ink);
+  // Tres canales que entran desde arcos en el muro.
+  for(const x of [177,575,974]){
+   rect(q,x-55,18,110,100,C.ink);
+   poly(q,[[x-55,81],[x-46,31],[x-23,12],[x+23,12],[x+46,31],[x+55,81]],C.ink);
+   rect(q,x-42,64,84,40,'#923738');
+   for(let k=0;k<9;k++){
+    rect(q,x-35+k*8,65+(k%3)*4,6,52,k%2?C.hot:C.lava);
+    if(k%3===0)rect(q,x-33+k*8,72,2,40,C.core);
+   }
+  }
+  // Ribera de magma vibrante, crujidos, espuma, remolinos y piedra flotante.
+  rect(q,0,107,1152,274,'#7e343b');
+  rect(q,0,116,1152,255,C.lava);
+  for(let i=0;i<280;i++){
+   const x=rand()*1152,y=122+rand()*247,w=6+rand()*46;
+   rect(q,x,y,w,4+rand()*8,i%4===0?C.core:i%2===0?C.hot:'#dc4e35');
+   if(i%9===0)rect(q,x+5,y+4,w*.65,2,'#ffe8a3');
+  }
+  for(let i=0;i<16;i++){
+   const x=rand()*1152,y=140+rand()*200;
+   circ(q,x,y,8+rand()*17,'#eb8244');
+   circ(q,x,y,5+rand()*10,'#ffcb70');
+   circ(q,x,y,3+rand()*5,'#f4753b');
+  }
+  for(const [x,y,s] of [[85,197,1.4],[268,255,1.0],[406,189,1.6],
+                         [701,266,1.8],[846,193,1.2],[1040,252,1.4]]){
+   rock(q,x,y,s);rock(q,x+46*s,y+11*s,s*.6);
+   rect(q,x-46*s,y+26*s,92*s,5,C.hot);
+  }
+  // Margen inferior, pavimento y alfombra ceremonial de llegada.
+  rect(q,0,390,1152,186,C.ink);rect(q,0,401,1152,175,C.stone);
+  bricks(q,0,407,1152,162,.86);
+  rect(q,0,392,1152,15,C.light);
+  // Puente central de piedra corta el río a lo largo del eje del templo.
+  rect(q,506,101,141,476,C.ink);
+  rect(q,518,102,117,474,C.stone2);
+  bricks(q,522,107,109,459,.71);
+  for(let k=0;k<15;k++){
+   const y=116+k*30;
+   rect(q,510,y,132,8,C.ink);rect(q,517,y+1,119,3,C.shine);
+  }
+  rect(q,525,413,102,150,C.red);
+  rect(q,534,422,84,135,'#7f3947');
+  crest(q,574,498,.98);
+  // Entrada del primer plano con cadenas y pilastras a ambos extremos.
+  for(const x of [104,279,873,1048]){
+   rect(q,x-28,407,57,125,C.ink);
+   rect(q,x-22,412,45,112,C.stone2);
+   rect(q,x-34,403,69,15,C.light);
+   rect(q,x-35,524,71,12,C.ink);
+   for(let yy=429;yy<521;yy+=17)rect(q,x-17,yy,36,3,C.light);
+  }
+  for(const x of [78,1074]){
+   rock(q,x,530,1.2);crystal(q,x+30,554,.84);
+  }
+ });
+ const riverTexture=mkTex(riverArt);
+ const riverMesh=new THREE.Mesh(new THREE.PlaneGeometry(122,31),
+  new THREE.MeshBasicMaterial({map:riverTexture,side:THREE.DoubleSide,depthWrite:true}));
+ riverMesh.rotation.x=-Math.PI/2;riverMesh.position.set(0,-.032,HZ+23);
+ scene.add(riverMesh);
+
  // 5. Primer plano ilustrado; se retira al terminar la cámara cinematográfica.
  const foreground=new THREE.Group();scene.add(foreground);
  const foregroundArt=canvas(1536,300,q=>{
