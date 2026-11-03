@@ -2632,10 +2632,10 @@ function disposeCityV3(){
 function buildCityV3(){
  const cgroup=new THREE.Group();cgroup.name='CIUDAD_V3_BARRIO';cityG.add(cgroup);cityV3Root=cgroup;
  const surface=(color,roughness=1)=>new THREE.MeshStandardMaterial({color,roughness,metalness:0});
- const sidewalk=surface(0xb9b2a3),curb=surface(0xe2d8c6);
- const asphalt=surface(0x46505b),mark=new THREE.MeshBasicMaterial({color:0xe6d7a8});
- const brick=surface(0x94705e),dark=surface(0x5f6867);
- const greens=surface(0x537d62);
+ const sidewalk=surface(0xe0c39f),curb=surface(0xffe3ac);
+ const asphalt=surface(0x344354),mark=new THREE.MeshBasicMaterial({color:0xfff0b3});
+ const brick=surface(0xa86546),dark=surface(0x273846);
+ const greens=surface(0x42aa65),ink=new THREE.MeshBasicMaterial({color:0x1e2b3b,side:THREE.DoubleSide});
  const add=(geo,mat,x,y,z)=>{const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);cgroup.add(o);return o};
  const block=(w,h,d,mat,x,y,z)=>add(new THREE.BoxGeometry(w,h,d),mat,x,y,z);
  const groundY=-1.55;
@@ -2659,7 +2659,7 @@ function buildCityV3(){
  for(const crossX of [-55,67])for(let dx=-5;dx<=5;dx+=2.5)
   block(1.25,.022,11,curb,crossX+dx,groundY+.13,-54);
  // Losetas y canaletas en veredas; sin cubrir el campo.
- const joint=new THREE.MeshBasicMaterial({color:0x968f84});
+ const joint=new THREE.MeshBasicMaterial({color:0x87745f});
  for(let x=-172;x<=171;x+=7){
   block(.10,.014,3.2,joint,x,groundY+.145,-69);
   block(.10,.014,3.8,joint,x,groundY+.145,-40.2);
@@ -2672,7 +2672,7 @@ function buildCityV3(){
  let randomSeed=871;const rnd=()=>{randomSeed=randomSeed*16807%2147483647;return(randomSeed-1)/2147483646};
  for(let i=0;i<60;i++){
   const x=i*26+(rnd()-.5)*6,w=24+rnd()*16,h=65+rnd()*100,y=384-h;
-  sc.fillStyle=['#aac4b6','#99b6b1','#b9c8b7','#96b0aa'][i%4];sc.fillRect(x,y,w,h);
+  sc.fillStyle='#536e79';sc.fillRect(x-2,y-3,w+4,h+3);sc.fillStyle=['#97caba','#85b9be','#bdcfb3','#93b0c9'][i%4];sc.fillRect(x,y,w,h);
   sc.fillStyle='#7e9e9d';
   for(let u=x+6;u<x+w-5;u+=11)for(let v=y+13;v<370;v+=20)sc.fillRect(u,v,5,8);
  }
@@ -2682,15 +2682,15 @@ function buildCityV3(){
  const distant=add(new THREE.PlaneGeometry(450,105),new THREE.MeshBasicMaterial({map:skyTex,transparent:true,depthWrite:false,fog:false,side:THREE.DoubleSide}),0,54,-175);
  distant.renderOrder=-3;
  // Texturas de fachada dibujadas para cada manzana. Volumen 3D en paredes y techos.
- const wallCols=[0xc6ac93,0xb7b5a6,0xd2b8a1,0xb5bdac,0xd3bda5,0xbcb2a3,0xd1ad9a];
- const roofCols=[0x975e50,0x6e7770,0xa57259,0x777f74,0x917b65];
+ const wallCols=[0xf0bf8d,0x9bcfa6,0xe7a59a,0x96c6de,0xe2bd82,0xb9a6df,0xe79c7f];
+ const roofCols=[0xa34d44,0x397e6b,0xc17742,0x486ca0,0x895e7c];
  const shopNames=['POKÉ CAFÉ','LIBRERÍA','PANADERÍA','FLORERÍA','BICICLETAS','MERCADO','TALLER','KANTO MART'];
  const makeFacade=(index,floors,shop)=>{
   const c=document.createElement('canvas');c.width=192;c.height=320;const q=c.getContext('2d');
   const fill=(x,y,w,h,col)=>{q.fillStyle=col;q.fillRect(x,y,w,h)};
-  const walls=['#d2b69c','#b6c4ad','#ddc6ac','#c3b5a6','#ce9e84','#b5bfbb'];
+  const walls=['#f7c99e','#a6dcba','#f2b8a8','#a6d1ea','#f5d38c','#d5bdef'];
   fill(0,0,192,320,walls[index%walls.length]);
-  fill(0,0,192,16,index%2?'#7f806f':'#9c6958');fill(0,16,192,4,'#f4e1c6');
+  fill(0,0,192,16,index%2?'#335f65':'#864a40');fill(0,16,192,4,'#ffebbf');fill(0,20,192,3,'#263446');
   // Ladrillos, esquinas, cornisas y desgaste de fachada.
   for(let y=28;y<253;y+=28)for(let x=(y%56?0:14);x<192;x+=28){
    fill(x,y,19,2,'#815d5055');
@@ -2698,26 +2698,26 @@ function buildCityV3(){
   fill(0,251,192,8,'#94725c');
   for(let row=0;row<Math.min(3,floors);row++)for(let col=0;col<3;col++){
    const x=15+col*57,y=34+row*70;
-   fill(x-5,y-5,44,54,'#e9d5bc');fill(x,y,34,42,'#5a6667');
-   fill(x+3,y+3,13,29,'#a7c9c6');fill(x+19,y+3,12,29,'#8cafb9');
-   fill(x+16,y+2,3,38,'#e6d4bd');fill(x+2,y+33,31,3,'#d8c5ac');
-   fill(x-5,y+43,44,6,'#815d47');
+   fill(x-7,y-7,48,58,'#213242');fill(x-4,y-4,42,51,'#ffe8bb');fill(x,y,34,42,'#24394e');
+   fill(x+3,y+3,13,29,'#70c4e0');fill(x+19,y+3,12,29,'#4b9fc7');fill(x+5,y+5,3,9,'#d7f9ff');
+   fill(x+16,y+2,3,38,'#172c3c');fill(x+2,y+33,31,3,'#172c3c');
+   fill(x-6,y+42,46,8,'#1f3040');fill(x-4,y+44,42,4,'#ad6b4c');
    if(row===1&&col===1&&index%3===0){
-    fill(x-8,y+51,50,4,'#765746');
+    fill(x-10,y+50,54,6,'#1d2d3b');fill(x-8,y+52,50,3,'#a96447');
     for(let p=0;p<6;p++)fill(x-6+p*9,y+52,2,17,'#684a3e');
     fill(x+1,y+68,32,3,'#624b40');
    }
   }
-  fill(0,260,192,60,shop?'#a6a8a0':'#b6a28e');
+  fill(0,258,192,62,shop?'#f7d7ac':'#d4bc98');fill(0,258,192,5,'#203242');
   if(shop){
-   fill(2,263,188,25,['#6b957b','#a57367','#6e8b9b','#897b63'][index%4]);
+   fill(2,263,188,25,'#1b3040');fill(5,266,182,19,['#299969','#dd624e','#247dab','#be6f38'][index%4]);
    fill(7,267,178,17,'#ffffff22');
    q.textAlign='center';q.textBaseline='middle';q.font='bold 15px monospace';
-   q.fillStyle='#fff5d9';q.fillText(shopNames[index%shopNames.length],96,276);
-   fill(14,293,66,27,'#617985');fill(86,291,42,29,'#495a54');
-   fill(137,290,41,30,'#708a92');fill(18,296,23,15,'#bcd2c8');
+   q.fillStyle='#fff7c8';q.strokeStyle='#1a2936';q.lineWidth=3;q.strokeText(shopNames[index%shopNames.length],96,276);q.fillText(shopNames[index%shopNames.length],96,276);
+   fill(12,290,71,30,'#203446');fill(15,293,65,27,'#5ab8d2');fill(83,289,48,31,'#1d303e');fill(87,293,40,27,'#3c7e70');
+   fill(134,289,46,31,'#233744');fill(138,292,39,28,'#5faec7');fill(18,296,23,15,'#d4eff1');
    fill(80,288,7,32,'#e8d9c1');fill(132,288,6,32,'#e8d9c1');
-   for(let k=0;k<8;k++)fill(2+k*24,286,24,5,k%2?'#eed7b9':'#a66d59');
+   for(let k=0;k<8;k++)fill(2+k*24,286,24,5,k%2?'#ffe4a3':'#c85648');fill(0,284,192,2,'#1d2e3a');
   }else{
    fill(20,272,50,46,'#6c6c61');fill(23,276,44,34,'#b4bdad');
    fill(110,266,53,54,'#b98e72');fill(118,278,34,41,'#566e74');
@@ -2745,11 +2745,14 @@ function buildCityV3(){
    const z=back?-113:-83;
    const matId=i%wallCols.length,body=block(w,h,depth,sideMats[matId],cx,h*.5+groundY,z);
    const frontZ=z+depth/2+.045;
-   const facade=add(new THREE.PlaneGeometry(w,h),frontMats[matId],cx,h*.5+groundY,frontZ);
-   const cap=block(w+.7,.42,depth+.7,roofMats[matId],cx,h+groundY+.22,z);
+   add(new THREE.PlaneGeometry(w+.52,h+.52),ink,cx,h*.5+groundY,frontZ+.01);
+   const facade=add(new THREE.PlaneGeometry(w,h),frontMats[matId],cx,h*.5+groundY,frontZ+.05);
+   block(w+.95,.52,depth+.95,ink,cx,h+groundY+.2,z);
+   const cap=block(w+.72,.32,depth+.72,roofMats[matId],cx,h+groundY+.36,z);
    const parapet=block(w+.8,.62,.4,roofMats[matId],cx,h+groundY+.4,frontZ-.1);
    if(!back){
-    const awning=block(w*.84,.24,2.0,roofMats[matId],cx,4.75,frontZ+1.0);
+    block(w*.89,.34,2.1,ink,cx,4.7,frontZ+1);
+    const awning=block(w*.84,.24,2.0,roofMats[matId],cx,4.83,frontZ+1.0);
     const storeStep=block(w*.72,.16,1.35,curb,cx,groundY+.2,frontZ+.5);
     if(i%3===0){
      const by=h*.53+groundY;
