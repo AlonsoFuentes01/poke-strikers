@@ -710,11 +710,11 @@ const cityFloor={visible:false,material:{map:null,color:new THREE.Color(0xffffff
 // Cámara 2D ortográfica: posición, ángulo y centro ABSOLUTAMENTE FIJOS.
 const cam=new THREE.OrthographicCamera(-50,50,30,-30,.1,600);
 // La cámara se acerca, conserva el partido completo y sitúa la plaza justo detrás de la cancha.
-const CAMERA_2D_POS=new THREE.Vector3(0,120,105),CAMERA_2D_LOOK=new THREE.Vector3(0,7,-7);
+const CAMERA_2D_POS=new THREE.Vector3(0,120,143),CAMERA_2D_LOOK=new THREE.Vector3(0,5,-7);
 let targetZoom2D=1;
 function resetCamera2D(){cam.position.copy(CAMERA_2D_POS);cam.up.set(0,1,0);cam.lookAt(CAMERA_2D_LOOK);cam.zoom=1;targetZoom2D=1;cam.updateProjectionMatrix()}
 function resizeCamera2D(){
- const aspect=Math.max(.4,innerWidth/Math.max(1,innerHeight)),halfHeight=Math.max(23.7,34/aspect);
+ const aspect=Math.max(.4,innerWidth/Math.max(1,innerHeight)),halfHeight=Math.max(21.3,31/aspect);
  cam.left=-halfHeight*aspect;cam.right=halfHeight*aspect;cam.top=halfHeight;cam.bottom=-halfHeight;
  cam.updateProjectionMatrix();R.setSize(innerWidth,innerHeight);
 }
