@@ -2330,7 +2330,7 @@ function stormImpact(x,z,damage=true){
   new THREE.MeshBasicMaterial({map:stormScorchTex,transparent:true,opacity:1,depthTest:false,depthWrite:false,side:THREE.DoubleSide})
  );
  mark.rotation.x=-Math.PI/2;mark.position.set(x,.19,z);
- mark.renderOrder=56;stormLayer.add(mark);stormMarks.push({mesh:mark,age:0});
+ mark.renderOrder=2;stormLayer.add(mark);stormMarks.push({mesh:mark,age:0});
  if(stormMarks.length>8){const old=stormMarks.shift();stormLayer.remove(old.mesh);old.mesh.material.dispose();}
  stormBoltAge=.72;stormBoltSprite.visible=true;
  // El punto de impacto está en el fotograma (55,137), no en su centro (56,80).
