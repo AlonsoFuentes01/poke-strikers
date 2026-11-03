@@ -2611,6 +2611,124 @@ function ordinaryCityStadium(){
 // Los panoramas se liberan cuando cambia el estadio para no acumular texturas.
 const SCENIC_TEXTURES=[];
 function disposeScenicTextures(){for(const t of SCENIC_TEXTURES)t.dispose();SCENIC_TEXTURES.length=0;}
+// ================= 2.5D: VOLUMEN REAL + FACHADAS ILUSTRADAS =================
+// Los cuerpos dan perspectiva al mover la cámara. Sus fachadas son texturas Canvas 2D
+// y están fuera de la cancha: nada de mega-gradas que tapen el paisaje.
+function buildIllustratedDiorama(mode){
+ const schemes={
+  city:{body:0xc9b69e,roof:0x9f6655,edge:0x795947,colors:['#e4ccac','#cbafa1','#b0c6ad'],kind:'house'},
+  classic:{body:0xb5b2a6,roof:0x6b756d,edge:0x686c5e,colors:['#d3c7ac','#b1b9a9','#c3a58f'],kind:'arena'},
+  sunset:{body:0xc99d87,roof:0x9a6458,edge:0x755248,colors:['#e9be9e','#d19b8c','#d6b497'],kind:'house'},
+  beach:{body:0xe0c693,roof:0x71aeaa,edge:0x9a805b,colors:['#f3deb4','#c4e1cc','#ddcaa5'],kind:'kiosk'},
+  volcano:{body:0x4d3b39,roof:0x342c2c,edge:0x3a302d,colors:['#54413e','#66514c','#493a38'],kind:'basalt'},
+  arctic:{body:0x91bbc6,roof:0xe1f3f4,edge:0x688f9e,colors:['#a8d8e3','#c1e1ea','#94c2ce'],kind:'ice'},
+  space:{body:0x58638e,roof:0x8995bf,edge:0x344267,colors:['#57688c','#6f739d','#697fb0'],kind:'module'},
+  desert:{body:0xc59f72,roof:0xe0c394,edge:0x916f53,colors:['#d8b489','#c89e78','#ddc195'],kind:'ruin'}
+ };
+ const conf=schemes[mode]||schemes.city;
+ let seed=787+mode.charCodeAt(0)*43;
+ const rand=()=>{seed=seed*16807%2147483647;return(seed-1)/2147483646};
+ const makeTexture=(variation)=>{
+  const canvas=document.createElement('canvas');canvas.width=128;canvas.height=192;
+  const g=canvas.getContext('2d');
+  const fill=(x,y,w,h,c)=>{g.fillStyle=c;g.fillRect(x,y,w,h)};
+  fill(0,0,128,192,conf.colors[variation%conf.colors.length]);
+  const k=conf.kind;
+  if(k==='house'||k==='arena'){
+   fill(0,0,128,13,k==='arena'?'#5b766e':'#926451');
+   fill(0,13,128,5,'#ffffff44');
+   for(let row=0;row<3;row++)for(let col=0;col<3;col++){
+    const x=13+col*37,y=24+row*48;
+    fill(x-4,y-4,29,35,'#64574f');fill(x,y,21,27,'#546d7c');
+    fill(x+3,y+2,6,13,'#b8d9d6');fill(x+12,y+3,5,19,'#8aaeba');
+    fill(x-8,y+30,38,5,'#805a47');fill(x-8,y+35,38,3,'#c4ad86');
+    if(row===1){for(let b=0;b<5;b++)fill(x-5+b*8,y+36,2,14,'#765947')}
+   }
+   fill(0,175,128,17,k==='arena'?'#607f71':'#aa886b');
+   if(k==='arena'){fill(9,162,110,9,'#e4deac');fill(15,166,98,3,'#7b8e70')}
+  }else if(k==='kiosk'){
+   fill(12,62,104,125,'#d2b98a');fill(0,48,128,19,'#f3e0c0');
+   for(let i=0;i<8;i++)fill(i*16,30,16,19,i%2?'#fff0d3':'#5faea2');
+   fill(29,82,70,66,'#497f8a');fill(34,90,22,38,'#f1d8a8');
+   fill(24,148,80,7,'#ad8256');fill(12,179,104,13,'#a78968');
+  }else if(k==='basalt'){
+   for(let row=0;row<10;row++)for(let col=0;col<5;col++){
+    const x=col*29+(row%2)*-12,y=row*21;
+    fill(x,y,28,20,row%3===0?'#65514d':row%3===1?'#493a39':'#3b3434');
+    fill(x,y+17,26,3,'#2f292b');fill(x+25,y,3,18,'#30292b');
+   }
+   g.strokeStyle='#e96a32';g.lineWidth=4;
+   for(let n=0;n<8;n++){const x=8+n*16;g.beginPath();g.moveTo(x,4);g.lineTo(x+8,53);g.lineTo(x+4,94);g.lineTo(x+12,177);g.stroke();}
+   g.strokeStyle='#f7bb65';g.lineWidth=1;g.stroke();
+  }else if(k==='ice'){
+   fill(0,0,128,192,'#8dbdcc');
+   for(let i=0;i<9;i++){
+    const x=i*17+(i%2)*-5;
+    fill(x,0,8,192,i%3===0?'#d7f0f3':i%3===1?'#a7d6e4':'#83b2c7');
+    fill(x+8,(i*41)%152,3,30,'#ffffffa6');
+   }
+   for(let i=0;i<11;i++){
+    g.strokeStyle=i%2?'#edfaff':'#6b9db3';g.lineWidth=2;
+    g.beginPath();g.moveTo(rand()*128,0);g.lineTo(rand()*128,85+rand()*60);g.lineTo(rand()*128,192);g.stroke();
+   }
+   fill(0,0,128,9,'#ebfcff');
+  }else if(k==='module'){
+   fill(4,5,120,179,'#374965');
+   for(let y=13;y<178;y+=35){
+    fill(11,y,106,29,'#6779a0');fill(17,y+6,95,17,'#344c6b');
+    for(let x=24;x<101;x+=17)fill(x,y+10,10,9,(x+y)%3?'#8cd2e1':'#d0afdd');
+   }
+   fill(0,0,128,8,'#9caacf');fill(0,184,128,8,'#899ac5');
+  }else if(k==='ruin'){
+   for(let row=0;row<9;row++)for(let col=0;col<4;col++){
+    const x=col*34+(row%2)*-12,y=row*24;
+    fill(x,y,33,22,row%3===0?'#e7c69a':row%3===1?'#bd946b':'#d4ad81');
+    fill(x,y+20,31,3,'#957556');
+   }
+   fill(36,92,56,96,'#79624f');fill(46,105,36,83,'#5a4c40');
+   fill(35,83,58,14,'#efcf9e');fill(44,65,40,15,'#e4c390');
+  }
+  // Suciedad, desconchados y sombras dibujados (no geometría low-poly).
+  for(let n=0;n<350;n++){
+   const x=rand()*128,y=rand()*192;
+   fill(x,y,1+rand()*4,1+rand()*3,rand()<.5?'#ffffff22':'#302c2522');
+  }
+  const texture=new THREE.CanvasTexture(canvas);texture.encoding=THREE.sRGBEncoding;
+  texture.magFilter=THREE.NearestFilter;texture.minFilter=THREE.LinearFilter;
+  SCENIC_TEXTURES.push(texture);return texture;
+ };
+ const faceMats=[0,1,2].map(i=>new THREE.MeshStandardMaterial({
+  map:makeTexture(i),roughness:1,metalness:0,side:THREE.DoubleSide
+ }));
+ const sideMat=new THREE.MeshStandardMaterial({color:conf.body,roughness:.98});
+ const topMat=new THREE.MeshStandardMaterial({color:conf.roof,roughness:.92});
+ const edgeMat=new THREE.MeshStandardMaterial({color:conf.edge,roughness:.9});
+ const count=mode==='city'||mode==='sunset'?12:mode==='classic'?10:mode==='beach'?9:8;
+ const obj=new THREE.Object3D(),bodies=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),sideMat,count);
+ const caps=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),topMat,count);
+ const faces=[0,1,2].map(i=>new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),faceMats[i],count));
+ const frontLedges=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),edgeMat,count);
+ const counts=[0,0,0];
+ for(let i=0;i<count;i++){
+  const side=i%2?-1:1,slot=Math.floor(i/2),x=side*(54+slot*12+(rand()-.5)*5);
+  const z=-48-rand()*6.5;
+  const kind=conf.kind,w=kind==='basalt'?5.5+rand()*3:kind==='ice'?6+rand()*4:kind==='ruin'?6+rand()*3:7.3+rand()*4.6;
+  const h=kind==='house'?10+rand()*9:kind==='arena'?9+rand()*7:kind==='basalt'?8+rand()*13:kind==='ice'?10+rand()*12:kind==='module'?9+rand()*8:8+rand()*7;
+  const depth=kind==='basalt'?5.5:5+rand()*3;
+  const cy=h/2-1.5;
+  obj.rotation.set(0,0,0);
+  obj.position.set(x,cy,z);obj.scale.set(w,h,depth);obj.updateMatrix();bodies.setMatrixAt(i,obj.matrix);
+  obj.position.set(x,h-1.4,z);obj.scale.set(w+1.4,.32,depth+1);obj.updateMatrix();caps.setMatrixAt(i,obj.matrix);
+  obj.position.set(x,cy,z+depth*.5+.05);obj.scale.set(w,h,1);obj.updateMatrix();
+  const matIndex=i%3,index=counts[matIndex]++;faces[matIndex].setMatrixAt(index,obj.matrix);
+  const balcony=kind==='house'||kind==='arena'||kind==='kiosk'||kind==='module';
+  obj.position.set(x,balcony?h*.55-1.4:-20,z+depth*.5+.6);
+  obj.scale.set(w*.82,.18,.95);obj.updateMatrix();frontLedges.setMatrixAt(i,obj.matrix);
+ }
+ for(let i=0;i<3;i++){faces[i].count=counts[i];faces[i].instanceMatrix.needsUpdate=true;faces[i].frustumCulled=false;cityG.add(faces[i])}
+ for(const mesh of [bodies,caps,frontLedges]){mesh.instanceMatrix.needsUpdate=true;mesh.frustumCulled=false;cityG.add(mesh)}
+}
+
 // ================= ESCENARIOS HÍBRIDOS 2D/3D + EVENTOS DE AMBIENTE =================
 // Fondos pintados en canvas (pixel-art), elementos físicos 3D y Pokémon 2D reales.
 function ambientStory(mode){
@@ -2723,6 +2841,8 @@ function ambientStory(mode){
   mesh.position.set(0,height/2-2,z);mesh.renderOrder=-3+layer;cityG.add(mesh);return mesh;
  };
  const far=backdrop(0,-145,420,105),middle=backdrop(1,-87,258,71),front=backdrop(2,-56,174,37);
+ // Edificios/rocas/ruinas con volumen, fachadas 2D y profundidad 3D visible.
+ buildIllustratedDiorama(mode);
  BIO.anims.push((dt,T)=>{far.position.x=Math.sin(T*.045)*1.6;middle.position.x=Math.sin(T*.076+2)*1.0;front.position.x=Math.sin(T*.12+4)*.55;});
  // Pájaros/drones pixelados cruzan las capas 2D del paisaje.
  const fc=document.createElement('canvas');fc.width=80;fc.height=36;
