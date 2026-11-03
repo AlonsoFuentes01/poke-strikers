@@ -1482,7 +1482,8 @@ function postHit(cx,cz){
  B.x=cx+nx*rr*1.002;B.z=cz+nz*rr*1.002;B.sup=false;B.tg=null;sfx('bounce',1);
 }
 function update(){
- if(camIntroLeft>0||!ready||(paused&&!netOn())||NET.role==='guest'||(NET.role==='host'&&NET.open&&!NET.guestReady))return;if(cheer>0)cheer--;
+ if(camIntroLeft>0||!ready||(paused&&!netOn())||NET.role==='guest'||(NET.role==='host'&&NET.open&&!NET.guestReady))return;
+ stormGameTick();if(cheer>0)cheer--;
  if(freeze>0){if(goalCelebration)celebrationWalk();if(--freeze==0){$('msg').textContent='';finishGoalCelebration();kickoff();sfx('whistle')}return}
  if(FK&&FK.hold>0){if(--FK.hold===0){$('msg').textContent='';sfx('whistle')}return}   // pausa de la falta
  if(FK&&B.o!==FK.p){FK=null;FKV=null}                                                 // el balón salió (pase)
@@ -1651,7 +1652,7 @@ function l4Tick(){
 
 // ---------- flujo ----------
 async function start(){
- audioInit();ready=false;over=false;trClear();pitchU.wear.value=.38;document.body.classList.add('playing');$('menu').style.display='none';$('splash').style.display='none';$('end').style.display='none';$('msg').style.color='#fff';$('msg').textContent='CARGANDO…';
+ audioInit();ready=false;over=false;trClear();stormReset();pitchU.wear.value=.38;document.body.classList.add('playing');$('menu').style.display='none';$('splash').style.display='none';$('end').style.display='none';$('msg').style.color='#fff';$('msg').textContent='CARGANDO…';
  grp.clear();P=[];const T=sel.map(team);names=T.map(t=>t.n);cols=T.map(t=>t.c);CREST=T.map(t=>'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/'+t.p[0]+'.png');
  BENCH=[[],[]];SUBS=[0,0];
  [0,1].forEach(t=>T[t].p.forEach((id,i)=>{if(i<3)P.push(mkPlayer(id,T[t].c,t,i==2,i));else{const b=mkPlayer(id,T[t].c,t,false,i-3);b.g.visible=false;BENCH[t].push(b)}}));
@@ -1845,7 +1846,7 @@ const STADIUM_CLIMATE={
  space:{clear:100},
  desert:{clear:76,cloudy:24}
 };
-const CLIMATE_SECONDS={clear:[24,43],cloudy:[17,30],rain:[10,18],storm:[7,12],fog:[12,19],snow:[12,23]};
+const CLIMATE_SECONDS={clear:[24,43],cloudy:[17,30],rain:[10,18],storm:[24,38],fog:[12,19],snow:[12,23]};
 function climateNext(mode,previous){
  const weights=STADIUM_CLIMATE[mode]||STADIUM_CLIMATE.city;
  const entries=Object.entries(weights).filter(([kind])=>kind!==previous);
@@ -1859,9 +1860,10 @@ function weatherPhaseLength(kind){
  return min+Math.random()*(max-min);
 }
 function beginStadiumAtmosphere(){
- WXmode=(typeof NET!=='undefined'&&NET.role==='guest')?'fixed':'auto';
- // Inicio tranquilo; las fases meteorológicas se activan durante el partido.
- setWeather('clear',true);wxTimer=18+Math.random()*16;
+ if(typeof NET!=='undefined'&&NET.role==='guest')WXmode='fixed';
+ if(WXmode==='auto')setWeather('clear',true);
+ else setWeather(WXk,true);
+ wxTimer=18+Math.random()*16;
 }
 function stadiumWeatherTitle(mode,k){
  if(mode==='space')return ['✨','Cielo espacial'];
@@ -2164,8 +2166,77 @@ function updateDirt(dt){let any=false;
   if(drtP[i*3+1]<.03){drtP[i*3+1]=.03;drtV[i*3]=drtV[i*3+1]=drtV[i*3+2]=0}if(drtL[i]<=0)drtP[i*3+1]=-50}
  dirtPts.geometry.attributes.position.needsUpdate=any||drtAny;drtAny=any}
 
+
+const STORM_RADIUS=3.15,STORM_WARNING_TICKS=100,STORM_STUN_TICKS=78;
+let stormNext=760,stormTarget=null,stormBolt=null,stormBoltAge=0;
+const stormMarks=[],stormLayer=new THREE.Group();S.add(stormLayer);
+function stormMaterial(color,opacity){return new THREE.MeshBasicMaterial({color,opacity,transparent:true,depthTest:false,depthWrite:false,side:THREE.DoubleSide});}
+const stormRing=new THREE.Mesh(new THREE.RingGeometry(STORM_RADIUS-.26,STORM_RADIUS,48),stormMaterial(0xffe477,.92));
+const stormCircle=new THREE.Mesh(new THREE.CircleGeometry(STORM_RADIUS,48),stormMaterial(0xf8d24f,.14));
+for(const m of [stormRing,stormCircle]){m.rotation.x=-Math.PI/2;m.position.y=.15;m.visible=false;m.renderOrder=42;stormLayer.add(m);}
+const stormMarkGeometry=new THREE.CircleGeometry(1,32);
+function stormReset(){
+ stormNext=740+Math.floor(Math.random()*500);stormTarget=null;
+ stormRing.visible=stormCircle.visible=false;
+ if(stormBolt){stormLayer.remove(stormBolt);stormBolt.geometry.dispose();stormBolt.material.dispose();stormBolt=null;}
+ for(const m of stormMarks){stormLayer.remove(m.mesh);m.mesh.material.dispose();}
+ stormMarks.length=0;stormBoltAge=0;
+}
+function stormWarn(x,z,send=true){
+ stormTarget={x,z,left:STORM_WARNING_TICKS};
+ stormRing.visible=stormCircle.visible=true;
+ stormRing.position.x=stormCircle.position.x=x;
+ stormRing.position.z=stormCircle.position.z=z;
+ if(send&&NET.role==='host'&&NET.open)NET.evq.push(['cityStormWarn',x,z]);
+}
+function stormImpact(x,z,damage=true){
+ stormTarget=null;stormRing.visible=stormCircle.visible=false;
+ const mark=new THREE.Mesh(stormMarkGeometry,stormMaterial(0x272332,.46));
+ mark.rotation.x=-Math.PI/2;mark.position.set(x,.08,z);mark.scale.set(STORM_RADIUS*.82,STORM_RADIUS*.82,1);
+ mark.renderOrder=38;stormLayer.add(mark);stormMarks.push({mesh:mark,age:0});
+ if(stormMarks.length>8){const old=stormMarks.shift();stormLayer.remove(old.mesh);old.mesh.material.dispose();}
+ if(stormBolt){stormLayer.remove(stormBolt);stormBolt.geometry.dispose();stormBolt.material.dispose();}
+ const points=[new THREE.Vector3(x+1.1,16,z-.8),new THREE.Vector3(x-.6,11,z+.5),
+  new THREE.Vector3(x+.7,7,z-.3),new THREE.Vector3(x-.35,3,z+.35),new THREE.Vector3(x,.18,z)];
+ stormBolt=new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color:0xedfaff,transparent:true,opacity:1,depthTest:false,depthWrite:false}));
+ stormBolt.renderOrder=60;stormLayer.add(stormBolt);stormBoltAge=.36;
+ thFlash=Math.max(thFlash,.9);sfx('thunder');addDecal(x,z,2.5,9,20);dirtBurst(x,z,24);
+ if(damage){
+  for(const p of P){
+   if(!p.g.visible||Math.hypot(p.x-x,p.z-z)>STORM_RADIUS)continue;
+   p.stun=Math.max(p.stun,Math.round(STORM_STUN_TICKS*(p.stunMul||1)));p.mv=false;
+   if(B.o===p){B.o=null;B.tg=null;B.sup=false;B.x=p.x;B.z=p.z;B.vx=(p.x-x||1)*.12;B.vz=(p.z-z||1)*.12;}
+  }
+  if(NET.role==='host'&&NET.open)NET.evq.push(['cityStormHit',x,z]);
+ }
+}
+function stormGameTick(){
+ if(stadiumMode!=='city'||WXk!=='storm'||!ready||over||freeze>0)return;
+ if(stormTarget){if(--stormTarget.left<=0)stormImpact(stormTarget.x,stormTarget.z);return;}
+ if(--stormNext>0)return;
+ stormNext=730+Math.floor(Math.random()*580);
+ let x=(Math.random()-.5)*HX*1.55,z=(Math.random()-.5)*HZ*1.5;
+ if(P.length&&Math.random()<.55){const p=P[Math.floor(Math.random()*P.length)];x=p.x+(Math.random()-.5)*8;z=p.z+(Math.random()-.5)*8;}
+ stormWarn(cl(x,-HX+6,HX-6),cl(z,-HZ+4,HZ-4));
+}
+function stormVisualTick(dt){
+ if(stormTarget){
+  const pulse=Math.sin(performance.now()*.012);
+  stormRing.material.opacity=.74+.2*pulse;stormCircle.material.opacity=.13+.07*pulse;
+  stormRing.scale.setScalar(1+.035*pulse);
+ }else{stormRing.visible=stormCircle.visible=false;}
+ if(stormBolt){
+  stormBoltAge-=dt;stormBolt.material.opacity=Math.max(0,stormBoltAge/.36);
+  if(stormBoltAge<=0){stormLayer.remove(stormBolt);stormBolt.geometry.dispose();stormBolt.material.dispose();stormBolt=null;}
+ }
+ for(let i=stormMarks.length-1;i>=0;i--){
+  const m=stormMarks[i];m.age+=dt;m.mesh.material.opacity=.46*Math.max(0,1-m.age/9);
+  if(m.age>=9){stormLayer.remove(m.mesh);m.mesh.material.dispose();stormMarks.splice(i,1);}
+ }
+}
+
 function envTick(dt,t){
- bioTick(dt);
+ bioTick(dt);stormVisualTick(dt);
  const k=1-Math.exp(-dt*.8),T=WXP[WXk];for(const key in T)WXc[key]+=(T[key]-WXc[key])*k;
  if(WXc.thunder>.5){thTimer-=dt;if(thTimer<=0){thTimer=7+Math.random()*9;thFlash=1;setTimeout(()=>sfx('thunder'),600+Math.random()*900)}}
  thFlash=Math.max(0,thFlash-dt*3.2);
@@ -2807,7 +2878,10 @@ function netEvApply(e){
   case'dec':_addDecal(e[1],e[2],e[3],e[4],e[5]);break;case'drt':_dirtBurst(e[1],e[2],e[3]);break;
   case'goalcam':if(P[e[1]])beginGoalCelebration(e[2],P[e[1]],true);break;
   case'goaljump':if(goalCelebration&&goalCelebration.jumpT<0)goalJump();break;
-  case'sc':if(P[e[1]])_shotCue(P[e[1]]);break;case'ti':if(P[e[1]]&&P[e[2]])_ti(P[e[1]],P[e[2]]);break;case'wx':_setW(e[1]);break;case'sub':doSub(e[1],e[2],e[3]);renderSubs();break;
+  case'sc':if(P[e[1]])_shotCue(P[e[1]]);break;case'ti':if(P[e[1]]&&P[e[2]])_ti(P[e[1]],P[e[2]]);break;case'wx':_setW(e[1]);break;
+   case'cityStormWarn':stormWarn(e[1],e[2],false);break;
+   case'cityStormHit':stormImpact(e[1],e[2],false);break;
+   case'sub':doSub(e[1],e[2],e[3]);renderSubs();break;
  }
 }
 
