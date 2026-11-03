@@ -66,7 +66,7 @@
    return t;
   };
   const main=getAtlas('./assets/volcano-main.webp?v=1');
-  const minor=getAtlas('./assets/volcano-minor.webp?v=1');
+  const minor=getAtlas('./assets/volcano-minor.webp?v=2');
   const A={THREE,main,minor};current=A;
   const embers=[];
   const mk=(name,w,h,x,y,z,opts={})=>{
