@@ -2268,6 +2268,92 @@ function stadiumV2(mode,glow){
  }
 }
 
+// ================= V2.1 · MUNDO VIVO: VEGETACIÓN Y VIENTO =================
+// Plantas agrupadas por geometría: pocas draw calls, movimiento íntegro en GPU.
+function livingLandscape(mode){
+ const natural=mode==='city'||mode==='classic'||mode==='sunset'||mode==='beach'||mode==='desert';
+ if(!natural)return;
+ const desert=mode==='desert',beach=mode==='beach',sunset=mode==='sunset';
+ const seed=mode.length*91+mode.charCodeAt(0);let n=seed;
+ const rand=()=>{n=(n*16807)%2147483647;return(n-1)/2147483646};
+ const greens=desert?[0x8e9850,0x9b9145,0x727c39]:beach?[0x1eab6b,0x2ac884,0x53ba55]:[0x287e40,0x39974c,0x5ba953,0x2d6d42];
+ const stems=[],leaves=[],cols=[],orig=[];
+ const count=desert?240:beach?350:850;
+ const range=mode==='city'?100:135;
+ for(let i=0;i<count;i++){
+  let x=(rand()-.5)*range*2,z=-22-rand()*115;
+  if(rand()<.38){x=(rand()<.5?-1:1)*(HX+21+rand()*55);z=(rand()-.5)*115;}
+  const height=(desert?.8:1.3)+rand()*(beach?3.6:desert?2:2.8);
+  const w=.35+rand()*.65;
+  const k=rand()*6.283;
+  const col=new THREE.Color(greens[Math.floor(rand()*greens.length)]);
+  const base=stems.length/3;
+  stems.push(x-w,-1.2,z,x+w,-1.2,z,x,height-1.2,z);
+  for(let j=0;j<3;j++){cols.push(col.r,col.g,col.b);orig.push(k,height,j===2?1:0);}
+ }
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(stems,3));
+ geo.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));
+ geo.setAttribute('aWind',new THREE.Float32BufferAttribute(orig,3));
+ const mat=new THREE.ShaderMaterial({uniforms:{uT:BIO.T,uWind:{value:mode==='desert'?1.4:mode==='beach'?1.2:.85}},
+  vertexShader:`attribute vec3 color;attribute vec3 aWind;uniform float uT,uWind;varying vec3 vC;
+   void main(){vC=color;vec3 p=position;
+    float gust=sin(uT*1.6+aWind.x+p.x*.07+p.z*.03)*.65+sin(uT*.72+p.z*.12)*.35;
+    p.x+=aWind.z*gust*uWind*aWind.y*.35;
+    p.z+=aWind.z*sin(uT*1.15+aWind.x*1.7)*uWind*aWind.y*.18;
+    gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
+  fragmentShader:'varying vec3 vC;void main(){gl_FragColor=vec4(vC,1.);}',
+  side:THREE.DoubleSide,depthWrite:true});
+ const field=new THREE.Mesh(geo,mat);field.frustumCulled=false;cityG.add(field);
+ // Árboles tridimensionales en grupos instanciados, fuera de la cancha.
+ if(!desert){
+  const amount=mode==='city'?130:beach?95:180;
+  const trunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.24,.4,1,5),new THREE.MeshStandardMaterial({color:beach?0x947044:0x654b32,roughness:1}),amount);
+  const foliage=new THREE.InstancedMesh(new THREE.ConeGeometry(1,2.4,6),new THREE.MeshStandardMaterial({color:beach?0x38a45a:0x348c43,roughness:1,flatShading:true,side:THREE.DoubleSide}),amount);
+  const obj=new THREE.Object3D();
+  for(let i=0;i<amount;i++){
+   let x=(rand()-.5)*210,z=-35-rand()*95;
+   if(rand()<.35){x=(rand()<.5?-1:1)*(HX+22+rand()*52);z=(rand()-.5)*105;}
+   const h=3+rand()*5;
+   obj.position.set(x,h*.5-1.4,z);obj.scale.set(1,h,1);obj.rotation.set(0,rand()*6.28,0);obj.updateMatrix();trunks.setMatrixAt(i,obj.matrix);
+   obj.position.set(x,h+1-1.4,z);obj.scale.set(1.4+rand()*1.8,2.4+rand()*2.6,1.4+rand()*1.8);obj.updateMatrix();foliage.setMatrixAt(i,obj.matrix);
+   foliage.setColorAt(i,new THREE.Color(greens[Math.floor(rand()*greens.length)]));
+  }
+  foliage.material.onBeforeCompile=sh=>{
+   sh.uniforms.uWindTime=BIO.T;
+   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uWindTime;')
+    .replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.x+=sin(uWindTime*1.4+instanceMatrix[3].x*.14+instanceMatrix[3].z*.1)*max(0.,position.y+1.)*.12;');
+  };
+  foliage.material.customProgramCacheKey=()=> 'living-tree-wind-v1';
+  trunks.frustumCulled=false;foliage.frustumCulled=false;cityG.add(trunks,foliage);
+ }
+ // Partículas de viento: polen, arena o pequeñas hojas a distintas alturas.
+ const particles=mode==='desert'?180:mode==='beach'?115:95;
+ const p=new Float32Array(particles*3),speed=new Float32Array(particles);
+ for(let i=0;i<particles;i++){p[i*3]=(rand()-.5)*150;p[i*3+1]=2+rand()*19;p[i*3+2]=-15-rand()*75;speed[i]=2+rand()*5;}
+ const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(p,3));
+ const pm=new THREE.PointsMaterial({color:desert?0xffdf95:beach?0xf3e6b3:0xd6ed9d,size:desert?.6:.33,transparent:true,opacity:.65,depthWrite:false});
+ const dust=new THREE.Points(pg,pm);dust.frustumCulled=false;cityG.add(dust);
+ BIO.anims.push((dt,T)=>{for(let i=0;i<particles;i++){p[i*3]+=speed[i]*dt*(desert?2:1);p[i*3+1]+=Math.sin(T+i)*dt*.5;if(p[i*3]>85)p[i*3]=-85;}pg.attributes.position.needsUpdate=true;});
+}
+function livingCity(){
+ // Ciudad contemporánea con parques y edificios de baja altura, no rascacielos futuristas.
+ const wall=new THREE.MeshStandardMaterial({color:0xc6b49c,roughness:.95});
+ const roof=new THREE.MeshStandardMaterial({color:0x8a4c3a,roughness:.92});
+ const windows=new THREE.MeshStandardMaterial({color:0x739ab1,roughness:.32,metalness:.05});
+ let seed=821;const rnd=()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483646;};
+ const blocks=50;
+ const houses=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),wall,blocks);
+ const roofs=new THREE.InstancedMesh(new THREE.ConeGeometry(1,1,4),roof,blocks);
+ const ob=new THREE.Object3D();
+ for(let i=0;i<blocks;i++){
+  const x=-110+i*4.5,z=-67-rnd()*18,h=4+rnd()*8,w=3.5+rnd()*2;
+  ob.position.set(x,h/2-1.2,z);ob.scale.set(w,h,4);ob.rotation.set(0,0,0);ob.updateMatrix();houses.setMatrixAt(i,ob.matrix);
+  ob.position.set(x,h+.5-1.2,z);ob.scale.set(w*1.5,3,5.8);ob.rotation.set(0,Math.PI/4,0);ob.updateMatrix();roofs.setMatrixAt(i,ob.matrix);
+ }
+ cityG.add(houses,roofs);
+}
+
 // Shaders de arquitectura para los ocho estadios: juntas minerales y luz animada.
 function stadiumWallMaterial(base,accent){
  const mat=new THREE.MeshStandardMaterial({color:base,roughness:.82,metalness:.12,emissive:accent,emissiveIntensity:.12});
@@ -2367,10 +2453,10 @@ void main(){
  });
 }
 const _bs=buildStadium;buildStadium=function(m){
- if(BIOMES[m]){buildBiome(m);buildEnds(m);stadiumLightShow(m,BIOMES[m].glow);envApply();envChipUpdate();return}
+ if(BIOMES[m]){buildBiome(m);buildEnds(m);livingLandscape(m);stadiumLightShow(m,BIOMES[m].glow);envApply();envChipUpdate();return}
  BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=cityFloorTex;cityFloor.material.needsUpdate=true;
- _bs(m);cityLife(m);buildEnds(m);stadiumLightShow(m,m==='sunset'?0xff9d5c:m==='classic'?0x9bd9ff:0x2fd0ff);envApply();envChipUpdate()};
-cityLife('city');
+ _bs(m);if(m==='city')livingCity();else cityLife(m);buildEnds(m);livingLandscape(m);if(m!=='city')stadiumLightShow(m,m==='sunset'?0xff9d5c:0x9bd9ff);envApply();envChipUpdate()};
+livingCity();
 // Fondo de los arcos: gradas escalonadas, muro con franjas de luz, techo, vallas y skyline.
 function buildEnds(mode){
  const sunset=mode==='sunset',tw=HZ*2+16,TH=BIOMES[mode],wallCol=TH?TH.wall:(sunset?0x3a2748:0x1a2a58),glow=TH?TH.glow:(sunset?0xff9d5c:0x2fd0ff),
@@ -2395,7 +2481,7 @@ function buildEnds(mode){
   }
  }
 }
-buildEnds(stadiumMode);stadiumLightShow(stadiumMode,0x2fd0ff);
+buildEnds(stadiumMode);livingLandscape(stadiumMode);
 
 const DMW=1024,DMH=614,dmC=document.createElement('canvas');dmC.width=DMW;dmC.height=DMH;const dmq=dmC.getContext('2d');
 const dmT=srgb(new THREE.CanvasTexture(dmC));
