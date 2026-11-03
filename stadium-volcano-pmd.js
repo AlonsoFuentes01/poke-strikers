@@ -369,6 +369,206 @@ function build(o){
   const glow=new THREE.PointLight(0xff873b,.28,9);glow.position.set(x,7.1,HZ+7);
   foregroundG.add(glow);foregroundParts.push({flameMesh,glow,phase:rnd()*6});
  }
+
+ // Detallado de ruinas: grabados, sillares, nichos, estatuas y lava sobre la arquitectura.
+ // Una lámina pixel-art transparente aporta el microdetalle que los prismas no tienen.
+ const relief=canvas(1536,720,q=>{
+  const crack=(x,y,len,phase=0,glow=false)=>{
+   q.lineJoin='miter';q.lineCap='square';
+   const pts=[[x,y]];let px=x,py=y;
+   for(let j=0;j<5;j++){px+=Math.sin(phase+j*1.9)*len*.12;py+=len*(.12+.045*(j%2));pts.push([px,py]);}
+   q.beginPath();q.moveTo(pts[0][0],pts[0][1]);
+   for(let j=1;j<pts.length;j++)q.lineTo(pts[j][0],pts[j][1]);
+   q.strokeStyle=glow?'rgba(252,116,47,.88)':'rgba(23,16,29,.95)';
+   q.lineWidth=glow?4:6;q.stroke();
+   if(glow){q.strokeStyle='rgba(255,211,111,.86)';q.lineWidth=1.6;q.stroke();}
+  };
+  // Fachada lateral detallada hasta los extremos del encuadre.
+  for(const left of [true,false]){
+   const x0=left?0:1085,x1=left?451:1536;
+   for(let row=0;row<13;row++){
+    const y=264+row*31;
+    fill(q,x0,y,x1-x0,4,'rgba(19,15,27,.75)');
+    fill(q,x0,y+5,x1-x0,2,'rgba(167,118,127,.48)');
+    const offset=row%2?43:0;
+    for(let x=x0-18+offset;x<x1;x+=88){
+     fill(q,x,y+7,4,25,'rgba(19,13,23,.75)');
+     fill(q,x+5,y+10,25,3,'rgba(173,134,145,.25)');
+     if((row+Math.floor(x/88))%4===0){
+      fill(q,x+28,y+16,11,4,'rgba(208,160,128,.26)');
+      fill(q,x+51,y+24,3,3,'rgba(22,15,27,.8)');
+     }
+    }
+   }
+   // Focos de antorcha y nichos arqueados.
+   for(let i=0;i<3;i++){
+    const cx=left?85+i*120:1451-i*120,yy=350+(i%2)*76;
+    fill(q,cx-31,yy-65,62,99,'#231b2c');
+    poly(q,[[cx-31,yy-65],[cx,yy-98],[cx+31,yy-65]],'#231b2c');
+    fill(q,cx-22,yy-58,44,82,'#533a43');
+    poly(q,[[cx-22,yy-58],[cx,yy-80],[cx+22,yy-58]],'#533a43');
+    fill(q,cx-15,yy-26,30,46,'#211924');
+    fill(q,cx-7,yy-18,14,29,'#c2553d');
+    fill(q,cx-2,yy-22,5,26,'#ffd288');
+    fill(q,cx-35,yy+24,70,10,'#8b6f77');
+    fill(q,cx-39,yy+32,78,5,'#2b2032');
+   }
+   // Ornamentos metalicos antiguos: anillos y trazos.
+   for(let j=0;j<4;j++){
+    const x=left?51+j*99:1485-j*99,y=573-(j%2)*30;
+    q.strokeStyle='rgba(221,160,103,.75)';q.lineWidth=5;
+    q.beginPath();q.arc(x,y,15,0,Math.PI*2);q.stroke();
+    fill(q,x-17,y-3,34,6,'rgba(218,145,78,.6)');
+    fill(q,x-4,y-20,8,38,'rgba(26,18,31,.62)');
+   }
+   for(let i=0;i<15;i++){
+    const x=left?25+rnd()*400:1110+rnd()*400,y=270+rnd()*360;
+    crack(x,y,24+rnd()*76,i*.9,i%5===0);
+   }
+  }
+  // Junta tallada y pequeños símbolos alrededor del portón sin cubrir su hueco.
+  for(const side of [-1,1]){
+   const base=768+side*215;
+   for(let row=0;row<11;row++){
+    const y=265+row*29;
+    fill(q,base-27,y,54,4,'rgba(27,19,29,.8)');
+    fill(q,base-24,y+5,48,2,'rgba(194,145,132,.58)');
+    fill(q,base-22+(row%2)*21,y+6,3,20,'rgba(29,20,31,.65)');
+   }
+   for(let i=0;i<4;i++){
+    const x=768+side*(165+i*30);
+    fill(q,x-8,202,16,40,'#281e2b');
+    fill(q,x-6,206,12,32,i%2?'#c07d53':'#9b6658');
+    fill(q,x-3,208,6,15,'#f2b978');
+   }
+  }
+  // Parte alta: paneles ceremoniales triangulares entre torres.
+  for(const side of [-1,1]){
+   const x=768+side*330;
+   poly(q,[[x-80,247],[x,188],[x+80,247]],'#241c2b');
+   poly(q,[[x-65,242],[x,202],[x+65,242]],'#665161');
+   poly(q,[[x-43,236],[x,214],[x+43,236]],'#a36b56');
+   fill(q,x-41,239,82,7,'#231927');
+  }
+ });
+ const reliefMesh=new THREE.Mesh(new THREE.PlaneGeometry(102,47.8),
+  new THREE.MeshBasicMaterial({map:tex(relief),transparent:true,alphaTest:.035,
+   depthWrite:false,side:THREE.DoubleSide,fog:false,toneMapped:false}));
+ reliefMesh.position.set(0,4.0,-38.0);
+ // Detalle fino sobre la lámina, sin falsos volúmenes en el área del portón.
+ reliefMesh.renderOrder=1;group.add(reliefMesh);
+ // Bloques de piedra con azulejos grabados, hendiduras y bordes iluminados.
+ const engraved=tex(canvas(192,256,q=>{
+  fill(q,0,0,192,256,'#443440');
+  for(let row=0;row<11;row++){
+   const yy=row*24;
+   fill(q,0,yy,192,4,'#261d2d');fill(q,0,yy+4,192,2,'#866c79');
+   for(let xx=(row%2)*37-50;xx<192;xx+=73){
+    fill(q,xx,yy+6,4,18,'#2a2030');
+    fill(q,xx+7,yy+10,21,2,'#826775');
+    fill(q,xx+47,yy+17,8,3,'#302431');
+   }
+  }
+  for(let i=0;i<18;i++){
+   const x=rnd()*192,y=rnd()*256;
+   fill(q,x,y,4+rnd()*11,2,i%3?'#80616e':'#a98781');
+  }
+  // Largas fracturas con magma entre sillares.
+  for(let i=0;i<4;i++){
+   const x=13+i*53;fill(q,x,43+i*45,3,48,'#2b1b2d');
+   fill(q,x+2,53+i*45,2,28,i%2?'#f47c42':'#e19c5a');
+  }
+ }));
+ const carvedMat=new THREE.MeshStandardMaterial({map:engraved,roughness:1,flatShading:true});
+ // Revestir pilares importantes con piedra pixelada, sin crear cuerpos duplicados.
+ for(const side of [-1,1]){
+  const sx=side*50;
+  propBlock(10.8,12.3,.19,sx-side*.65,8,-33.55,carvedMat);
+  propBlock(4.6,9.1,.16,side*40,4.95,-29.45,carvedMat);
+  // Hornacinas, contrafuertes y balcones recortan la silueta de los costados.
+  for(let j=0;j<4;j++){
+   const xx=sx-side*(1.5+j*2.55),z=-32.4-j*.38;
+   propBlock(1.0,5.6+j*.4,1.2,xx,7.1,z,stoneDark);
+   propBlock(1.3,.53,1.55,xx,10+j*.24,z,stoneTop);
+   propBlock(.3,3.3,.15,xx,6.3,z+.84,emberMat);
+  }
+ }
+ // Estatuas guardianas basadas en siluetas talladas, no en personajes Pokemon.
+ const guardianTex=tex(canvas(160,228,q=>{
+  poly(q,[[17,224],[13,197],[35,185],[44,111],[31,96],[43,52],[58,38],[53,12],[77,30],
+   [99,12],[111,46],[130,59],[124,95],[139,128],[124,184],[146,215]],'#221c2b');
+  poly(q,[[29,214],[40,191],[54,170],[58,101],[48,77],[61,51],[78,43],[92,55],
+   [111,47],[119,88],[108,124],[117,171],[130,211]],'#554252');
+  poly(q,[[57,80],[65,60],[78,64],[89,59],[104,80],[98,95],[62,97]],'#89717c');
+  poly(q,[[44,115],[29,90],[28,126],[52,158]],'#726071');
+  poly(q,[[115,115],[133,90],[135,126],[111,158]],'#302537');
+  fill(q,60,99,15,5,'#ff9b4c');fill(q,89,99,13,5,'#ff9b4c');
+  fill(q,64,100,7,3,'#ffe2a1');fill(q,91,100,7,3,'#ffe2a1');
+  poly(q,[[64,146],[82,134],[102,146],[85,159]],'#ae7965');
+  for(let k=0;k<9;k++)fill(q,46+k*8,182+(k%3)*5,5,3,k%2?'#9d7e82':'#251a2b');
+  fill(q,10,219,140,9,'#251c2c');fill(q,17,216,126,4,'#a18180');
+ }));
+ for(const side of [-1,1]){
+  const statue=new THREE.Mesh(new THREE.PlaneGeometry(8.1,11.6),
+   new THREE.MeshBasicMaterial({map:guardianTex,transparent:true,alphaTest:.08,side:THREE.DoubleSide,depthWrite:false}));
+  statue.position.set(side*43,7.3,-28.6);group.add(statue);
+  propBlock(9.0,1.8,5.6,side*43,.9,-28.8,stoneDark);
+  propBlock(8.7,.35,5.7,side*43,2,-28.8,stoneTop);
+  // Secciones de cadena suspendida alrededor del pedestal.
+  for(let k=0;k<5;k++){
+   const chain=new THREE.Mesh(new THREE.TorusGeometry(.43,.11,5,8),trimMat);
+   chain.rotation.y=Math.PI/2;chain.position.set(side*(39.6+k*1.72),4.9-Math.sin(k*Math.PI/4)*1.5,-25.65);
+   group.add(chain);
+  }
+ }
+ // Bloques ornamentales de foreground: musgo de ceniza, grietas y runas.
+ const rimTexture=tex(canvas(768,128,q=>{
+  fill(q,0,0,768,128,'#443440');
+  for(let row=0;row<5;row++){
+   const y=row*26;
+   fill(q,0,y,768,5,'#211827');fill(q,0,y+5,768,2,'#947b82');
+   for(let x=((row%2)*39)-50;x<768;x+=79){
+    fill(q,x,y+7,4,18,'#211a28');
+    fill(q,x+12,y+12,23,3,'#826878');
+   }
+  }
+  for(let i=0;i<34;i++){
+   let x=12+i*23+Math.sin(i*4)*7;
+   fill(q,x,68+(i%5)*7,3,23,'#261d2d');
+   if(i%3===0){fill(q,x+1,78+(i%5)*7,2,9,C.lava);fill(q,x+1,80+(i%5)*7,1,5,C.hot);}
+  }
+  for(let i=0;i<24;i++){
+   const x=rnd()*768,y=rnd()*128;
+   fill(q,x,y,3+rnd()*8,2,i%3===0?'#c18d75':'#2c2332');
+  }
+ }));
+ const rimSlab=new THREE.Mesh(new THREE.PlaneGeometry(75.5,4.0),
+  new THREE.MeshBasicMaterial({map:rimTexture,transparent:false,side:THREE.DoubleSide}));
+ rimSlab.position.set(0,5.4,HZ+7.0);foregroundG.add(rimSlab);
+ // Balconies y escaleras ocultas, en franjas de ambos lados para que no haya huecos.
+ for(const side of [-1,1]){
+  for(let k=0;k<6;k++){
+   const x=side*(26+k*5.2),z=-25-k*.55;
+   propBlock(4.8,1.1,3.8,x,.8+k*.45,z,stoneDark);
+   propBlock(4.4,.23,3.6,x,1.45+k*.45,z,stoneTop);
+   if(k%2===0){
+    const g=new THREE.Mesh(new THREE.DodecahedronGeometry(1.05,0),stoneFace);
+    g.position.set(x,.9+k*.45,z+.4);g.rotation.y=k*.7;group.add(g);
+   }
+  }
+ }
+ // Distancia: partículas en capas, no un volumen denso.
+ const ashTexture=tex(canvas(32,32,q=>{
+  fill(q,12,8,8,9,'#99828f');fill(q,16,12,6,4,'#dcb2a0');fill(q,9,17,9,5,'#594759');
+ }));
+ const ash=[];
+ for(let i=0;i<28;i++){
+  const m=new THREE.Sprite(new THREE.SpriteMaterial({map:ashTexture,transparent:true,opacity:.33,depthWrite:false}));
+  m.scale.set(.28+rnd()*.4,.22+rnd()*.3,1);
+  group.add(m);
+  ash.push({m,x:(rnd()-.5)*118,y:2+rnd()*16,z:-25-rnd()*38,phase:rnd()*10,speed:.2+rnd()*.65});
+ }
+
  group.userData.pmdSetIntro=mix=>{
   // Objetos bajos y cercanos desaparecen cuando la cámara termina de subir.
   const k=Math.max(0,Math.min(1,(mix-.45)/.35));
@@ -377,6 +577,11 @@ function build(o){
  };
 
  group.userData.pmdTick=(dt,t)=>{
+  for(const a of ash){
+   const p=(t*.00015*a.speed+a.phase)%1;
+   a.m.position.set(a.x+Math.sin(t*.0005+a.phase)*1.4,a.y+p*8,a.z);
+   a.m.material.opacity=.3*Math.sin(Math.PI*p);
+  }
   for(const item of animateParts)if(item.flag)item.flag.rotation.y=Math.sin(t*.0015+item.phase)*.07;
   for(const item of foregroundParts){
    const w=Math.sin(t*.009+item.phase),h=Math.sin(t*.012+item.phase);
