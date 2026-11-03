@@ -3445,7 +3445,7 @@ function render(t){pollSplashPad();aimTick(t);ctlTick(t);const dt=Math.min(.1,cl
   }
   camLook.lerp(lookT,1-Math.exp(-dt*5));cam.lookAt(camLook);
   if(!isFinite(cam.position.x+cam.position.y+cam.position.z)){cam.position.set(0,13.5,21);camLook.set(0,.6,0);lookT.copy(camLook)}
-  if((t|0)%2===0)crowd.forEach(c=>{if(!c.fit&&c.anim.ready&&c.anim.box){const b=c.anim.box,bh=b.y1-b.y0+1,bw=b.x1-b.x0+1;let k=c.hc/bh;if(bw*k>2.6)k=2.6/bw;c.s.scale.set(c.anim.fw*k,c.anim.fh*k,1);c.s.position.x+=(c.anim.fw/2-(b.x0+b.x1+1)/2)*k;c.by=c.baseY+(b.y1+1-c.anim.fh/2)*k+.02;c.s.position.y=c.by;c.fit=true}c.s.position.y=c.by+Math.abs(Math.sin(t*.004*c.sp+c.ph))*(cheer>0?.12:.025);if(c.anim.ready&&c.anim.frames.length>1){c.anim.elapsed+=dt;if(c.anim.elapsed>.18){c.anim.elapsed=0;c.anim.frame=(c.anim.frame+1)%c.anim.frames.length;c.anim.mat.map=c.anim.frames[c.anim.frame];c.anim.mat.needsUpdate=true;}}});
+  if((t|0)%2===0)crowd.forEach(c=>{if(!c.fit&&c.anim.ready&&c.anim.box){const b=c.anim.box,bh=b.y1-b.y0+1,bw=b.x1-b.x0+1;let k=c.hc/bh;if(bw*k>2.6)k=2.6/bw;c.s.scale.set(c.anim.fw*k,c.anim.fh*k,1);c.s.position.x+=(c.anim.fw/2-(b.x0+b.x1+1)/2)*k;c.by=c.baseY+(b.y1+1-c.anim.fh/2)*k+.02;c.s.position.y=c.by;c.fit=true}c.s.position.y=stadiumMode==='city'?c.by:c.by+Math.abs(Math.sin(t*.004*c.sp+c.ph))*(cheer>0?.12:.025);if(stadiumMode!=='city'&&c.anim.ready&&c.anim.frames.length>1){c.anim.elapsed+=dt;if(c.anim.elapsed>.18){c.anim.elapsed=0;c.anim.frame=(c.anim.frame+1)%c.anim.frames.length;c.anim.mat.map=c.anim.frames[c.anim.frame];c.anim.mat.needsUpdate=true;}}});
   if(conf.visible){for(let i=0;i<NC;i++){cp[i*3+1]-=.12;cp[i*3]+=Math.sin(t*.003+i)*.02}conf.geometry.attributes.position.needsUpdate=true;if(!cheer)conf.visible=false}
  }
  gfxShake(1);R.render(S,cam);gfxShake(-1);
@@ -3715,8 +3715,8 @@ function dugTick(t){
 
  if(t-dugT>300){dugT=t;try{dugSync()}catch(e){}}
 
- dugSprites.forEach(s=>{const u=s.userData,ph=u.ph||0,hop=Math.max(0,Math.sin(t*.0042+ph)),j=cheer>0?Math.abs(Math.sin(t*.011+ph))*1.1:0;
-  s.position.y=(u.y0||1.15)+hop*.16+j;s.rotation.z=Math.sin(t*.0023+ph)*.07+(cheer>0?Math.sin(t*.02+ph)*.12:0);s.scale.set(1-hop*.03,1+hop*.05+j*.04,1);
+ dugSprites.forEach(s=>{const u=s.userData,ph=u.ph||0,hop=stadiumMode==='city'?0:Math.max(0,Math.sin(t*.0042+ph)),j=stadiumMode==='city'?0:cheer>0?Math.abs(Math.sin(t*.011+ph))*1.1:0;
+  s.position.y=(u.y0||1.15)+hop*.16+j;s.rotation.z=stadiumMode==='city'?0:Math.sin(t*.0023+ph)*.07+(cheer>0?Math.sin(t*.02+ph)*.12:0);s.scale.set(1-hop*.03,1+hop*.05+j*.04,1);
   if(u.pmdAnim&&u.pmdAnim.ready&&u.pmdAnim.mat.map!==s.material.map){s.material.map=u.pmdAnim.mat.map;s.material.needsUpdate=true;}if(typeof SPT!=='undefined')s.material.color.copy(SPT)});
 }
 function gfxTick(dt,t){
