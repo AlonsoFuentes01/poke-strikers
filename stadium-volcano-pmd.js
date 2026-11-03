@@ -408,21 +408,60 @@ function build(o){
   }
   for(let xx=594;xx<940;xx+=19)r(q,xx,486,13,4,C.stoneLight);
   r(q,552,502,435,8,C.ink);r(q,560,501,419,4,C.stoneLight);
-  // Stalls with striped awnings and wooden counters.
-  for(const [x,w] of [[117,200],[1218,204]]){
-   r(q,x,337,w,162,C.ink);r(q,x+6,344,w-12,150,C.stone);
-   r(q,x+22,380,w-44,98,C.wood);r(q,x+29,385,w-58,84,C.water);
-   r(q,x+11,348,w-22,31,C.roofDark);
-   for(let j=0;j<9;j++){const sx=x+11+j*(w-22)/9;
-    r(q,sx,348,(w-22)/9,29,j%2?C.stoneLight:C.roof);}
-   r(q,x+10,476,w-20,11,C.wood);
+  // Graderías volcánicas secundarias con muros tallados en la ladera.
+  // Misma escala y límites de Ciudad, sin puestos de comercio ni toldos.
+  for(const [x,w] of [[110,209],[1217,209]]){
+   r(q,x-10,333,w+20,167,C.ink);
+   r(q,x-3,340,w+6,151,C.stoneDark);
+   for(let row=0;row<8;row++){
+    const y=345+row*18;
+    r(q,x,y,w,3,C.ink);
+    r(q,x+4,y+4,w-8,2,C.stoneLight);
+    for(let xx=x+5+((row%2)*22);xx<x+w-7;xx+=44)
+     r(q,xx,y+7,3,10,C.ink);
+   }
+   // Ventanas arqueadas que muestran magma debajo de los espectadores.
+   for(let j=0;j<4;j++){
+    const xx=x+20+j*47;
+    r(q,xx-9,410,35,67,C.ink);
+    poly(q,[[xx-9,427],[xx-3,414],[xx+9,409],
+      [xx+20,414],[xx+26,427]],C.ink);
+    r(q,xx,428,18,45,C.water);
+    r(q,xx+7,435,4,35,C.waterLight);
+   }
+   r(q,x-12,325,w+24,15,C.ink);
+   r(q,x-8,328,w+16,7,C.stoneLight);
+   for(let j=0;j<Math.floor(w/37);j++){
+    const xx=x+j*37+4;
+    r(q,xx,304,29,23,C.ink);r(q,xx+4,307,20,16,C.stone);
+   }
+   // Lenguas de lava naturales a un lado de cada muro.
+   const lavaX=x===110?x-26:x+w+4;
+   r(q,lavaX,361,18,123,C.ink);
+   r(q,lavaX+4,363,10,117,C.water);
+   r(q,lavaX+6,368,3,103,C.waterLight);
+   r(q,lavaX-6,482,30,8,C.flower);
   }
-  // Lanterns and blue flags, deliberately away from the pitch.
-  for(const x of [81,452,1088,1451]){
-   r(q,x-5,293,12,214,C.ink);r(q,x-3,300,8,202,C.wood);
-   r(q,x-15,281,33,18,C.ink);r(q,x-11,286,25,12,C.stoneLight);
-   r(q,x+10,313,58,97,C.ink);r(q,x+14,318,50,82,C.banner);
-   r(q,x+21,327,34,8,C.waterLight);r(q,x+22,359,32,7,C.stoneLight);
+  // Braseros de piedra y estandartes rojos sobre pilastras.
+  for(const x of [83,451,1086,1462]){
+   r(q,x-9,347,20,156,C.ink);
+   r(q,x-5,351,12,147,C.stoneDark);
+   r(q,x-16,339,35,12,C.stoneLight);
+   r(q,x-27,331,56,12,C.ink);
+   r(q,x-23,333,49,6,C.stoneLight);
+   poly(q,[[x-21,331],[x-16,316],[x-3,302],
+     [x+3,314],[x+11,290],[x+22,329]],C.water);
+   poly(q,[[x-8,329],[x-2,310],[x+6,319],
+     [x+9,328]],C.waterLight);
+  }
+  for(const x of [261,497,1042,1282]){
+   r(q,x,340,10,142,C.ink);r(q,x+3,344,4,134,C.stone);
+   r(q,x+10,349,48,79,C.ink);
+   poly(q,[[x+14,354],[x+54,358],[x+51,414],
+     [x+31,431],[x+14,411]],C.banner);
+   r(q,x+18,363,29,6,C.stoneLight);
+   circle(q,x+33,386,9,C.stoneLight);
+   circle(q,x+33,386,5,C.roofDark);
   }
   for(let i=0;i<18;i++)flowers(q,36+i*85,497);
   // Escaleras monumentales: pasamanos, huellas y zócalos sombreados.
@@ -435,29 +474,29 @@ function build(o){
     r(q,sx+3,yy+12,77,3,'rgba(80,67,84,.17)');
    }
   }
-  // Jardineras sobre pedestales, arbustos y flores a distintas alturas.
+  // En los antiguos maceteros: altares de roca con cristales volcánicos.
   for(const x of [35,212,426,1000,1212,1462]){
-   r(q,x-36,446,72,47,C.ink);r(q,x-31,452,62,34,C.stone);
+   r(q,x-36,446,72,48,C.ink);r(q,x-30,452,61,34,C.stoneDark);
    r(q,x-40,442,80,12,C.stoneLight);
-   r(q,x-26,438,54,9,C.treeDark);
-   for(let j=0;j<8;j++){
-    circle(q,x-30+j*9,436+(j%2)*3,7,j%2?C.tree:C.treeLight);
-    r(q,x-27+j*8,427-(j%3)*4,6,5,j%2?C.flower:C.flower2);
+   r(q,x-26,438,54,9,C.ink);
+   for(let j=0;j<3;j++){
+    const xx=x-21+j*20,h=19+(j%2)*16;
+    poly(q,[[xx-10,440],[xx-8,440-h*.59],[xx,440-h],
+      [xx+9,440-h*.61],[xx+10,440]],C.ink);
+    poly(q,[[xx-6,439],[xx-5,440-h*.56],[xx,443-h],
+      [xx+6,440-h*.53],[xx+7,439]],j%2?C.flower2:C.flower);
+    r(q,xx-1,440-h+5,2,8,C.waterLight);
    }
   }
-  // Ornamental lanterns: frames and warm glass.
+  // Antorchas fijadas a la roca: sin farolas ni banderines urbanos.
   for(const x of [44,456,1078,1496]){
-   r(q,x-5,369,11,125,C.ink);r(q,x-3,374,6,119,C.wood);
-   r(q,x-18,351,35,35,C.ink);r(q,x-12,355,24,27,'#f4d38e');
-   r(q,x-8,359,11,15,'#fff2b5');r(q,x-19,349,37,7,C.stoneLight);
+   r(q,x-7,373,15,124,C.ink);r(q,x-3,378,7,115,C.stoneDark);
+   r(q,x-20,352,40,34,C.ink);r(q,x-15,355,30,26,C.stone);
+   r(q,x-25,344,51,13,C.stoneLight);
+   poly(q,[[x-18,343],[x-17,326],[x-5,308],
+     [x+1,319],[x+11,299],[x+19,338]],C.water);
+   poly(q,[[x-9,341],[x-5,323],[x+4,319],[x+9,340]],C.waterLight);
   }
-  // Banderines de la ciudad y pilastras, no personajes artificiales.
-  for(const x of [261,497,1042,1282]){
-   r(q,x,343,10,142,C.ink);r(q,x+4,345,4,136,C.wood);
-   r(q,x+10,352,47,66,C.banner);
-   r(q,x+13,356,39,5,C.waterLight);r(q,x+16,390,30,4,C.stoneLight);
-  }
-
   r(q,0,539,1536,13,C.stoneLight);r(q,0,553,1536,10,C.ink);
  });
  const foreground=canvas(1024,160,q=>{
