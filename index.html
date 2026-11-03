@@ -768,43 +768,9 @@ async function loadPMDSprite(p){
   m.position.y=H2*.5;p.spOY=H2*.5;m.renderOrder=3;p.g.add(m);p.spriteMesh=m;p.spriteFallback=true;
  }
 }
-// cancha
-const cv=document.createElement('canvas');cv.width=1200;cv.height=720;const g=cv.getContext('2d');
-function paintGrass(q,W,H){
- const sw=W/12;for(let i=0;i<12;i++){q.fillStyle=i%2?'#2f8d47':'#287b3d';q.fillRect(i*sw,0,sw,H)}
- for(let i=0;i<260;i++){const x=Math.random()*W,y=Math.random()*H,r=18+Math.random()*60,gr=q.createRadialGradient(x,y,0,x,y,r);
-  gr.addColorStop(0,Math.random()<.5?'rgba(120,200,90,.10)':'rgba(10,50,20,.13)');gr.addColorStop(1,'rgba(0,0,0,0)');q.fillStyle=gr;q.fillRect(x-r,y-r,r*2,r*2)}
- for(let i=0;i<26000;i++){const x=Math.random()*W,y=Math.random()*H,l=3+Math.random()*5;q.strokeStyle=Math.random()<.5?'rgba(140,215,110,.22)':'rgba(10,60,25,.28)';q.lineWidth=1;q.beginPath();q.moveTo(x,y);q.lineTo(x+(Math.random()-.5)*3,y-l);q.stroke()}
- // Desgaste real: bocas de gol, pisadas, regueros, cortes irregulares y tierra descubierta.
- const scx=W/1200,scy=H/720;
- q.save();
- const wearPatch=(x,y,rx,ry,strength)=>{
-  const gr=q.createRadialGradient(0,0,0,0,0,Math.max(rx,ry));
-  gr.addColorStop(0,'rgba(112,75,36,'+(strength*.67)+')');gr.addColorStop(.45,'rgba(127,92,48,'+(strength*.42)+')');gr.addColorStop(1,'rgba(78,62,30,0)');
-  q.save();q.translate(x,y);q.scale(rx/Math.max(rx,ry),ry/Math.max(rx,ry));
-  q.fillStyle=gr;q.beginPath();q.arc(0,0,Math.max(rx,ry),0,Math.PI*2);q.fill();q.restore();
- };
- for(const x of [65,1135]){
-  wearPatch(x*scx,360*scy,110*scx,220*scy,.72);
-  for(let i=0;i<1100;i++){
-   const a=Math.random()*Math.PI*2,rr=Math.sqrt(Math.random()),px=x*scx+Math.cos(a)*rr*93*scx,py=360*scy+Math.sin(a)*rr*172*scy;
-   q.strokeStyle=Math.random()<.65?'rgba(105,83,40,.27)':'rgba(165,135,78,.22)';
-   q.lineWidth=1+Math.random()*4;q.beginPath();q.moveTo(px,py);q.lineTo(px+(Math.random()-.5)*17*scx,py+(Math.random()-.5)*9*scy);q.stroke();
-  }
- }
- // Huellas de botas y barridos en pasillos frecuentes, no sobre el logo central.
- for(let i=0;i<800;i++){
-  const x=(85+Math.random()*1030)*scx,y=(Math.random()<.5?80+Math.random()*145:500+Math.random()*140)*scy;
-  q.strokeStyle=Math.random()<.65?'rgba(67,54,31,.19)':'rgba(205,198,133,.18)';
-  q.lineWidth=(.6+Math.random()*3)*scx;q.beginPath();q.moveTo(x,y);q.lineTo(x+(-8+Math.random()*16)*scx,y+(3+Math.random()*16)*scy);q.stroke();
- }
- q.restore();
-}
-paintGrass(g,1200,720);
-g.strokeStyle='#ffffffdd';g.lineWidth=6;g.strokeRect(10,10,1180,700);g.beginPath();g.moveTo(600,10);g.lineTo(600,710);g.stroke();
-g.strokeRect(10,200,180,320);g.strokeRect(1010,200,180,320);
-g.beginPath();g.arc(600,360,100,Math.PI,0);g.fillStyle='#e63946cc';g.fill();g.beginPath();g.arc(600,360,100,0,Math.PI);g.fillStyle='#ffffffcc';g.fill();
-g.fillStyle='#111';g.fillRect(500,352,200,16);g.beginPath();g.arc(600,360,28,0,7);g.fillStyle='#fff';g.fill();g.stroke();g.beginPath();g.arc(600,360,100,0,7);g.stroke();
+// Terreno inicial neutro. Todas las texturas PMD se pintan en stadium-city-pmd.js.
+const cv=document.createElement('canvas');cv.width=1024;cv.height=614;
+const g=cv.getContext('2d');g.fillStyle='#c9b7a6';g.fillRect(0,0,1024,614);
 const gnC=document.createElement('canvas');gnC.width=gnC.height=256;const gnq=gnC.getContext('2d');gnq.fillStyle='#808080';gnq.fillRect(0,0,256,256);
 for(let i=0;i<5200;i++){const x=Math.random()*256,y=Math.random()*256;gnq.strokeStyle=Math.random()<.5?'rgba(255,255,255,.35)':'rgba(0,0,0,.35)';gnq.lineWidth=1;gnq.beginPath();gnq.moveTo(x,y);gnq.lineTo(x+(Math.random()-.5)*2,y-2-Math.random()*4);gnq.stroke()}
 const grainT=new THREE.CanvasTexture(gnC);grainT.wrapS=grainT.wrapT=THREE.RepeatWrapping;grainT.repeat.set(40,24);grainT.anisotropy=8;
@@ -934,7 +900,7 @@ function mdPaintApron(mode){
  apron.material.map=t;apron.material.color.setHex(0xffffff);apron.material.needsUpdate=true;
 }
 
-const apC=document.createElement('canvas');apC.width=1024;apC.height=640;paintGrass(apC.getContext('2d'),1024,640);
+const apC=document.createElement('canvas');apC.width=512;apC.height=512;const apQ=apC.getContext('2d');apQ.fillStyle='#c9b7a6';apQ.fillRect(0,0,512,512);
 const apron=new THREE.Mesh(new THREE.PlaneGeometry(HX*2+16,HZ*2+12+DZ),new THREE.MeshStandardMaterial({map:srgb(new THREE.CanvasTexture(apC)),color:0x9aa89a,roughness:1}));apron.rotation.x=-Math.PI/2;apron.position.set(0,-.03,-DZ/2);S.add(apron);apron.material.onBeforeCompile=wxPatch;apron.material.customProgramCacheKey=()=>'apron-wx';
 // Antiguas porterías, vallas, gradas, focos, asientos y publicidad eliminados de S.
 // Su sustitución vive exclusivamente en stadium-city-pmd.js.
