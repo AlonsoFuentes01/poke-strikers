@@ -2285,18 +2285,18 @@ function dugSync(){
  const key=[names.join('|'),cols.join('|'),ids.map(a=>a.join(',')).join('/'),SUBS.join(','),mir].join('~');
  if(key===dugKey)return;dugKey=key;
  while(dugG.children.length){const o=dugG.children.pop();if(o.userData.own){(Array.isArray(o.material)?o.material:[o.material]).forEach(mt=>{if(mt.map&&!mt.map.userData.keep)mt.map.dispose()})}}dugSprites=[];
- const zf=-(HZ+.7),zbk=-(HZ+DZ+1.6),dep=zf-zbk,zc=(zf+zbk)/2,W=DUGW;
+ // Se usan las gradas PNG del escenario como banquillos, sin marquesinas 3D.
+ // Mantener sprites auténticos de los suplentes y entrenadores oficiales.
+ const zSeat=-(HZ+6.1);
  [0,1].forEach(t=>{
-  const cx=t?DUGX:-DUGX,col=cols[t];
-  window.PMD_CITY.buildBench({THREE,dugG,centerX:cx,frontZ:zf,backZ:zbk,
-   name:names[t],color:col,subs:SUBS[t],maxSubs:MAXSUB});
+  const cx=t?DUGX:-DUGX;
   ids[t].forEach((id,i)=>{
    const entry=crowdAnimFor(id);
    const material=new THREE.MeshBasicMaterial({map:entry.mat.map,transparent:true,
     alphaTest:.05,side:THREE.DoubleSide,depthWrite:false});
-   const pokemon=new THREE.Mesh(new THREE.PlaneGeometry(3.1,3.1).translate(0,1.55,0),material);
-   pokemon.position.set(cx-.6+i*3.2,.9,zbk+1.75);
-   pokemon.userData.ph=i*1.9+t*.7;pokemon.userData.y0=.9;
+   const pokemon=new THREE.Mesh(new THREE.PlaneGeometry(3.25,3.25).translate(0,1.625,0),material);
+   pokemon.position.set(cx-1.1+i*3.05,1.2,zSeat);
+   pokemon.userData.ph=i*1.9+t*.7;pokemon.userData.y0=1.2;
    pokemon.userData.pmdAnim=entry;
    pokemon.renderOrder=3;dugG.add(pokemon);dugSprites.push(pokemon);
   });
@@ -2402,8 +2402,8 @@ const _dv=new THREE.Vector3();
 function dugTrainerPos(){
  if(dugTr.length){const rc=R.domElement.getBoundingClientRect(),fl=typeof NETG!=='undefined'&&NETG.flip;
   dugTr.forEach(o=>{const im=o.im;if(!im.dataset.ok||!im.naturalHeight){return}
-   const cx=(o.t?DUGX:-DUGX)-5.6,z=-(HZ+DZ+.5);
-   _dv.set(cx,3.9,z).project(cam);const vis=_dv.z<1;const ty=(-_dv.y*.5+.5)*rc.height;
+   const cx=(o.t?DUGX:-DUGX)-5.6,z=-(HZ+6.1);
+   _dv.set(cx,3.65,z).project(cam);const vis=_dv.z<1;const ty=(-_dv.y*.5+.5)*rc.height;
    _dv.set(cx,.06,z).project(cam);const by=(-_dv.y*.5+.5)*rc.height;let sx=(_dv.x*.5+.5)*rc.width;if(fl)sx=rc.width-sx;
    const hh=by-ty,ww=hh*im.naturalWidth/im.naturalHeight;
    if(!vis||hh<8||hh>600||ready===false&&false){im.style.display='none';return}
