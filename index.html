@@ -2350,11 +2350,293 @@ function bDesert(){
  const hl=bAdd(new THREE.HemisphereLight(0xffe2b0,0xe0b070,.3));
 }
 
+// ================= PLAYA V4 · DIORAMA COSTERO GBA =================
+// Basado en la dirección artística aprobada: mar y barco lejano, acantilados,
+// arco de piedra, faro, paseo de madera y sombras de nubes sobre el césped.
+// La cámara y la geometría jugable originales NO se modifican.
+let BEACH_V4_ROOT=null;
+function disposeBeachV4(){
+ if(!BEACH_V4_ROOT)return;
+ BEACH_V4_ROOT.traverse(o=>{
+  if(o.geometry)o.geometry.dispose();
+  if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());
+ });
+ BEACH_V4_ROOT=null;
+}
+function bBeachV4(){
+ const root=new THREE.Group();root.name='PLAYA_V4_COSTA_GBA';cityG.add(root);BEACH_V4_ROOT=root;
+ let seed=93842;
+ const rnd=()=>{seed=seed*16807%2147483647;return(seed-1)/2147483646};
+ const canvas=(w,h,draw)=>{
+  const c=document.createElement('canvas');c.width=w;c.height=h;
+  const q=c.getContext('2d');q.imageSmoothingEnabled=false;
+  draw(q,w,h);return c;
+ };
+ const rect=(q,x,y,w,h,c)=>{q.fillStyle=c;q.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h))};
+ const polygon=(q,points,color,stroke='#203a50',lineWidth=4)=>{
+  q.beginPath();q.moveTo(points[0][0],points[0][1]);
+  for(let i=1;i<points.length;i++)q.lineTo(points[i][0],points[i][1]);
+  q.closePath();q.fillStyle=color;q.fill();
+  if(stroke){q.lineJoin='miter';q.lineWidth=lineWidth;q.strokeStyle=stroke;q.stroke();}
+ };
+ const tex=(c)=>{
+  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;
+  t.magFilter=THREE.NearestFilter;t.minFilter=THREE.LinearFilter;
+  t.generateMipmaps=false;SCENIC_TEXTURES.push(t);return t;
+ };
+ const plane=(c,x,y,z,w,h,transparent=true)=>{
+  const material=new THREE.MeshBasicMaterial({
+   map:tex(c),transparent,alphaTest:transparent?.015:0,
+   depthWrite:!transparent,side:THREE.DoubleSide,fog:false,toneMapped:false
+  });
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),material);
+  m.position.set(x,y,z);m.frustumCulled=false;root.add(m);return m;
+ };
+ const place=(geometry,material,x,y,z)=>{
+  const o=new THREE.Mesh(geometry,material);o.position.set(x,y,z);root.add(o);return o;
+ };
+ const block=(w,h,d,material,x,y,z)=>
+  place(new THREE.BoxGeometry(w,h,d),material,x,y,z);
+ const stone=new THREE.MeshStandardMaterial({color:0x816b56,roughness:1,flatShading:true});
+ const timber=new THREE.MeshStandardMaterial({color:0xa5744d,roughness:1});
+ const black=new THREE.MeshBasicMaterial({color:0x20374b});
+ const azure=new THREE.MeshBasicMaterial({color:0x41b9cf});
+ const white=new THREE.MeshBasicMaterial({color:0xf7ecce});
+ const foliage=new THREE.MeshBasicMaterial({color:0x39965a});
+ const cloud=(q,x,y,scale)=>{
+  // Volúmenes de nube dibujados en bloques pixelados, con base azul y borde blanco.
+  for(const [dx,dy,w,h] of [[-43,5,75,20],[-22,-10,78,27],[12,-23,74,38],[43,-8,54,25]]){
+   rect(q,x+dx*scale,y+dy*scale,w*scale,h*scale,'#8fc8f4');
+  }
+  for(const [dx,dy,w,h] of [[-45,-1,70,14],[-25,-16,72,25],[10,-30,69,31],[41,-14,48,19]]){
+   rect(q,x+dx*scale,y+dy*scale,w*scale,h*scale,'#ffffff');
+  }
+  rect(q,x-40*scale,y+20*scale,132*scale,4*scale,'#5eaff0');
+ };
+ // Fondo lejano: EL HORIZONTE, sin grada ni cancha duplicadas de la referencia.
+ const far=canvas(960,320,(q,w,h)=>{
+  const sky=['#1776e6','#218bf1','#3198f1','#4caaf4','#6fc5f2','#8bd5f0'];
+  sky.forEach((c,i)=>rect(q,0,i*36,w,40,c));
+  rect(q,0,215,w,105,'#0c73b8');
+  for(let i=0;i<5;i++)rect(q,0,221+i*21,w,18,
+    ['#0a79bd','#088dc8','#079cc8','#22b8ce','#3dc5c4'][i]);
+  // Islas boscosas y cordilleras de fondo.
+  polygon(q,[[0,218],[0,183],[44,171],[83,177],[115,150],[154,172],[209,166],[265,203],[325,218]],
+    '#358c85','#316382',3);
+  polygon(q,[[0,215],[0,198],[65,190],[104,199],[146,181],[194,199],[235,209],[295,219]],'#286b84',null);
+  polygon(q,[[278,220],[315,205],[340,211],[358,192],[386,204],[427,222]],'#5c9f9c',null);
+  for(let i=0;i<50;i++){
+   const x=rnd()*w,y=230+rnd()*82;
+   rect(q,x,y,6+rnd()*27,1+rnd()*2,i%4?'#91eef2':'#e1fdff');
+  }
+  // Altas nubes pixeladas y sombra azul.
+  cloud(q,70,61,1.05);cloud(q,345,105,1.22);
+  cloud(q,682,54,1.3);cloud(q,868,115,.72);
+  for(let i=0;i<25;i++){
+   const x=rnd()*w,y=20+rnd()*180;
+   rect(q,x,y,5+rnd()*19,2,'#d1eafa');
+  }
+ });
+ const farPlane=plane(far,0,60,-225,510,124,false);
+ // Siluetas intermedias: acantilados de formas orgánicas + arco de roca.
+ const mid=canvas(960,320,(q,w,h)=>{
+  // Acantilado izquierdo: roca pintada, vegetación y escaleras.
+  polygon(q,[[0,320],[0,82],[42,64],[86,40],[137,67],[159,103],[193,109],
+   [234,153],[273,157],[304,214],[314,320]],'#263c52','#203143',5);
+  polygon(q,[[7,315],[7,102],[48,76],[81,58],[129,81],[145,117],[184,123],
+   [214,173],[268,176],[293,230],[304,317]],'#bc9065','#263b4d',4);
+  for(let i=0;i<25;i++){
+   const x=25+rnd()*257,y=103+rnd()*197;
+   rect(q,x,y,9+rnd()*24,3+rnd()*8,i%3?'#e8be83':'#896d5e');
+  }
+  polygon(q,[[0,66],[48,54],[87,28],[126,57],[141,87],[94,103],[37,96],[0,121]],
+   '#2f8759','#193e45',4);
+  for(let i=0;i<20;i++){
+   const x=8+rnd()*240,y=67+rnd()*80;
+   rect(q,x,y,9+rnd()*18,4+rnd()*8,i%2?'#50b36b':'#86cc71');
+  }
+  // Arco pétreo costero a la derecha: hueco visible hacia el mar.
+  polygon(q,[[658,320],[665,198],[701,152],[724,118],[770,97],[818,111],
+   [859,146],[885,192],[898,318],[845,316],[835,201],[815,166],
+   [787,149],[758,155],[738,178],[724,222],[718,320]],
+   '#a97d5a','#273849',6);
+  polygon(q,[[661,319],[668,221],[692,171],[724,134],[742,126],[741,180],
+    [717,226],[706,319]],'#e8ba83',null);
+  polygon(q,[[840,316],[837,193],[817,152],[791,132],[829,146],[867,198],[884,317]],
+    '#826654',null);
+  for(let i=0;i<25;i++){
+   const x=682+rnd()*200,y=127+rnd()*165;
+   rect(q,x,y,8+rnd()*20,3+rnd()*7,i%3?'#e9bc82':'#836f59');
+  }
+  polygon(q,[[748,123],[786,89],[820,101],[843,145],[809,134],[764,144]],
+   '#39865c','#245545',4);
+  // Isla intermedia central y rocas que sobresalen de las olas.
+  polygon(q,[[390,293],[411,255],[449,244],[475,269],[488,307],[459,320],[405,320]],
+    '#b58f6b','#284153',4);
+  polygon(q,[[409,270],[444,251],[457,270],[451,286],[424,288]],'#e1bb83',null);
+  for(const [x,y,w0] of [[351,306,45],[525,308,34],[584,300,40]]){
+   polygon(q,[[x,y+19],[x+7,y+2],[x+w0*.5,y-9],[x+w0,y+8],[x+w0+5,y+19]],
+    '#aa8d74','#284457',3);
+   rect(q,x-8,y+15,w0+19,3,'#d4fcf5');
+  }
+  // Faro antiguo en alto, a la derecha, con franjas rojas y contorno oscuro.
+  rect(q,900,77,31,121,'#1c3248');
+  rect(q,905,83,22,113,'#f9ecd8');
+  for(let y=96;y<189;y+=33)rect(q,905,y,22,12,'#d65b50');
+  rect(q,895,70,39,12,'#1d3349');rect(q,899,60,31,14,'#fcf1dc');
+  rect(q,905,49,19,14,'#284b69');rect(q,908,54,13,8,'#ffe7a3');
+  rect(q,909,40,9,9,'#ffffff');rect(q,908,37,12,4,'#1d3144');
+  rect(q,896,194,40,9,'#344c55');
+  // Muelle y línea de playa que une ambas laderas por la parte inferior.
+  polygon(q,[[0,318],[304,295],[346,306],[594,311],[638,302],[960,317],[960,320]],
+    '#ecd09b','#c4a076',2);
+  for(let i=0;i<35;i++)rect(q,rnd()*960,311+rnd()*8,8+rnd()*17,2,'#fff1c9');
+ });
+ const midPlane=plane(mid,0,44,-138,380,94,true);
+ // Primer plano costero, recortado para que no tape bancas ni público.
+ const near=canvas(960,260,(q,w,h)=>{
+  polygon(q,[[0,260],[0,142],[35,118],[77,122],[121,163],[142,207],[177,228],[219,260]],
+    '#263e50','#1a2f42',5);
+  polygon(q,[[3,259],[3,151],[38,130],[77,140],[113,177],[145,220],[177,259]],
+    '#b38a63','#2a3b49',3);
+  for(let i=0;i<22;i++)rect(q,rnd()*164,152+rnd()*105,9+rnd()*22,3+rnd()*7,i%3?'#e4b987':'#82634e');
+  polygon(q,[[737,259],[786,199],[827,174],[860,171],[900,195],[941,230],[960,249],[960,260]],
+    '#ad855f','#24394a',5);
+  polygon(q,[[800,257],[835,192],[858,185],[887,211],[933,253]],'#eac391',null);
+  for(let i=0;i<26;i++)rect(q,787+rnd()*171,182+rnd()*72,8+rnd()*17,3,'#ecd1a0');
+  for(const [x,y] of [[24,130],[86,158],[851,159],[919,181]]){
+   rect(q,x,y,42,13,'#1b5449');rect(q,x+4,y-8,33,12,'#319765');
+   rect(q,x+10,y-14,22,8,'#6ac276');
+  }
+  // La franja central queda transparente para mostrar mar, arena y embarcación.
+ });
+ const nearPlane=plane(near,0,30,-84,262,63,true);
+ // Mar físico, conectado con el horizonte ilustrado y olas en pixel-art.
+ const sea=canvas(256,128,(q)=>{
+  rect(q,0,0,256,128,'#079cc3');
+  for(let i=0;i<72;i++){
+   const x=rnd()*256,y=rnd()*128;
+   rect(q,x,y,10+rnd()*36,1+rnd()*3,i%4?'#48d4d7':'#d7fbf1');
+  }
+ });
+ const seaMat=new THREE.MeshBasicMaterial({map:tex(sea),side:THREE.DoubleSide});
+ seaMat.map.wrapS=seaMat.map.wrapT=THREE.RepeatWrapping;
+ seaMat.map.repeat.set(16,8);
+ const water=place(new THREE.PlaneGeometry(580,270),seaMat,0,-1.58,-185);
+ water.rotation.x=-Math.PI/2;
+ const sand=canvas(256,128,(q)=>{
+  rect(q,0,0,256,128,'#edce91');
+  for(let i=0;i<1150;i++){
+   rect(q,rnd()*256,rnd()*128,1+rnd()*4,1+rnd()*2,i%2?'#f9e3b1':'#bc986e');
+  }
+  for(let y=10;y<120;y+=25){
+   for(let x=0;x<256;x+=16)rect(q,x,y+(rnd()*3),10,1,'#f3dcaa');
+  }
+ });
+ const sandTex=tex(sand);sandTex.wrapS=sandTex.wrapT=THREE.RepeatWrapping;
+ sandTex.repeat.set(18,7);
+ const sandMat=new THREE.MeshBasicMaterial({map:sandTex,side:THREE.DoubleSide});
+ const ground=place(new THREE.PlaneGeometry(430,120),sandMat,0,-1.515,-89);
+ ground.rotation.x=-Math.PI/2;
+ // Sombras en la arena, coherentes con las nubes del cielo.
+ const shade=canvas(256,128,q=>{
+  for(let i=0;i<8;i++){
+   const cx=rnd()*256,cy=rnd()*128;
+   for(let k=0;k<5;k++){
+    rect(q,cx+(rnd()-.5)*52,cy+(rnd()-.5)*23,26+rnd()*42,7+rnd()*12,'rgba(38,57,91,.17)');
+   }
+  }
+ });
+ const shadeT=tex(shade);shadeT.wrapS=shadeT.wrapT=THREE.RepeatWrapping;
+ shadeT.repeat.set(3,2);
+ const beachShade=place(new THREE.PlaneGeometry(295,65),
+  new THREE.MeshBasicMaterial({map:shadeT,transparent:true,depthWrite:false,opacity:.85,side:THREE.DoubleSide}),0,-1.48,-83);
+ beachShade.rotation.x=-Math.PI/2;
+ // Nubes reales sobre el césped del partido, sin alterar el césped ni sus líneas.
+ const cloudMask=canvas(256,128,q=>{
+  for(let c=0;c<13;c++){
+   const x=rnd()*256,y=rnd()*128;
+   for(let i=0;i<7;i++){
+    const dx=(rnd()-.5)*47,dy=(rnd()-.5)*22;
+    rect(q,(x+dx+256)%256,(y+dy+128)%128,16+rnd()*29,5+rnd()*12,
+     'rgba(32,48,73,.18)');
+   }
+  }
+ });
+ const mask=tex(cloudMask);mask.wrapS=mask.wrapT=THREE.RepeatWrapping;
+ mask.repeat.set(1.5,1.5);
+ const shadowMaterial=new THREE.MeshBasicMaterial({
+  map:mask,transparent:true,depthWrite:false,side:THREE.DoubleSide,
+  opacity:.95,polygonOffset:true,polygonOffsetFactor:-1
+ });
+ const pitchShadow=place(new THREE.PlaneGeometry(HX*2,HZ*2),shadowMaterial,0,.046,0);
+ pitchShadow.rotation.x=-Math.PI/2;
+ // Antiguo embarcadero de madera: volumen 3D pequeño, base física y líneas pixeladas.
+ const deck=canvas(256,128,q=>{
+  rect(q,0,0,256,128,'#a56e45');
+  for(let y=0;y<128;y+=18){
+   rect(q,0,y,256,3,'#263849');
+   rect(q,0,y+3,256,11,y%36?'#b58051':'#ca9462');
+   for(let x=0;x<256;x+=53)rect(q,x,y+4,3,9,'#77553f');
+  }
+ });
+ const deckMat=new THREE.MeshStandardMaterial({map:tex(deck),roughness:1});
+ deckMat.map.wrapS=deckMat.map.wrapT=THREE.RepeatWrapping;deckMat.map.repeat.set(4,2);
+ for(const x of [-92,-78,-64]){
+  block(11,.35,6,black,x,-1.1,-69);
+  block(10.7,.17,5.7,deckMat,x,-.85,-69);
+  for(const dz of [-2.2,2.2]){
+   block(.21,3,.21,timber,x-4.4,.45,-69+dz);
+   block(.21,3,.21,timber,x+4.4,.45,-69+dz);
+  }
+ }
+ for(const z of [-71.4,-66.6])
+  block(42,.18,.26,black,-78,1.8,z);
+ // Tablas de surf y pequeño kiosco, con colores a escala del jugador.
+ const kiosk=canvas(128,96,q=>{
+  rect(q,12,42,104,51,'#203b4d');rect(q,16,45,95,44,'#bd8d5f');
+  rect(q,5,28,120,17,'#1a3349');
+  for(let i=0;i<7;i++)rect(q,9+i*16,31,16,12,i%2?'#fff0bf':'#e66f59');
+  rect(q,28,56,48,26,'#1d4255');rect(q,32,60,42,17,'#6ec7c8');
+  rect(q,81,55,16,35,'#75503d');rect(q,12,87,104,5,'#26394c');
+ });
+ plane(kiosk,-116,7,-61,19,14,true);
+ const surfing=canvas(96,128,q=>{
+  for(const [i,c] of ['#eb7559','#49b4b8','#f4c55d'].entries()){
+   rect(q,12+i*25,17,21,95,'#21374b');
+   rect(q,15+i*25,20,15,89,c);
+   rect(q,21+i*25,23,3,83,'#fff0cd');
+  }
+ });
+ plane(surfing,110,7,-65,12,16,true);
+ // Barco distante con movimiento discreto, sin sobresalir en primer plano.
+ const boat=canvas(128,62,q=>{
+  polygon(q,[[12,29],[116,29],[105,45],[26,45]],'#e3d8c4','#1c384f',4);
+  rect(q,27,32,76,5,'#c86653');
+  rect(q,43,13,48,16,'#f1e8da');rect(q,40,10,54,4,'#26394f');
+  for(let x=49;x<90;x+=12)rect(q,x,17,8,7,'#2a698e');
+  rect(q,65,3,4,14,'#2b465e');rect(q,70,5,12,5,'#d66553');
+  rect(q,8,50,106,2,'#daf9f4');
+ });
+ const boatPlane=plane(boat,23,26,-183,12,6,true);
+ BIO.anims.push((dt,T)=>{
+  farPlane.position.x=Math.sin(T*.035)*1.35;
+  midPlane.position.x=Math.sin(T*.052+.4)*.7;
+  nearPlane.position.x=Math.sin(T*.082+1)*.25;
+  boatPlane.position.x=23+Math.sin(T*.075)*5;
+  boatPlane.position.y=26+Math.sin(T*.75)*.18;
+  seaMat.map.offset.x=(T*.004)%1;
+  shadeT.offset.x=(T*.008)%1;
+  mask.offset.x=(T*.005)%1;mask.offset.y=(T*.0017)%1;
+  shadowMaterial.opacity=Math.max(.25,Math.min(1,.64+WXc.cloud*.25));
+ });
+}
+
 // ---------- ensamblado de estadios temáticos ----------
 function buildBiome(mode){
  stadiumMode=mode;cityG.clear();BIO.anims.length=0;BIO.seed=1000+mode.length*77+mode.charCodeAt(0);
  cityFloor.visible=false;
- try{({beach:bBeach,volcano:bVolcano,arctic:bArctic,space:bSpace,desert:bDesert})[mode]()}catch(e){console.warn('bioma',mode,e)}
+ try{({beach:bBeachV4,volcano:bVolcano,arctic:bArctic,space:bSpace,desert:bDesert})[mode]()}catch(e){console.warn('bioma',mode,e)}
 }
 
 
@@ -4043,8 +4325,8 @@ void main(){
  });
 }
 const _bs=buildStadium;buildStadium=function(m){
- disposeCityV3();disposeWorldV31();disposeScenicTextures();
- if(BIOMES[m]){buildBiome(m);buildEnds(m);livingLandscape(m);livingWorldV2(m);ambientStory(m);stadiumLightShow(m,BIOMES[m].glow);syncBiomeWeather();envApply();envChipUpdate();return}
+ disposeCityV3();disposeWorldV31();disposeBeachV4();disposeScenicTextures();
+ if(BIOMES[m]){buildBiome(m);buildEnds(m);if(m!=='beach'){livingLandscape(m);livingWorldV2(m);ambientStory(m);stadiumLightShow(m,BIOMES[m].glow);}syncBiomeWeather();envApply();envChipUpdate();return}
  if(m==='city'){stadiumMode='city';cityG.clear();BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=null;cityFloor.material.color.setHex(0x9fa69f);cityFloor.material.needsUpdate=true;buildEnds('city');buildCityV3();syncBiomeWeather();envApply();envChipUpdate();return}
  BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=cityFloorTex;cityFloor.material.needsUpdate=true;
  stadiumMode=m;cityG.clear();cityFloor.material.color.setHex(m==='sunset'?0xd6c6aa:m==='classic'?0xc0cfbd:0xffffff);buildEnds(m);if(m==='city')ordinaryCityStadium();livingLandscape(m);livingWorldV2(m);ambientStory(m);if(m!=='city')stadiumLightShow(m,m==='sunset'?0xff9d5c:0x9bd9ff);syncBiomeWeather();envApply();envChipUpdate()};
