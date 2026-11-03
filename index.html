@@ -811,9 +811,24 @@ const apC=document.createElement('canvas');apC.width=1024;apC.height=640;paintGr
 const apron=new THREE.Mesh(new THREE.PlaneGeometry(HX*2+16,HZ*2+12+DZ),new THREE.MeshStandardMaterial({map:srgb(new THREE.CanvasTexture(apC)),color:0x9aa89a,roughness:1}));apron.rotation.x=-Math.PI/2;apron.position.set(0,-.03,-DZ/2);S.add(apron);apron.material.onBeforeCompile=wxPatch;apron.material.customProgramCacheKey=()=>'apron-wx';
 const ntC=document.createElement('canvas');ntC.width=128;ntC.height=64;const ntq=ntC.getContext('2d');ntq.strokeStyle='rgba(255,255,255,.85)';ntq.lineWidth=2;for(let i=0;i<=128;i+=16){ntq.beginPath();ntq.moveTo(i,0);ntq.lineTo(i,64);ntq.stroke()}for(let i=0;i<=64;i+=16){ntq.beginPath();ntq.moveTo(0,i);ntq.lineTo(128,i);ntq.stroke()}
 const netT=srgb(new THREE.CanvasTexture(ntC));netT.wrapS=netT.wrapT=THREE.RepeatWrapping;netT.repeat.set(5,2.5);
-function seatMat(rx,ry){const c=document.createElement('canvas');c.width=128;c.height=64;const q=c.getContext('2d');q.fillStyle='#141d3d';q.fillRect(0,0,128,64);
- for(let y=0;y<4;y++)for(let x=0;x<8;x++){q.fillStyle=(x*3+y*5)%11===0?'#f0c030':'#2f5ea8';q.fillRect(x*16+2,y*16+3,12,9);q.fillStyle='rgba(0,0,0,.28)';q.fillRect(x*16+2,y*16+11,12,2);q.fillStyle='rgba(255,255,255,.14)';q.fillRect(x*16+2,y*16+3,12,2)}
- const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rx,ry);t.encoding=THREE.sRGBEncoding;t.anisotropy=4;return new THREE.MeshStandardMaterial({map:t,roughness:.8})}
+// Butacas GBA con bordes oscuros y colores variados.
+const SEAT_MATERIALS=new Map();
+function seatMat(rx,ry){
+ const key=rx.toFixed(1)+':'+ry.toFixed(1);
+ if(SEAT_MATERIALS.has(key))return SEAT_MATERIALS.get(key);
+ const c=document.createElement('canvas');c.width=128;c.height=64;const q=c.getContext('2d');
+ q.fillStyle='#182c3b';q.fillRect(0,0,128,64);
+ for(let y=0;y<4;y++)for(let x=0;x<8;x++){
+  const u=x*16,v=y*16,colors=['#3d9da9','#dfa55d','#67ab72','#689acb'];
+  q.fillStyle='#112738';q.fillRect(u+1,v+2,14,12);
+  q.fillStyle=colors[(x*5+y*3)%4];q.fillRect(u+3,v+3,10,8);
+  q.fillStyle='#d9d5b5';q.fillRect(u+4,v+3,8,2);
+  q.fillStyle='#213b4c';q.fillRect(u+3,v+10,10,2);
+ }
+ const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;
+ t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rx,ry);t.magFilter=THREE.NearestFilter;
+ const m=new THREE.MeshStandardMaterial({map:t,roughness:.94});SEAT_MATERIALS.set(key,m);return m;
+}
 const white=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.32});
 // carteles
 const ac=document.createElement('canvas');ac.width=3200;ac.height=100;const a2=ac.getContext('2d');
@@ -846,9 +861,19 @@ for(const s of [-1,1]){
  const net=new THREE.Mesh(new THREE.PlaneGeometry(GW*2,3.6),new THREE.MeshBasicMaterial({map:netT,transparent:true,side:2,depthWrite:false}));net.rotation.y=Math.PI/2;net.position.set(s*(HX+2.2),1.8,0);S.add(net);
 }
 // gradas
-const stM=new THREE.MeshStandardMaterial({color:0x1d2c5e});
-for(let r=0;r<3;r++)for(const s of [-1,1]){const h=1.2*(r+1),b=new THREE.Mesh(new THREE.BoxGeometry(HX*2+10,h,2.4),seatMat((HX*2+10)/2.2,h/1.1));b.position.set(0,h/2,s*(HZ+3+r*2.4)-(s<0?DZ:0));S.add(b)}
-for(let r=0;r<3;r++)for(const s of [-1,1]){const h=.42*(r+1),b=new THREE.Mesh(new THREE.BoxGeometry(1.5,h,HZ*1.72),new THREE.MeshStandardMaterial({color:[0x263b70,0x31518a,0x3c69a4][r],roughness:.86}));b.position.set(s*(HX+3.2+r*1.35),h/2+.02,0);S.add(b)}
+// Gradas reales bajo las siete filas de público del fondo y seis filas delanteras.
+const edgeSeat=new THREE.MeshBasicMaterial({color:0x182d3b}),seatLip=new THREE.MeshBasicMaterial({color:0xe3c491});
+for(const side of [-1,1])for(let r=0;r<(side<0?7:6);r++){
+ const h=Math.min(3,r)+1+Math.max(0,r-3)*.16;
+ const z=side<0?-(HZ+DZ+2.2+r*1.55):HZ+2.2+r*1.55;
+ const tier=new THREE.Mesh(new THREE.BoxGeometry(HX*2+10,h,1.5),seatMat(26,Math.max(1,h/1.3)));
+ tier.position.set(0,h/2,z);S.add(tier);
+ const sign=side<0?1:-1;
+ const border=new THREE.Mesh(new THREE.BoxGeometry(HX*2+10,.20,.20),edgeSeat);
+ border.position.set(0,h+.03,z+sign*.71);S.add(border);
+ const stripe=new THREE.Mesh(new THREE.BoxGeometry(HX*2+10,.08,.20),seatLip);
+ stripe.position.set(0,h+.13,z+sign*.73);S.add(stripe);
+}
 // reflectores y estrellas
 for(const sx of [-1,1])for(const sz of [-1,1]){const px=sx*(HX+10),pz=sz*(HZ+11);
  const pole=new THREE.Mesh(new THREE.CylinderGeometry(.3,.4,24),new THREE.MeshStandardMaterial({color:0x445}));pole.position.set(px,12,pz);S.add(pole);
@@ -975,7 +1000,7 @@ function buildCrowd(T){
  }
  // Gradas laterales con pequeñas diferencias de altura y filas alternadas.
  // Tribunas detrás de los arcos: más altas y anchas (se ven al cambiar la cámara en los tiros libres).
- for(const side of [-1,1])for(let r=0;r<12;r++)for(let k=0;k<44;k+=(r<6?1:2)){
+ for(const side of [-1,1])for(let r=0;r<7;r++)for(let k=0;k<44;k+=(r<6?1:2)){
   const x=side*(HX+2.6+r*1.15),z=-(HZ+DZ+6)+k*(HZ*2+12+DZ)/43;
   const baseY=.55*(Math.min(r,3)+1)+Math.max(0,r-3)*.5;
   add(x,z,baseY,idx++,r+6);
@@ -3481,8 +3506,21 @@ cityG.clear();
 // Fondo de los arcos: gradas escalonadas, muro con franjas de luz, techo, vallas y skyline.
 function buildEnds(mode){
  if(mode==='city'){
-  // Público y bancos existentes; solo vallas bajas, sin murallas ni tejados.
+  // Siete escalones laterales reales bajo el público. Sin pantallas/muros gigantes.
+  const stone=new THREE.MeshStandardMaterial({color:0x526a76,roughness:1});
+  const edge=new THREE.MeshBasicMaterial({color:0x192d3b}),accent=new THREE.MeshBasicMaterial({color:0xdcb67b});
   for(const side of [-1,1]){
+   for(let r=0;r<7;r++){
+    const h=.55*(Math.min(r,3)+1)+Math.max(0,r-3)*.5,x=side*(HX+2.6+r*1.15);
+    const slab=new THREE.Mesh(new THREE.BoxGeometry(1.12,h,HZ*2+DZ+11),stone);
+    slab.position.set(x,h/2,-DZ/2);cityG.add(slab);
+    const seat=new THREE.Mesh(new THREE.BoxGeometry(.99,.12,HZ*2+DZ+11),seatMat(1,20));
+    seat.position.set(x,h+.05,-DZ/2);cityG.add(seat);
+    const line=new THREE.Mesh(new THREE.BoxGeometry(.16,.22,HZ*2+DZ+11),edge);
+    line.position.set(x-side*.54,h+.05,-DZ/2);cityG.add(line);
+    const lip=new THREE.Mesh(new THREE.BoxGeometry(.10,.08,HZ*2+DZ+11),accent);
+    lip.position.set(x-side*.56,h+.16,-DZ/2);cityG.add(lip);
+   }
    const ad=new THREE.Mesh(new THREE.PlaneGeometry(HZ*2+8,1.2),new THREE.MeshBasicMaterial({map:adT,side:THREE.DoubleSide}));
    ad.position.set(side*(HX+2.45),.75,0);ad.rotation.y=side>0?-Math.PI/2:Math.PI/2;cityG.add(ad);
   }
@@ -3495,7 +3533,7 @@ function buildEnds(mode){
   const a=wins[Math.random()*wins.length|0];for(let y=6;y<124;y+=14)for(let x=6;x<60;x+=14){q.fillStyle=Math.random()>.25?a:'#26314e';q.fillRect(x,y,7,9)}
   const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;return new THREE.MeshStandardMaterial({map:t,roughness:.86})};
  for(const s of [-1,1]){
-  for(let r=0;r<12;r++){
+  for(let r=0;r<7;r++){
    const by=.55*(Math.min(r,3)+1)+Math.max(0,r-3)*.5,x=s*(HX+2.6+r*1.15);
    const b=new THREE.Mesh(new THREE.BoxGeometry(1.15,by,tw),seatMat(tw/2.2,by/1.1));b.position.set(x,by/2,0);cityG.add(b);
   }
