@@ -933,15 +933,18 @@ function buildCrowd(T){
  // Publico permanente e independiente de los equipos; cada especie usa sprites PMD animados.
  if(crowdBuilt)return;
  crowdBuilt=true;crowdG.clear();crowd=[];
- // A modest crowd of real Pokémon sprites ONLY; no dense stacked wall.
+ // Gradas del Centro Pokémon: dos filas de sprites PMD auténticos, legibles
+ // y apoyados exactamente sobre los escalones del escenario (z -25/-26).
  let mdIdx=0;
  const ids=[25,4,7,133,52,39,1,54,58,37,27,63,74,175,215,393,155,258];
- for(let row=0;row<2;row++)for(let i=0;i<28;i++){
+ for(let row=0;row<2;row++)for(let i=0;i<18;i++){
   const id=ids[(i*7+row*5)%ids.length],anim=crowdAnimFor(id);
-  const sp=new THREE.Sprite(anim.mat),sz=1.9;
-  sp.scale.set(sz,sz,1);sp.position.set(-29+i*2.15,3.5+row*2.2,-HZ-26-row*1.1);
+  const sp=new THREE.Sprite(anim.mat),sz=2.8;
+  sp.scale.set(sz,sz,1);
+  sp.position.set(-28+i*(56/17),row?7.3:3.8,row?-26.4:-24.9);
   sp.renderOrder=2;crowdG.add(sp);
-  crowd.push({s:sp,by:sp.position.y,baseY:sp.position.y-sz*.49,ph:mdIdx*.77,sp:.7+(i%5)*.08,anim,sz,hc:1.6});mdIdx++;
+  crowd.push({s:sp,by:sp.position.y,baseY:sp.position.y-sz*.49,
+   ph:mdIdx*.77,sp:.7+(i%5)*.08,anim,sz,hc:2.7});mdIdx++;
  }
 }
 // Ejecutar la vista previa solo después de inicializar crowdBuilt/crowdAnim.
