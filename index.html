@@ -714,8 +714,15 @@ const cam=new THREE.OrthographicCamera(-50,50,30,-30,.1,600);
 // La cámara se acerca, conserva el partido completo y sitúa la plaza justo detrás de la cancha.
 const CAMERA_2D_POS=new THREE.Vector3(0,110,220),CAMERA_2D_LOOK=new THREE.Vector3(0,4,-2);
 // Inicio con vista general. El encuadre del partido amplía los Pokémon.
-const CAM_ZOOM_GAME=1.19,CAM_ZOOM_INTRO=.82,CAM_INTRO_SECONDS=2.4;
+const CAM_ZOOM_GAME=1.19,CAM_ZOOM_INTRO=.64,CAM_INTRO_SECONDS=4.6;
 let targetZoom2D=CAM_ZOOM_GAME,camIntroLeft=0;
+const stadiumIntro=document.createElement('div');
+stadiumIntro.setAttribute('aria-hidden','true');
+stadiumIntro.style.cssText='position:fixed;left:50%;top:24%;transform:translate(-50%,0) scale(1.05);z-index:9;pointer-events:none;display:none;opacity:0;text-align:center;white-space:nowrap;filter:drop-shadow(0 3px 3px #1119);';
+stadiumIntro.innerHTML='<div style="display:inline-block;padding:10px 24px;background:#243651dc;border:3px solid #eed49b;border-radius:10px;box-shadow:0 5px 0 #131f37a0;color:#ffe8af;font:bold clamp(17px,3.3vw,38px) system-ui,sans-serif;letter-spacing:2px">🏟️ ESTADIO CIUDAD</div><div style="color:#fff5d9;font:700 clamp(11px,1.7vw,18px) system-ui,sans-serif;margin-top:10px;letter-spacing:3px">POKÉ STRIKERS</div>';
+document.body.appendChild(stadiumIntro);
+function showStadiumIntro(){camIntroLeft=CAM_INTRO_SECONDS;cam.zoom=CAM_ZOOM_INTRO;targetZoom2D=CAM_ZOOM_INTRO;cam.updateProjectionMatrix();stadiumIntro.style.display='block';stadiumIntro.style.opacity='0';}
+function hideStadiumIntro(){camIntroLeft=0;stadiumIntro.style.display='none';}
 function resetCamera2D(){
  cam.position.copy(CAMERA_2D_POS);cam.up.set(0,1,0);cam.lookAt(CAMERA_2D_LOOK);
  cam.zoom=CAM_ZOOM_GAME;targetZoom2D=CAM_ZOOM_GAME;camIntroLeft=0;
@@ -1537,13 +1544,12 @@ async function start(){
  BENCH=[[],[]];SUBS=[0,0];
  [0,1].forEach(t=>T[t].p.forEach((id,i)=>{if(i<3)P.push(mkPlayer(id,T[t].c,t,i==2,i));else{const b=mkPlayer(id,T[t].c,t,false,i-3);b.g.visible=false;BENCH[t].push(b)}}));
  await Promise.all([...P,...BENCH[0],...BENCH[1]].map(loadStats));buildCrowd(T);
- finishGoalCelebration();lastGoalShooter=null;score=[0,0];time=5400;beginStadiumAtmosphere();envChipUpdate();sta=1;charge=0;cameraCue=null;impactCue=0;power=0;powerBoost=0;possessionTicks=0;alt=false;l4Setup();netMatchInit();kickoff();resetCamera2D();camIntroLeft=CAM_INTRO_SECONDS;
- cam.zoom=CAM_ZOOM_INTRO;targetZoom2D=CAM_ZOOM_INTRO;cam.updateProjectionMatrix();
+ finishGoalCelebration();lastGoalShooter=null;score=[0,0];time=5400;beginStadiumAtmosphere();envChipUpdate();sta=1;charge=0;cameraCue=null;impactCue=0;power=0;powerBoost=0;possessionTicks=0;alt=false;l4Setup();netMatchInit();kickoff();resetCamera2D();showStadiumIntro();
  camLook.set(0,.8,0);lookT.set(0,.8,0);camBall.set(0,0,0);vb.x=vb.z=0;hud();$('msg').textContent=netOn()?'ESPERANDO AL RIVAL…':'';ready=true;if(!netOn())sfx('whistle');netReadyHook();
 }
 // Online: la partida (y la revancha) solo empieza cuando AMBOS jugadores confirman "Listo".
 $('go').onclick=()=>{if(netOn())setReady(!NET.myReady);else start()};$('re').onclick=()=>{if(netOn())setReady(!NET.myReady);else start()};
-const toMenu=(fromNet)=>{finishGoalCelebration();document.body.classList.remove('l4');L4.on=false;netMenu(fromNet===true);ready=false;document.body.classList.remove('playing');splashActive=false;$('splash').style.display='none';$('end').style.display='none';$('msg').textContent='';$('menu').style.display='flex';showMenuPreview();if(window.wizGo)wizGo(2)};
+const toMenu=(fromNet)=>{hideStadiumIntro();finishGoalCelebration();document.body.classList.remove('l4');L4.on=false;netMenu(fromNet===true);ready=false;document.body.classList.remove('playing');splashActive=false;$('splash').style.display='none';$('end').style.display='none';$('msg').textContent='';$('menu').style.display='flex';showMenuPreview();if(window.wizGo)wizGo(2)};
 $('chg').onclick=toMenu;$('ch2').onclick=toMenu;
 
 // ---------- render ----------
@@ -2135,8 +2141,14 @@ function render(t){pollSplashPad();aimTick(t);ctlTick(t);const dt=Math.min(.1,cl
   let nextZoom=CAM_ZOOM_GAME;
   if(camIntroLeft>0){
    camIntroLeft=Math.max(0,camIntroLeft-dt);
-   const p=1-camIntroLeft/CAM_INTRO_SECONDS,ease=p*p*(3-2*p);
+   const p=1-camIntroLeft/CAM_INTRO_SECONDS;
+   // 0–1.0 s: plano panorámico, 1.0–4.6 s: acercamiento progresivo.
+   const k=Math.max(0,Math.min(1,(p-.20)/.80)),ease=k*k*(3-2*k);
    nextZoom=CAM_ZOOM_INTRO+(CAM_ZOOM_GAME-CAM_ZOOM_INTRO)*ease;
+   const alpha=Math.max(0,Math.min(1,p/.10,(.86-p)/.15));
+   stadiumIntro.style.opacity=String(alpha);
+   stadiumIntro.style.transform='translate(-50%,0) scale('+(1.06-.06*ease).toFixed(3)+')';
+   if(camIntroLeft===0)stadiumIntro.style.display='none';
   }else if(fkCam)nextZoom=1.24;
   else if(goalCelebration||(cameraCue&&cameraCue.kind==='goal'))nextZoom=1.29;
   else if(cameraCue&&cameraCue.kind==='shot')nextZoom=1.24;
