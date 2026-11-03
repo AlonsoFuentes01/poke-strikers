@@ -3396,6 +3396,209 @@ function buildAmbientMoment(mode){
  });
 }
 
+// ================= ESTADIOS V3.1 · DIORAMAS PROPIOS =================
+// La Ciudad define la calidad visual, no la geografía: cada mundo tiene sus
+// propios caminos, fachadas 2D con volumen 3D, desgaste y habitantes.
+let worldV31Root=null;
+function disposeWorldV31(){
+ if(!worldV31Root)return;
+ worldV31Root.traverse(o=>{
+  if(o.geometry)o.geometry.dispose();
+  if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());
+ });
+ worldV31Root=null;
+}
+function buildWorldV31(mode){
+ const art={
+  classic:{ground:'#71996a',floor:'#d6bd93',line:'#31594a',bright:'#ffe3a2',ink:'#1c3842',roof:0x588576,kind:'gates',mon:[25,133,39,58],sign:'LIGA POKÉ'},
+  sunset:{ground:'#bc8e72',floor:'#e9b694',line:'#ab5d54',bright:'#ffe2ac',ink:'#48364d',roof:0xa75c4b,kind:'village',mon:[16,133,43,37],sign:'VILLA ATARDECER'},
+  beach:{ground:'#e8d196',floor:'#bf935f',line:'#4b9f9a',bright:'#ffecc3',ink:'#285060',roof:0x53b8ac,kind:'pier',mon:[278,54,7,120],sign:'MUELLE POKÉ'},
+  volcano:{ground:'#46353a',floor:'#63504b',line:'#e07040',bright:'#eeb47b',ink:'#221d29',roof:0x34272c,kind:'basalt',mon:[322,228,218,77],sign:'CALDERA MAGMA'},
+  arctic:{ground:'#bddde4',floor:'#90becd',line:'#71a6c4',bright:'#f4ffff',ink:'#436f90',roof:0xe5faff,kind:'ice',mon:[363,459,393,215],sign:'BASE GLACIAR'},
+  space:{ground:'#34436b',floor:'#5e729b',line:'#77c6e0',bright:'#c5eaff',ink:'#1e2949',roof:0x7d93c2,kind:'station',mon:[479,81,35,173],sign:'ORBITAL STRIKERS'},
+  desert:{ground:'#e1bd80',floor:'#d1a071',line:'#97704c',bright:'#ffe4b1',ink:'#76523d',roof:0xcca174,kind:'ruins',mon:[551,328,27,50],sign:'CAMINO DEL SOL'}
+ }[mode];if(!art)return;
+ const root=new THREE.Group();root.name='DIORAMA_V31_'+mode;cityG.add(root);worldV31Root=root;
+ let seed=1723+mode.charCodeAt(0)*131;const rnd=()=>{seed=seed*16807%2147483647;return(seed-1)/2147483647;};
+ const color=hex=>new THREE.MeshStandardMaterial({color:hex,roughness:1,metalness:0});
+ const stone=color(art.floor),edge=color(art.ink),roof=color(art.roof);
+ const put=(g,m,x,y,z)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y,z);root.add(o);return o;};
+ const box=(w,h,d,m,x,y,z)=>put(new THREE.BoxGeometry(w,h,d),m,x,y,z);
+ const paint=(w,h,fn)=>{const c=document.createElement('canvas');c.width=w;c.height=h;const q=c.getContext('2d');q.imageSmoothingEnabled=false;fn(q);return c;};
+ const px=(q,x,y,w,h,col)=>{q.fillStyle=col;q.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h));};
+ const tex=c=>{const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.magFilter=THREE.NearestFilter;t.minFilter=THREE.LinearFilter;t.generateMipmaps=false;SCENIC_TEXTURES.push(t);return t;};
+ const floorCanvas=paint(256,256,q=>{
+  px(q,0,0,256,256,art.ground);
+  for(let i=0;i<3200;i++){const x=rnd()*256,y=rnd()*256;
+   px(q,x,y,1+rnd()*4,1+rnd()*4,i%3?art.floor:art.line);}
+  if(art.kind==='ice')for(let i=0;i<55;i++)px(q,rnd()*256,rnd()*256,15+rnd()*39,2,art.bright);
+  if(art.kind==='station'){for(let i=0;i<256;i+=32){px(q,i,0,3,256,art.ink);px(q,0,i,256,3,art.ink);px(q,i+8,i,9,4,art.bright);}}
+  if(art.kind==='basalt')for(let i=0;i<60;i++){const x=rnd()*256,y=rnd()*256;px(q,x,y,9+rnd()*10,3,art.line);}
+ });
+ const groundTexture=tex(floorCanvas);groundTexture.wrapS=groundTexture.wrapT=THREE.RepeatWrapping;groundTexture.repeat.set(16,6);
+ const ground=put(new THREE.PlaneGeometry(346,132),new THREE.MeshStandardMaterial({map:groundTexture,roughness:1}),0,-1.47,-104);
+ ground.rotation.x=-Math.PI/2;
+ // La geografía manda: paseo deportivo, calle empedrada, muelle, calzada
+ // de basalto, sendero de hielo, pasarela orbital o ruta arqueológica.
+ const routeCanvas=paint(256,128,q=>{
+  px(q,0,0,256,128,art.floor);
+  const kind=art.kind;
+  if(kind==='pier'){
+   for(let y=0;y<128;y+=16){px(q,0,y,256,2,art.ink);px(q,0,y+2,256,12,'#bb8c5d');px(q,0,y+3,256,2,'#e9bb77');}
+   for(let x=0;x<256;x+=48)px(q,x,0,3,128,art.ink);
+  }else if(kind==='station'){
+   for(let x=0;x<256;x+=32){px(q,x,0,3,128,art.ink);px(q,x+5,8,23,3,art.bright);px(q,x+5,114,23,3,art.bright);}
+   for(let x=20;x<256;x+=64)px(q,x,51,22,24,art.line);
+  }else if(kind==='ice'){
+   for(let y=0;y<128;y+=22){px(q,0,y,256,4,art.bright);px(q,0,y+5,256,3,art.line);}
+  }else{
+   for(let y=0;y<128;y+=26)for(let x=(y%52?-14:0);x<256;x+=42){
+    px(q,x,y,39,24,art.ink);px(q,x+2,y+2,35,20,art.bright);
+    if(kind==='basalt')px(q,x+4,y+20,18,3,art.line);
+    if(kind==='ruins')px(q,x+5,y+4,17,3,art.floor);
+   }
+  }
+ });
+ const routeTex=tex(routeCanvas);routeTex.wrapS=routeTex.wrapT=THREE.RepeatWrapping;routeTex.repeat.set(13,1);
+ const route=put(new THREE.PlaneGeometry(334,art.kind==='pier'?17:13),new THREE.MeshStandardMaterial({map:routeTex,roughness:1}),0,-1.39,-58);
+ route.rotation.x=-Math.PI/2;
+ for(const z of [-65,-51])box(338,.17,.27,edge,0,-1.29,z);
+ // Arquitectura: las texturas son ilustraciones 2D, la estructura sí tiene volumen.
+ const facade=(variation)=>tex(paint(128,192,q=>{
+  px(q,0,0,128,192,art.ink);px(q,5,5,118,182,variation%2?art.floor:art.bright);
+  if(art.kind==='gates'||art.kind==='village'){
+   px(q,0,0,128,16,art.line);px(q,7,18,114,3,art.bright);
+   for(let row=0;row<3;row++)for(let col=0;col<3;col++){
+    const x=10+col*37,y=29+row*49;
+    px(q,x-3,y-4,31,43,art.ink);px(q,x,y,24,32,art.kind==='gates'?'#6cb5b4':'#8cb5ca');
+    px(q,x+4,y+4,5,11,'#d4f9e9');px(q,x+12,y,3,32,art.ink);
+    px(q,x-5,y+32,34,5,art.line);
+    if(row===1&&col===1){px(q,x-7,y+37,38,3,art.ink);for(let k=0;k<5;k++)px(q,x-5+k*8,y+38,2,12,art.ink);}
+   }
+   px(q,6,167,116,17,art.line);
+  }else if(art.kind==='pier'){
+   for(let n=0;n<8;n++)px(q,n*16,23,16,28,n%2?art.bright:'#e67d60');
+   px(q,11,51,106,130,'#b78e62');px(q,22,73,85,77,art.ink);
+   px(q,28,79,75,66,'#4c989b');px(q,35,84,22,37,art.bright);
+   px(q,8,160,112,10,art.line);
+  }else if(art.kind==='basalt'){
+   for(let y=0;y<192;y+=24)for(let x=(y%48?-11:0);x<128;x+=34){
+    px(q,x,y,32,22,y%72===0?'#604b47':'#342d33');px(q,x,y+18,30,3,art.ink);
+    if((x+y)%5===0)px(q,x+9,y+8,4,13,art.line);
+   }
+   for(let i=0;i<4;i++)px(q,9+i*32,46,5,121,'#ee7138');
+  }else if(art.kind==='ice'){
+   for(let i=0;i<7;i++){px(q,i*20,6,11,180,art.bright);px(q,i*20+11,8,8,173,art.line);}
+   for(let i=0;i<12;i++)px(q,rnd()*128,rnd()*170,25,3,'#efffff');
+  }else if(art.kind==='station'){
+   px(q,9,9,110,177,'#374a72');
+   for(let y=17;y<176;y+=37){px(q,17,y,94,28,art.ink);
+    for(let x=23;x<109;x+=17){px(q,x,y+5,12,17,art.line);px(q,x+2,y+8,4,5,art.bright);}
+   }
+   px(q,6,172,116,10,art.bright);
+  }else{
+   for(let y=0;y<192;y+=24)for(let x=(y%48?-10:0);x<128;x+=32){
+    px(q,x,y,30,22,'#a67c55');px(q,x+2,y+2,26,17,'#e4ba84');px(q,x,y+19,30,3,art.ink);
+   }
+   px(q,36,75,56,112,art.ink);px(q,43,83,42,104,'#76543e');
+  }
+  for(let i=0;i<150;i++)px(q,rnd()*128,rnd()*192,1+rnd()*3,2,i%2?'#ffffff22':'#111e2720');
+ }));
+ const mats=[0,1,2].map(i=>new THREE.MeshBasicMaterial({map:facade(i),side:THREE.DoubleSide}));
+ const locations={
+  classic:[-140,-99,-60,-17,33,75,117,149],sunset:[-145,-122,-100,-72,-29,10,46,82,117,146],
+  beach:[-142,-99,-55,0,48,97,142],volcano:[-139,-105,-64,-20,34,76,114,147],
+  arctic:[-139,-105,-69,-27,24,68,108,146],space:[-143,-103,-63,-18,31,75,120,150],
+  desert:[-140,-104,-66,-24,25,68,104,143]
+ }[mode];
+ const n=locations.length,form=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),stone,n),
+  top=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),roof,n),
+  faces=[0,1,2].map(i=>new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),mats[i],n));
+ const used=[0,0,0],obj=new THREE.Object3D();
+ locations.forEach((x,i)=>{
+  const h=(art.kind==='basalt'?13:art.kind==='ice'?11:9)+(i%3)*3,w=art.kind==='village'?10:art.kind==='basalt'?7:11;
+  const z=-81-(i%3)*5,dep=art.kind==='pier'?8:7.5;
+  obj.rotation.set(0,0,0);obj.position.set(x,h/2-1.45,z);obj.scale.set(w,h,dep);obj.updateMatrix();form.setMatrixAt(i,obj.matrix);
+  obj.position.set(x,h-1.3,z);obj.scale.set(w+1,.32,dep+.7);obj.updateMatrix();top.setMatrixAt(i,obj.matrix);
+  obj.position.set(x,h/2-1.45,z+dep/2+.06);obj.scale.set(w,h,1);obj.updateMatrix();faces[i%3].setMatrixAt(used[i%3]++,obj.matrix);
+  if(i%2===0&&['village','gates','pier','station'].includes(art.kind)){
+   box(w*.78,.24,1.6,edge,x,h*.52-1.5,z+dep/2+.8);
+   box(w*.70,.16,1.48,roof,x,h*.52-1.31,z+dep/2+.8);
+  }
+ });
+ root.add(form,top);[form,top].forEach(o=>{o.instanceMatrix.needsUpdate=true;o.frustumCulled=false});
+ faces.forEach((f,i)=>{f.count=used[i];f.instanceMatrix.needsUpdate=true;f.frustumCulled=false;root.add(f)});
+ // Siluetas propias del bioma, con píxeles y contorno oscuro.
+ const scenery=tex(paint(96,128,q=>{
+  if(art.kind==='gates'){
+   px(q,15,20,66,20,art.ink);px(q,20,25,56,10,art.bright);
+   for(let i=0;i<5;i++){px(q,17+i*13,44,7,79,art.line);px(q,18+i*13,49,4,63,art.bright);}
+  }else if(art.kind==='village'){
+   px(q,43,19,9,109,'#5e4540');px(q,10,11,76,10,art.ink);
+   px(q,14,14,67,7,art.bright);
+   for(let i=0;i<6;i++)px(q,18+i*10,22,6,15,i%2?'#f7bd75':'#d36858');
+  }else if(art.kind==='pier'){
+   px(q,43,42,9,85,'#7a5a3f');
+   for(let i=0;i<7;i++){q.strokeStyle=i%2?'#fff3c9':'#40b5a0';q.lineWidth=6;
+    q.beginPath();q.moveTo(48,43);q.lineTo(12+i*12,15+i%3*15);q.stroke();}
+   px(q,6,117,85,7,art.ink);
+  }else if(art.kind==='basalt'){
+   for(let i=0;i<8;i++){const x=i*11+5,h=38+i%3*23;
+    px(q,x,126-h,9,h,art.ink);px(q,x+2,128-h,5,h-3,art.floor);
+    if(i%3===0)px(q,x+4,128-h+13,2,23,art.line);}
+  }else if(art.kind==='ice'){
+   px(q,8,39,80,87,art.ink);px(q,12,17,72,109,'#e1f6fa');
+   for(let i=0;i<5;i++)px(q,17+i*14,23,7,94,'#80bdd6');
+  }else if(art.kind==='station'){
+   px(q,16,24,64,95,art.ink);px(q,22,29,52,79,'#6582ad');
+   for(let y=34;y<102;y+=18)for(let x=26;x<72;x+=15)px(q,x,y,11,10,art.line);
+   px(q,7,113,82,10,art.bright);
+  }else{
+   px(q,10,23,77,102,art.ink);for(let i=0;i<5;i++){
+    px(q,13+i*16,16,12,105,art.floor);px(q,16+i*16,28,6,86,art.bright);}
+  }
+ }));
+ const decoM=new THREE.MeshBasicMaterial({map:scenery,transparent:true,alphaTest:.08,side:THREE.DoubleSide});
+ const decorations=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),decoM,13);
+ for(let i=0;i<13;i++){
+  const x=-144+i*24,h=7+(i%3)*1.5,z=-48-(i%2)*9;
+  obj.position.set(x,h/2-1.44,z);obj.scale.set(h*.78,h,1);obj.rotation.set(0,0,0);obj.updateMatrix();
+  decorations.setMatrixAt(i,obj.matrix);
+ }
+ decorations.instanceMatrix.needsUpdate=true;decorations.frustumCulled=false;root.add(decorations);
+ // Letrero integrado a una estructura, no una valla gigante.
+ const signTex=tex(paint(512,96,q=>{
+  px(q,0,0,512,96,art.ink);px(q,7,7,498,82,art.line);px(q,13,13,486,70,art.floor);
+  q.font='bold 38px monospace';q.fillStyle=art.ink;q.textAlign='center';q.textBaseline='middle';q.fillText(art.sign,256,50);
+ }));
+ put(new THREE.PlaneGeometry(26,4.9),new THREE.MeshBasicMaterial({map:signTex,side:THREE.DoubleSide}),-18,16,-74);
+ // Pokémon de paso, con sprites reales que caminan por el sendero exterior.
+ const walkers=[],amount=innerWidth<850?5:9;
+ for(let i=0;i<amount;i++){
+  const id=art.mon[i%4],e=crowdAnimFor(id),fallback=loader.load(spr(id),t=>{
+   t.encoding=THREE.sRGBEncoding;t.magFilter=THREE.NearestFilter;t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;
+  });SCENIC_TEXTURES.push(fallback);
+  const m=new THREE.SpriteMaterial({map:fallback,transparent:true,alphaTest:.07,depthWrite:false,fog:false});
+  const sp=new THREE.Sprite(m),h=2.3+i%3*.2;
+  sp.scale.set(h*1.2,h*1.2,1);sp.position.set(-107+i*214/(amount-1),-1.44+h*.58,-58+(i%2?3:-3));
+  root.add(sp);walkers.push({sp,m,e,h,dir:i%2?1:-1,speed:.45+(i%4)*.18,clock:0,frame:0,wait:1+i*.45});
+ }
+ BIO.anims.push((dt,T)=>{
+  for(const w of walkers){
+   if(w.e.ready&&w.e.frames.length){
+    w.clock+=dt;if(w.clock>.16){w.clock=0;w.frame=(w.frame+1)%w.e.frames.length;
+     if(w.m.map!==w.e.frames[w.frame]){w.m.map=w.e.frames[w.frame];w.m.needsUpdate=true}}
+   }
+   if(w.wait>0)w.wait-=dt;
+   else{w.sp.position.x+=w.dir*w.speed*dt;
+    if(Math.abs(w.sp.position.x)>129){w.dir*=-1;w.wait=1+rnd()*3;}
+   }
+   w.sp.scale.x=Math.abs(w.sp.scale.x)*(w.dir>0?1:-1);
+   w.sp.position.y=-1.44+w.h*.58+(w.wait>0?0:Math.abs(Math.sin(T*8+w.h))*.08);
+  }
+ });
+}
+
 // ================= ESCENARIOS HÍBRIDOS 2D/3D + EVENTOS DE AMBIENTE =================
 // Fondos pintados en canvas (pixel-art), elementos físicos 3D y Pokémon 2D reales.
 function ambientStory(mode){
@@ -3509,7 +3712,7 @@ function ambientStory(mode){
  };
  const far=backdrop(0,-145,420,105),middle=backdrop(1,-87,258,71),front=backdrop(2,-56,174,37);
  // Edificios/rocas/ruinas con volumen, fachadas 2D y profundidad 3D visible.
- buildIllustratedDiorama(mode);
+ buildWorldV31(mode);
  buildAmbientMoment(mode);
  BIO.anims.push((dt,T)=>{far.position.x=Math.sin(T*.045)*1.6;middle.position.x=Math.sin(T*.076+2)*1.0;front.position.x=Math.sin(T*.12+4)*.55;});
  // Pájaros/drones pixelados cruzan las capas 2D del paisaje.
@@ -3535,50 +3738,7 @@ function ambientStory(mode){
  // Elementos ambientados según el bioma: únicamente casas en zonas habitadas.
  // Para volcanes usamos basalto; glaciar pinos helados; desierto cactus;
  // espacio instalaciones. No se generan viviendas genéricas.
- const props=[],urban=['city','classic','sunset'].includes(mode);
- const count=urban?12:mode==='beach'?13:mode==='arctic'?17:mode==='desert'?22:mode==='volcano'?18:14;
- for(let k=0;k<count;k++){
-  const x=-120+(k+.5)*240/count+(rnd()-.5)*7,z=-68-rnd()*20;
-  const h=urban?11+rnd()*9:mode==='beach'?12+rnd()*8:mode==='volcano'?8+rnd()*10:12+rnd()*10;
-  props.push({x,y:-1.4,z,w:mode==='space'?8:mode==='volcano'?7:mode==='beach'?9:urban?10:7,h});
- }
- if(urban){
-  // Fachadas de barrios pixeladas, con balcones, ventanas, techos y toldos.
-  const c=document.createElement('canvas');c.width=96;c.height=128;const q=c.getContext('2d');
-  const painted=mode==='sunset'?'#c58f78':mode==='classic'?'#b8bda1':'#cbb8a2';
-  q.fillStyle=painted;q.fillRect(8,24,80,102);
-  q.fillStyle=mode==='sunset'?'#8d665c':'#84634b';q.fillRect(4,16,88,12);
-  for(let row=0;row<3;row++)for(let col=0;col<2;col++){
-   const xx=22+col*38,yy=34+row*27;
-   q.fillStyle='#485e69';q.fillRect(xx,yy,19,18);
-   q.fillStyle='#b1d3d4';q.fillRect(xx+2,yy+2,5,9);
-   q.fillStyle='#70543e';q.fillRect(xx-3,yy+18,25,5);
-   if(row===1){
-    q.fillRect(xx-3,yy+23,25,4);
-    for(let j=0;j<4;j++)q.fillRect(xx-2+j*7,yy+22,2,13);
-   }
-  }
-  if(mode==='sunset'){q.fillStyle='#edd9b6';q.fillRect(13,70,22,4);q.fillRect(19,74,10,9);}
-  const tex=new THREE.CanvasTexture(c);tex.encoding=THREE.sRGBEncoding;tex.magFilter=THREE.NearestFilter;tex.minFilter=THREE.LinearFilter;SCENIC_TEXTURES.push(tex);
-  const geom=new THREE.PlaneGeometry(1,1),m=new THREE.MeshBasicMaterial({map:tex,transparent:true,alphaTest:.04,side:THREE.DoubleSide,depthWrite:false,fog:false});
-  const im=new THREE.InstancedMesh(geom,m,props.length),dummy=new THREE.Object3D();
-  props.forEach((p,k)=>{dummy.position.set(p.x,p.h*.5-1.4,p.z);dummy.scale.set(p.w,p.h,1);dummy.rotation.set(0,0,0);dummy.updateMatrix();im.setMatrixAt(k,dummy.matrix);});
-  im.frustumCulled=false;cityG.add(im);
- }else if(mode==='beach'){
-  // Kioscos de playa 2D, sin fachadas residenciales genéricas.
-  const c=document.createElement('canvas');c.width=96;c.height=128;const q=c.getContext('2d');
-  q.fillStyle='#b78053';q.fillRect(16,54,64,73);
-  q.fillStyle='#e3d7a4';q.fillRect(13,45,70,16);
-  for(let k=0;k<5;k++){q.fillStyle=k%2?'#f7ebc9':'#54b3a2';q.fillRect(10+k*15,35,15,17);}
-  q.fillStyle='#487e80';q.fillRect(28,71,40,37);q.fillStyle='#f7d9a6';q.fillRect(34,76,13,17);
-  const tex=new THREE.CanvasTexture(c);tex.encoding=THREE.sRGBEncoding;tex.magFilter=THREE.NearestFilter;tex.minFilter=THREE.LinearFilter;SCENIC_TEXTURES.push(tex);
-  const mat=new THREE.MeshBasicMaterial({map:tex,transparent:true,side:THREE.DoubleSide,depthWrite:false});
-  const im=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),mat,props.length),dummy=new THREE.Object3D();
-  props.forEach((p,k)=>{dummy.position.set(p.x,p.h*.5-1.4,p.z);dummy.scale.set(p.w,p.h,1);dummy.updateMatrix();im.setMatrixAt(k,dummy.matrix);});
-  im.frustumCulled=false;cityG.add(im);
- }else{
-  pixelBiomeInstances(mode,props);
- }
+ // Decoración genérica reemplazada por worldV31 de cada bioma.
  // Carteles cotidianos 2D en estructuras 3D, sin la estética de pantallas gigantes.
  const sign=document.createElement('canvas');sign.width=512;sign.height=128;
  const q=sign.getContext('2d');q.fillStyle=th.mid;q.fillRect(0,0,512,128);
@@ -3741,7 +3901,7 @@ void main(){
  });
 }
 const _bs=buildStadium;buildStadium=function(m){
- disposeCityV3();disposeScenicTextures();
+ disposeCityV3();disposeWorldV31();disposeScenicTextures();
  if(BIOMES[m]){buildBiome(m);buildEnds(m);livingLandscape(m);livingWorldV2(m);ambientStory(m);stadiumLightShow(m,BIOMES[m].glow);syncBiomeWeather();envApply();envChipUpdate();return}
  if(m==='city'){stadiumMode='city';cityG.clear();BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=null;cityFloor.material.color.setHex(0x9fa69f);cityFloor.material.needsUpdate=true;buildEnds('city');buildCityV3();syncBiomeWeather();envApply();envChipUpdate();return}
  BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=cityFloorTex;cityFloor.material.needsUpdate=true;
