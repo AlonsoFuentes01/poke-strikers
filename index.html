@@ -3566,6 +3566,148 @@ function buildWorldV31(mode){
   decorations.setMatrixAt(i,obj.matrix);
  }
  decorations.instanceMatrix.needsUpdate=true;decorations.frustumCulled=false;root.add(decorations);
+ // Lugares emblemáticos propios: volumen 3D y detalle pixel art, NO props repetidos.
+ const plank=color(0x875e41),metal=color(0x465469),pale=color(0xe2c18c),ice=color(0xd9f5f5);
+ if(art.kind==='gates'){
+  // Explanada del club, taquillas, acceso y pabellones bajos.
+  for(const x of [-116,-58,58,116]){
+   box(8,5,4,edge,x,1.4,-47);
+   box(7.3,4.2,3.6,stone,x,1.7,-46.9);
+   box(8.6,.4,4.5,roof,x,4.3,-47);
+   box(3.2,2.8,.2,metal,x,1.9,-44.99);
+   box(1.8,1.3,.25,pale,x,2.1,-44.82);
+  }
+  for(const x of [-29,29]){
+   box(2,10,2,edge,x,3.6,-73);
+   box(2.4,9.3,2.2,stone,x,3.7,-73);
+   box(4.5,.7,5.5,edge,x,8.5,-73);
+  }
+  box(66,2.8,2.4,roof,0,9,-73);
+  box(58,.45,2.55,pale,0,7.7,-71.8);
+  for(const x of [-148,-81,-7,81,148]){
+   box(.19,6,.18,metal,x,1.55,-68);
+   box(2.6,.25,.25,roof,x+1.1,4.7,-68);
+  }
+ }else if(art.kind==='village'){
+  // Plazoletas, toldos, luminarias cálidas, macetas y puesto de fruta.
+  const lamps=[],glow=new THREE.MeshBasicMaterial({color:0xffe7a2});
+  for(const x of [-144,-106,-69,-31,7,46,88,132]){
+   box(.24,7,.24,edge,x,2,-48);
+   box(2.2,.25,.7,metal,x+.9,5.8,-48);
+   const bulb=box(1.2,.6,.7,glow,x+1.5,5.46,-48);lamps.push(bulb);
+   box(2.3,1,2.3,edge,x, -.95,-65);
+   box(2.0,.82,2.0,stone,x,-.73,-65);
+  }
+  for(const x of [-95,2,96]){
+   box(7,.23,3,edge,x,2.7,-68);
+   box(6.5,.15,2.7,roof,x,2.85,-68);
+   for(const dx of [-2.6,2.6])box(.2,3.7,.2,plank,x+dx,.45,-68);
+   box(5.3,1.2,1.8,stone,x,-.55,-67);
+  }
+  BIO.anims.push((dt,T)=>lamps.forEach((light,i)=>{
+   light.material=glow;light.scale.y=1+.03*Math.sin(T*2+i);
+  }));
+ }else if(art.kind==='pier'){
+  // Muelle, pasarela elevada y tablas de surf con colores brillantes.
+  for(const z of [-102,-91]){
+   box(115,.4,1.1,plank,0,-.5,z);
+   for(let x=-58;x<=58;x+=8)box(.35,4,.35,metal,x,.9,z);
+  }
+  for(let z=-103;z<=-90;z+=3)box(115,.19,2.6,plank,0,-1.2,z);
+  for(let x=-53;x<=53;x+=16){
+   box(.2,2.2,.2,plank,x,-.2,-95);
+   box(2.1,.16,.3,edge,x,1,-95);
+  }
+  const surf=tex(paint(80,160,q=>{
+   px(q,27,5,26,150,art.ink);
+   px(q,30,8,20,145,'#f77b68');
+   px(q,36,15,8,127,'#fff3c3');
+   for(let i=0;i<8;i++)px(q,30,25+i*15,20,3,'#66c2b9');
+  }));
+  for(const x of [-134,-92,-45,57,104,144]){
+   const board=put(new THREE.PlaneGeometry(2.4,5.2),
+    new THREE.MeshBasicMaterial({map:surf,transparent:true,side:THREE.DoubleSide}),x,1.45,-48);
+   board.rotation.z=x%2?-.12:.08;
+  }
+ }else if(art.kind==='basalt'){
+  // Fisuras ancladas a la roca, escalones y pozas de lava.
+  const fissure=tex(paint(256,128,q=>{
+   px(q,0,0,256,128,art.ink);
+   q.strokeStyle='#f46b35';q.lineWidth=9;
+   for(let i=0;i<8;i++){
+    let x=15+i*29,y=0;q.beginPath();q.moveTo(x,y);
+    for(let j=0;j<8;j++){x+=rnd()*16-8;y+=15;q.lineTo(x,y)}
+    q.stroke();
+   }
+   q.strokeStyle='#ffd16b';q.lineWidth=2;q.stroke();
+  }));
+  for(const x of [-121,-64,17,81,139]){
+   const lava=put(new THREE.PlaneGeometry(8,12),
+    new THREE.MeshBasicMaterial({map:fissure,side:THREE.DoubleSide,transparent:true}),x,-1.31,-76);
+   lava.rotation.x=-Math.PI/2;
+  }
+  for(const x of [-119,-72,-8,57,119]){
+   box(7,2.2,6,edge,x,-.43,-47);
+   box(6.4,1.8,5.4,stone,x,.06,-47);
+   box(1.4,7,1.4,edge,x,4,-47);
+   box(1.15,6.6,1.15,stone,x,4.1,-47);
+   box(1.5,.22,1.5,roof,x,7.5,-47);
+  }
+ }else if(art.kind==='ice'){
+  // Campamento de investigación, cristales helados y barandillas de hielo.
+  for(const x of [-113,0,114]){
+   box(13,6,6,edge,x,1.7,-69);
+   box(12.3,5.4,5.5,ice,x,1.9,-69);
+   box(14,.45,7,roof,x,5.1,-69);
+   box(4,3,.3,metal,x,2,-65.9);
+   box(3.5,2.5,.3,new THREE.MeshBasicMaterial({color:0x68adc8}),x,2,-65.6);
+   for(const off of [-4.4,4.4])box(1.2,5,1.1,stone,x+off,1.1,-65.8);
+  }
+  for(const x of [-138,-87,-41,46,85,136]){
+   box(2.2,8,2.2,edge,x,2.5,-47);
+   box(1.9,7.7,1.9,ice,x,2.6,-47);
+   box(2.5,.4,2.7,roof,x,6.5,-47);
+  }
+  for(let x=-155;x<=155;x+=22)box(14,.22,.32,ice,x,-1,-66);
+ }else if(art.kind==='station'){
+  // Pista de aterrizaje, placas solares, antenas y grúas de carga.
+  const pad=put(new THREE.RingGeometry(9.5,11.7,36),
+   new THREE.MeshBasicMaterial({color:0x89b8e3,side:THREE.DoubleSide}),-64,-1.22,-96);
+  pad.rotation.x=-Math.PI/2;
+  for(const x of [-142,-95,-15,39,90,139]){
+   box(9,.45,6,edge,x,-.9,-45);
+   box(8.5,.22,5.6,metal,x,-.5,-45);
+   const gridMat=new THREE.MeshBasicMaterial({color:0x53b7d4});
+   const panel=box(7.8,.2,5,gridMat,x,3,-45);
+   panel.rotation.x=-.25;
+   box(.32,3.4,.32,metal,x,1.1,-45);
+  }
+  for(const x of [-78,79]){
+   box(.4,9,.4,edge,x,3,-70);
+   const dish=put(new THREE.ConeGeometry(3.3,1.1,12,1,true),roof,x,8,-70);
+   dish.rotation.z=.35;
+   box(1.8,1.2,1.8,metal,x,6.8,-70);
+  }
+  for(const x of [-112,16,118])for(const z of [-67,-72])
+   box(2.4,2,2.4,stone,x,-.4,z);
+ }else{
+  // Ruinas con columnas partidas, arco de piedra y caravanas de telas.
+  for(const x of [-128,-64,0,65,130]){
+   for(const dx of [-4,4]){
+    box(2.7,7.5,2.6,edge,x+dx,2.2,-70);
+    box(2.3,7.1,2.2,stone,x+dx,2.35,-70);
+    box(3.3,.4,3,roof,x+dx,6.2,-70);
+   }
+   if(x%2===0)box(11,1.5,2.4,stone,x,7.4,-70);
+  }
+  const fabrics=[new THREE.MeshBasicMaterial({color:0xd87a5d}),new THREE.MeshBasicMaterial({color:0xe7b76b})];
+  for(const x of [-112,-30,43,108]){
+   for(const dx of [-5,5])box(.18,5,.18,edge,x+dx,1.1,-46);
+   const canopy=box(11,.28,6,fabrics[x>0?0:1],x,3.6,-46);
+   canopy.rotation.z=.06;
+   box(7,1.2,2.1,plank,x,-.7,-46);
+  }
+ }
  // Letrero integrado a una estructura, no una valla gigante.
  const signTex=tex(paint(512,96,q=>{
   px(q,0,0,512,96,art.ink);px(q,7,7,498,82,art.line);px(q,13,13,486,70,art.floor);
