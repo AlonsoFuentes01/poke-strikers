@@ -2505,6 +2505,9 @@ function ordinaryCityStadium(){
  board.position.set(-48,12,-39);cityG.add(board);
 }
 
+// Los panoramas se liberan cuando cambia el estadio para no acumular texturas.
+const SCENIC_TEXTURES=[];
+function disposeScenicTextures(){for(const t of SCENIC_TEXTURES)t.dispose();SCENIC_TEXTURES.length=0;}
 // ================= ESCENARIOS HÍBRIDOS 2D/3D + EVENTOS DE AMBIENTE =================
 // Fondos pintados en canvas (pixel-art), elementos físicos 3D y Pokémon 2D reales.
 function ambientStory(mode){
@@ -2611,12 +2614,28 @@ function ambientStory(mode){
   }
   const tex=new THREE.CanvasTexture(c);tex.encoding=THREE.sRGBEncoding;
   tex.magFilter=THREE.NearestFilter;tex.minFilter=THREE.LinearFilter;
+  SCENIC_TEXTURES.push(tex);
   const mesh=new THREE.Mesh(new THREE.PlaneGeometry(width,height),
    new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false,side:THREE.DoubleSide,fog:false}));
   mesh.position.set(0,height/2-2,z);mesh.renderOrder=-3+layer;cityG.add(mesh);return mesh;
  };
  const far=backdrop(0,-145,420,105),middle=backdrop(1,-87,258,71),front=backdrop(2,-56,174,37);
  BIO.anims.push((dt,T)=>{far.position.x=Math.sin(T*.045)*1.6;middle.position.x=Math.sin(T*.076+2)*1.0;front.position.x=Math.sin(T*.12+4)*.55;});
+ // Pájaros/drones pixelados cruzan las capas 2D del paisaje.
+ const fc=document.createElement('canvas');fc.width=80;fc.height=36;
+ const fq=fc.getContext('2d');fq.fillStyle=mode==='space'?'#8fe6e4':mode==='volcano'?'#443638':'#faf7e9';
+ if(mode==='space'){fq.fillRect(18,10,44,14);fq.fillRect(35,3,10,29);fq.fillStyle='#466d8d';fq.fillRect(12,14,12,6);fq.fillRect(58,14,12,6);}
+ else {fq.beginPath();fq.moveTo(4,15);fq.lineTo(25,8);fq.lineTo(39,20);fq.lineTo(55,8);fq.lineTo(77,15);fq.lineTo(55,15);fq.lineTo(40,25);fq.lineTo(25,15);fq.closePath();fq.fill();}
+ const flightTex=new THREE.CanvasTexture(fc);flightTex.encoding=THREE.sRGBEncoding;flightTex.magFilter=THREE.NearestFilter;
+ SCENIC_TEXTURES.push(flightTex);
+ const birds=[];
+ for(let n=0;n<5;n++){
+  const material=new THREE.SpriteMaterial({map:flightTex,transparent:true,depthWrite:false,fog:false,opacity:.62+n*.07});
+  const sprite=new THREE.Sprite(material);sprite.position.set(-100-n*15,24+n*4,-53-n*4);sprite.scale.set(5+n*.7,2.4+n*.3,1);
+  cityG.add(sprite);birds.push({sprite,speed:1.8+n*.9,y:sprite.position.y});
+ }
+ BIO.anims.push((dt,T)=>{for(const b of birds){b.sprite.position.x+=b.speed*dt;b.sprite.position.y=b.y+Math.sin(T*1.2+b.speed)*.9;if(b.sprite.position.x>106)b.sprite.position.x=-106;}});
+
  // Decoración temática en primer plano del telón.
  const plaster=mat(mode==='volcano'?0x66534c:mode==='arctic'?0xa0b8bd:mode==='desert'?0xb68e59:0xc8b89d);
  const timber=mat(mode==='desert'?0x685344:0x8a6a4b);
@@ -2650,9 +2669,18 @@ function ambientStory(mode){
   const texture=loader.load(spr(th.mon[i]),t=>{t.encoding=THREE.sRGBEncoding;t.magFilter=THREE.NearestFilter;t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;});
   const material=new THREE.SpriteMaterial({map:texture,transparent:true,alphaTest:.06,depthWrite:false,fog:false});
   const sprite=new THREE.Sprite(material);
-  sprite.scale.set(i===0?5.6:4.6,i===0?5.6:4.6,1);
-  sprite.position.set(i===0?-55:i===1?49:0,i===0?13:9.6,-57);
+  sprite.scale.set(i===0?7:5.4,i===0?7:5.4,1);
+  const px=i===0?(mode==='city'?-49:-55):i===1?49:0;
+  sprite.position.set(px,i===0?(mode==='city'?14.7:13):12,-52);
   sprite.visible=false;cityG.add(sprite);sprites.push(sprite);
+ }
+ // Balcón físico pequeño con Pokémon 2D, situado fuera de la cancha.
+ if(mode==='city'){
+  const front=add(new THREE.BoxGeometry(9,12,2.4),plaster,-49,8,-55);
+  add(new THREE.PlaneGeometry(5.8,6),new THREE.MeshBasicMaterial({color:0x41595e}),-49,13,-53.75);
+  add(new THREE.BoxGeometry(9,.36,2.2),timber,-49,11,-52.6);
+  for(const dx of [-3.8,0,3.8])add(new THREE.BoxGeometry(.18,2,.15),timber,-49+dx,12,-51.65);
+  add(new THREE.BoxGeometry(8,.16,.17),timber,-49,13,-51.65);
  }
  const eventDefs={
   city:['Meowth saluda desde el balcón','Pidgey cruza el barrio','Un vecino se asoma'],
@@ -2789,6 +2817,7 @@ void main(){
  });
 }
 const _bs=buildStadium;buildStadium=function(m){
+ disposeScenicTextures();
  if(BIOMES[m]){buildBiome(m);buildEnds(m);livingLandscape(m);livingWorldV2(m);ambientStory(m);stadiumLightShow(m,BIOMES[m].glow);envApply();envChipUpdate();return}
  BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=cityFloorTex;cityFloor.material.needsUpdate=true;
  stadiumMode=m;cityG.clear();cityFloor.material.color.setHex(m==='sunset'?0xd6c6aa:m==='classic'?0xc0cfbd:0xffffff);buildEnds(m);if(m==='city')ordinaryCityStadium();livingLandscape(m);livingWorldV2(m);ambientStory(m);if(m!=='city')stadiumLightShow(m,m==='sunset'?0xff9d5c:0x9bd9ff);envApply();envChipUpdate()};
