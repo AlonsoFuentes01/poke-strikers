@@ -258,94 +258,129 @@ function build(o){
   rect(q,0,631,1536,19,C.ink);rect(q,0,631,1536,6,C.light);
  });
  plane(entrance,106,45,0,3,-40);
- // 3. Secciones laterales AUTÓNOMAS: la misma mampostería, gradas y lava.
- const sidePanel=side=>canvas(704,600,q=>{
-  // Acantilado que da contexto vertical a cada lateral.
-  poly(q,[[0,600],[0,178],[75,114],[129,175],[216,103],[307,191],
-          [390,132],[486,210],[604,133],[704,191],[704,600]],C.ink);
-  poly(q,[[5,600],[5,222],[76,143],[142,206],[222,138],[298,233],
-          [385,171],[486,247],[593,165],[698,217],[698,600]],C.stone);
-  for(let i=0;i<110;i++){
-   const x=rand()*704,y=174+rand()*411;
-   rect(q,x,y,8+rand()*23,3, i%3===0?C.light:C.ash);
-  }
-  // Una cascada corta a un lado, pero integrada al escalonado de las gradas.
-  lavaFall(q,side<0?45:567,240,74,285);
-  rect(q,139,331,430,246,C.ink);rect(q,147,337,414,229,C.stone);
-  bricks(q,149,340,409,220,.78);
-  // Arco secundario y escalinata.
-  cutArch(q,side<0?385:180,286,111,127,false);
-  stairs(q,350,455,144,6);
-  // Gradas como Ciudad: distintas hileras, caras, luces, sin muñecos dibujados.
-  for(let row=0;row<4;row++){
-   const y=342+row*47;
-   rect(q,153,y+30,395,15,C.ink);
-   rect(q,154,y+30,392,5,C.light);
-   // Bancos vacíos y módulos de piedra: los espectadores reales usan sprites PMD.
-   for(let i=0;i<17;i++){
-    const x=160+i*22+(row%2)*8;
-    if(x>540)continue;
-    rect(q,x,y+13,18,8,'#514052');
-    rect(q,x+2,y+15,14,2,C.stone2);
-    rect(q,x+4,y+22,10,4,C.ink);
-   }
-  }
-  rect(q,126,555,467,24,C.ink);rect(q,132,557,455,9,C.shine);
-  banner(q,side<0?235:465,219,.95);
-  torch(q,side<0?185:519,380,.85);
-  rock(q,side<0?90:610,573,1.0);
-  crystal(q,side<0?136:560,573,.7);
- });
- plane(sidePanel(-1),62,39,-52,3,-32);
- plane(sidePanel(1),62,39,52,3,-32);
 
- // 3b. Gradas bajas bien delimitadas y atestadas de arquitectura pixel art.
- // Estas son las plataformas en que se colocan los sprites reales desde index.html.
- const standFrame=canvas(768,256,q=>{
-  rect(q,0,0,768,256,C.ink);
-  rect(q,8,10,752,239,C.stone);
-  bricks(q,12,16,744,227,.65);
-  // Banquetas claras, filas independientes y columnas de separación.
+ // 3. GRANDE TRIBUNA ILUSTRADA: tres filas de asientos verificables.
+ // El público NO está dibujado en la textura: son sprites PMD del juego.
+ const standPanel=(side)=>canvas(1088,920,q=>{
+  const outer=side<0?85:1003,inner=side<0?1003:85;
+  // Acantilado escalonado y línea de cumbres, lejos de las tribunas.
+  poly(q,[[0,920],[0,281],[64,233],[103,172],[173,226],[257,140],
+          [332,208],[414,158],[507,250],[591,179],[670,268],[751,206],
+          [845,253],[923,207],[1014,250],[1088,207],[1088,920]],C.ink);
+  poly(q,[[0,920],[0,301],[74,251],[117,189],[185,240],[264,167],
+          [341,233],[424,178],[516,278],[587,207],[677,297],[748,237],
+          [847,280],[932,234],[1023,282],[1088,247],[1088,920]],C.stone);
+  for(let i=0;i<155;i++){
+   const px=rand()*1088,py=210+rand()*620;
+   rect(q,px,py,7+rand()*21,2+rand()*3,i%3===0?C.light:C.ash);
+  }
+  // Dos torres y arco alejados de la fila superior; forman la silueta del estadio.
+  const outside=side<0?104:984,inside=side<0?962:126;
+  tower(q,outside,228,.88);
+  tower(q,inside,255,.66);
+  // Columnas cortas y capitel, anexados a la fachada.
+  for(const x of [215,871]){
+   rect(q,x-29,268,58,278,C.ink);rect(q,x-22,279,44,262,C.stone2);
+   bricks(q,x-18,281,38,253,.56);
+   rect(q,x-34,256,68,26,C.ink);rect(q,x-29,261,58,14,C.light);
+   rect(q,x-32,524,64,20,C.ink);
+  }
+  // Cascada de lava situada claramente entre las torres.
+  lavaFall(q,side<0?155:841,296,84,297);
+  // Tres graderías con peldaños, respaldos, divisores, arcos y zócalos.
+  rect(q,166,368,763,525,C.ink);
+  rect(q,176,379,743,497,C.stone);
+  bricks(q,179,389,739,490,.74);
   for(let row=0;row<3;row++){
-   const y=42+row*58;
-   rect(q,10,y,748,14,C.ink);
-   rect(q,14,y+2,740,6,C.shine);
-   rect(q,14,y+8,740,5,C.stone2);
-   for(let k=0;k<19;k++){
-    const x=23+k*39;
-    rect(q,x,y+15,27,25,C.ink);
-    rect(q,x+3,y+18,21,18,'#554359');
-    rect(q,x+5,y+23,17,3,C.light);
+   const yy=402+row*143,stagger=row%2?22:0;
+   // Plataforma sobresaliente bajo el público, resaltada como en Ciudad.
+   rect(q,173,yy-20,754,19,C.ink);
+   rect(q,179,yy-15,741,6,C.shine);
+   rect(q,176,yy+91,749,20,C.ink);
+   rect(q,178,yy+93,746,7,C.light);
+   rect(q,182,yy+103,740,7,C.stone2);
+   // Asientos distribuidos de forma exacta y sin personajes falsos.
+   for(let seat=0;seat<16;seat++){
+    const xx=196+seat*44+stagger;
+    if(xx>889)continue;
+    rect(q,xx,yy+14,31,30,C.ink);
+    rect(q,xx+4,yy+19,23,20,'#58465c');
+    rect(q,xx+3,yy+41,27,7,C.stone2);
+    rect(q,xx+6,yy+23,18,3,'#8d7083');
+   }
+   // Arquería bajo los peldaños, con pequeñas ventanas de lava.
+   for(let k=0;k<11;k++){
+    const xx=193+k*67;
+    rect(q,xx,yy+113,50,23,C.ink);
+    rect(q,xx+5,yy+115,39,15,k%3===0?'#a84e42':'#504055');
+    if(k%3===0)rect(q,xx+12,yy+117,18,10,C.hot);
    }
   }
-  // Separadores que delimitan sectores, igual que las tribunas de Ciudad.
-  for(const x of [5,371,732]){
-   rect(q,x,10,29,239,C.ink);
-   rect(q,x+5,10,19,229,C.stone2);
-   rect(q,x+9,22,6,196,C.light);
+  // Pasarela de servicio central y escaleras originales de las láminas aprobadas.
+  const stairsX=side<0?844:246;
+  stairs(q,stairsX,376,70,13);
+  for(const x of [side<0?763:329,side<0?955:137]){
+   rect(q,x-22,374,45,440,C.ink);
+   rect(q,x-16,382,33,420,C.stone2);
+   for(let yy=393;yy<797;yy+=57){
+    rect(q,x-18,yy,38,7,C.ink);
+    rect(q,x-15,yy+1,33,3,C.light);
+   }
   }
-  rect(q,0,236,768,20,C.ink);rect(q,0,237,768,7,C.shine);
+  // Muro frontal, dos largos corredores y un remate con pilares ornamentados.
+  rect(q,161,840,784,63,C.ink);
+  rect(q,172,845,765,49,C.stone2);
+  for(let x=187;x<937;x+=71){
+   cutArch(q,x,855,39,25,true);
+   rect(q,x-4,883,46,8,C.ink);
+  }
+  rect(q,152,818,798,31,C.ink);rect(q,159,822,785,11,C.shine);
+  for(let x=162;x<943;x+=84){
+   rect(q,x,788,34,48,C.ink);rect(q,x+6,796,22,36,C.stone);
+   rect(q,x-4,784,43,12,C.light);
+  }
+  // Monumentos, banderas y braseros colocados en pilares, no sobre espectadores.
+  banner(q,side<0?300:788,264,1.22);
+  banner(q,side<0?948:140,553,.9);
+  for(const [x,y,s] of [[side<0?140:948,585,1.15],[side<0?956:132,848,.95],
+                         [side<0?346:742,345,.75]])torch(q,x,y,s);
+  for(const x of [side<0?55:1033,side<0?324:760])rock(q,x,888,.85);
+  crystal(q,side<0?78:1010,894,1.15);
+  // Muro exterior lateral lleno de detalle en el fondo, no color plano.
+  for(let j=0;j<20;j++){
+   const x=12+j*55;
+   rect(q,x,900,44,5,C.ink);
+   if(j%3===0)rect(q,x+12,906,7,11,C.hot);
+  }
+ });
+ // Las imágenes comparten el mismo tamaño lógico de pixel que la fachada.
+ plane(standPanel(-1),44,38,-44.7,7.7,-32);
+ plane(standPanel(1),44,38,44.7,7.7,-32);
+ // Barandillas delante de los pies, por fila, con separación de Pokémon.
+ const railArt=canvas(832,76,q=>{
+  for(let y=0;y<76;y+=19){
+   rect(q,0,y,832,19,y%38===0?C.stone:C.stone2);
+   rect(q,0,y,832,3,C.light);
+  }
+  rect(q,0,28,832,20,C.ink);
+  rect(q,0,30,832,7,C.shine);
+  for(let i=0;i<23;i++){
+   const x=i*39;
+   rect(q,x,8,13,60,C.ink);
+   rect(q,x+3,12,7,51,C.stone2);
+   rect(q,x-4,0,19,12,C.light);
+   if(i%4===0){
+    rect(q,x+23,38,12,11,'#9d453f');rect(q,x+27,39,5,8,C.hot);
+   }
+  }
+  rect(q,0,65,832,11,C.ink);rect(q,0,67,832,4,C.light);
  });
  for(const side of [-1,1]){
-  // Plano de las gradas por detrás de los espectadores.
-  plane(standFrame,27,11.4,side*45.3,7.5,-28.8);
- }
- // Barandillas por delante de los sprites para evitar espectadores flotando.
- const seatRail=canvas(768,88,q=>{
-  rect(q,0,33,768,55,C.ink);
-  rect(q,0,38,768,37,C.stone);
-  for(let x=0;x<768;x+=47){
-   rect(q,x,7,14,80,C.ink);rect(q,x+3,12,8,66,C.stone2);
-   rect(q,x-5,0,24,14,C.light);
+  for(const yy of [3.2,6.65,10.05]){
+   const r=plane(railArt,31.7,1.35,side*41.2,yy,-26.15);
+   r.renderOrder=4;r.material.depthTest=false;
   }
-  rect(q,0,23,768,13,C.ink);rect(q,0,25,768,5,C.shine);
-  rect(q,0,71,768,9,C.ink);rect(q,0,72,768,3,C.light);
- });
- for(const side of [-1,1]){
-  const rail=plane(seatRail,27.3,3.4,side*45.3,3.95,-25.9);
-  rail.renderOrder=4;rail.material.depthTest=false;
  }
-
  // 4. Edificaciones pequeñas y decoración cerca de las bandas, como Ciudad.
  const prop=canvas(128,152,q=>{
   rect(q,17,117,95,25,C.ink);rect(q,20,120,90,15,C.stone);
