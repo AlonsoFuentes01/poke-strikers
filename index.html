@@ -1075,31 +1075,40 @@ function crowdAnimFor(id){
  return entry;
 }
 function arrangeStadiumCrowd(){
- // Sprites PMD reales en dos filas de asientos sobre cada gradería.
+ // Las posiciones se anclan a los escalones dibujados del Volcán.
+ // Ciudad conserva exactamente su antiguo aforo y sus dos filas.
  if(!crowd.length)return;
  const volcano=stadiumMode==='volcano';
- const xSeats=volcano?[-54,-47,-40,-33,33,40,47,54]:[-40.5,-37,-33.5,-30,30,33.5,37,40.5];
+ const seatsVol=[-50,-46.5,-43,-39.5,-36,36,39.5,43,46.5,50];
+ const seatsCity=[-40.5,-37,-33.5,-30,30,33.5,37,40.5];
  for(let i=0;i<crowd.length;i++){
-  const c=crowd[i],row=Math.floor(i/8),idx=i%8;
-  const y=volcano?(row?9.15:5.85):(row?3.2:1.85);
-  const z=volcano?(row?-29.2:-27.0):(row?-25.4:-24.6);
-  c.fit=false;c.hc=volcano?1.85:2.2;
-  c.s.scale.set(volcano?2.45:2.8,volcano?2.45:2.8,1);
-  c.s.position.set(xSeats[idx],y,z);c.by=y;
-  c.baseY=y-(volcano?2.45:2.8)*.49;
+  const member=crowd[i];
+  member.s.visible=volcano||i<16;
+  if(!member.s.visible)continue;
+  const row=volcano?Math.floor(i/10):Math.floor(i/8);
+  const idx=volcano?i%10:i%8;
+  const x=volcano?seatsVol[idx]:seatsCity[idx];
+  const feetY=volcano?[3.65,7.1,10.55][row]:[1.85,3.2][row];
+  const z=volcano?[-27,-27.65,-28.3][row]:[-24.6,-25.4][row];
+  const size=volcano?2.22:2.8;
+  member.fit=false;member.hc=volcano?1.72:2.2;
+  member.s.scale.set(size,size,1);
+  member.s.position.set(x,feetY+size*.42,z);
+  member.by=feetY+size*.42;
+  member.baseY=feetY;
  }
 }
 function buildCrowd(T){
  if(crowdBuilt){arrangeStadiumCrowd();return;}
  crowdBuilt=true;crowdG.clear();crowd=[];
  const ids=[25,4,7,133,52,39,1,54,58,37,27,63,74,175,215,393];
- let mdIdx=0;
- for(let row=0;row<2;row++)for(let i=0;i<8;i++){
-  const id=ids[(i*7+row*3)%ids.length],anim=crowdAnimFor(id);
+ for(let row=0;row<3;row++)for(let i=0;i<10;i++){
+  const n=row*10+i,id=ids[(i*7+row*3)%ids.length],anim=crowdAnimFor(id);
+  // No compartir materiales de sprite individuales: permite opacidades futuras.
   const sp=new THREE.Sprite(anim.mat);
   sp.scale.set(2.8,2.8,1);sp.renderOrder=2;crowdG.add(sp);
-  crowd.push({s:sp,by:0,baseY:0,ph:mdIdx*.7,
-   sp:.75+(i%3)*.07,anim,sz:2.8,hc:2.2,fit:false});mdIdx++;
+  crowd.push({s:sp,by:0,baseY:0,ph:n*.7,sp:.75+(i%3)*.07,
+   anim,sz:2.8,hc:2.2,fit:false});
  }
  arrangeStadiumCrowd();
 }
