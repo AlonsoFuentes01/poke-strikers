@@ -334,7 +334,7 @@ body.netHost .wzModes,body.netGuest .wzModes{display:none}
 #wiz #stadiumPick{display:flex!important;flex-wrap:nowrap;gap:10px;margin:0 0 14px!important;max-width:100%!important;width:100%;overflow-x:auto;padding:4px 2px 8px;scroll-snap-type:x proximity;scrollbar-width:thin;align-self:stretch}
 #wiz #stadiumPick button{flex:0 0 auto;width:118px;height:84px;padding:0 6px 7px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;font:800 12px Nunito,sans-serif;color:#fff;border:2px solid #ffffff30;box-shadow:inset 0 -30px 28px #000a;text-shadow:0 2px 6px #000;scroll-snap-align:start;transition:.15s;background:var(--bg,#223)}
 #wiz #stadiumPick button.on{border-color:#ffd23f;box-shadow:inset 0 -30px 28px #000a,0 0 0 3px #ffd23f44;transform:translateY(-2px);color:#fff}
-#wiz #stadiumPick [data-stadium=city]{--bg:linear-gradient(180deg,#1a3a70,#ff4fd8 150%)}#wiz #stadiumPick [data-stadium=sunset]{--bg:linear-gradient(180deg,#2a2050,#ff9b5a)}#wiz #stadiumPick [data-stadium=classic]{--bg:linear-gradient(180deg,#294a74,#9cc0df)}
+#wiz #stadiumPick [data-stadium=city]{--bg:linear-gradient(180deg,#5b91b7,#97b56c 150%)}#wiz #stadiumPick [data-stadium=sunset]{--bg:linear-gradient(180deg,#2a2050,#ff9b5a)}#wiz #stadiumPick [data-stadium=classic]{--bg:linear-gradient(180deg,#294a74,#9cc0df)}
 #wiz #stadiumPick [data-stadium=beach]{--bg:linear-gradient(180deg,#1f7ae0,#f5d48a)}#wiz #stadiumPick [data-stadium=volcano]{--bg:linear-gradient(180deg,#14070b,#ff5a1f)}#wiz #stadiumPick [data-stadium=arctic]{--bg:linear-gradient(180deg,#7fd0f0,#f1fbff)}
 #wiz #stadiumPick [data-stadium=space]{--bg:linear-gradient(180deg,#0a0420,#7a3cff)}#wiz #stadiumPick [data-stadium=desert]{--bg:linear-gradient(180deg,#e0a85a,#f7d98a)}
 #wiz #weatherPick{display:flex!important;gap:8px;flex-wrap:wrap;margin:0!important;max-width:100%!important;align-self:stretch}
@@ -1708,7 +1708,7 @@ function refTick(dt,t){
 renderBinds();keysHint();
 // ================= ENTORNO VISUAL: cielo, clima, daño de césped, minimapa =================
 const mixn=(a,b,k)=>a+(b-a)*k;
-const STN={city:'Ciudad neón',sunset:'Atardecer',classic:'Clásico'};
+const STN={city:'Ciudad',sunset:'Atardecer',classic:'Clásico'};
 const WXN={clear:['☀️','Despejado'],cloudy:['☁️','Nublado'],rain:['🌧️','Lluvia'],storm:['⛈️','Tormenta'],fog:['🌫️','Niebla'],snow:['❄️','Nieve']};
 const WXP={
  clear:{cloud:.12,rain:0,snow:0,fog:0,dark:0,wet:0,thunder:0},
@@ -2221,6 +2221,29 @@ function stadiumLightShow(mode,glow){
  const arch=new THREE.Mesh(new THREE.TorusGeometry(30,.3,6,72,Math.PI),new THREE.MeshBasicMaterial({color:glow,transparent:true,opacity:.85}));
  arch.position.set(0,11,-HZ-20);cityG.add(arch);
 }
+// Reutilizada por todos los biomas para crear fisuras, salitre y pintura saltada.
+let _stadiumPatina=null;
+function stadiumPatinaTexture(){
+ if(_stadiumPatina)return _stadiumPatina;
+ const c=document.createElement('canvas');c.width=c.height=512;const q=c.getContext('2d');
+ q.fillStyle='#e8e7de';q.fillRect(0,0,512,512);
+ let seed=842;const rnd=()=>{seed=seed*16807%2147483647;return(seed-1)/2147483646};
+ for(let i=0;i<2500;i++){
+  const x=rnd()*512,y=rnd()*512,r=1+rnd()*12;
+  q.fillStyle=rnd()<.6?'rgba(70,60,50,.15)':'rgba(255,251,224,.36)';
+  q.fillRect(x,y,r,r*(.25+rnd()));
+ }
+ for(let i=0;i<65;i++){
+  let x=rnd()*512,y=rnd()*512;
+  q.strokeStyle=rnd()<.5?'rgba(38,35,28,.27)':'rgba(112,71,40,.3)';
+  q.lineWidth=.6+rnd()*1.8;q.beginPath();q.moveTo(x,y);
+  for(let j=0;j<6;j++){x+=rnd()*13-6;y+=rnd()*16+2;q.lineTo(x,y)}q.stroke();
+ }
+ _stadiumPatina=new THREE.CanvasTexture(c);
+ _stadiumPatina.wrapS=_stadiumPatina.wrapT=THREE.RepeatWrapping;
+ _stadiumPatina.repeat.set(3,2);_stadiumPatina.encoding=THREE.sRGBEncoding;
+ return _stadiumPatina;
+}
 // ================= POKÉ STRIKERS 2.0 · ARENAS DE NUEVA GENERACIÓN =================
 // Gran tribuna del fondo, videomarcador holográfico, luminarias y efectos propios.
 // Todo queda fuera de los límites jugables; sin cámaras ni mecánicas nuevas.
@@ -2234,7 +2257,7 @@ function stadiumV2(mode,glow){
  };
  const pal=palettes[mode]||palettes.city,accent=new THREE.Color(pal[1]),secondary=new THREE.Color(pal[2]);
  const basic=(c,opacity=1)=>new THREE.MeshBasicMaterial({color:c,transparent:opacity<1,opacity,depthWrite:opacity===1});
- const structure=new THREE.MeshStandardMaterial({color:pal[0],roughness:.58,metalness:.38});
+ const structure=new THREE.MeshStandardMaterial({color:pal[0],map:stadiumPatinaTexture(),roughness:.94,metalness:.07});
  const lightMat=new THREE.MeshBasicMaterial({color:pal[1]});
  const secondMat=new THREE.MeshBasicMaterial({color:pal[2]});
  const add=(geo,mat,x,y,z)=>{const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);cityG.add(o);return o};
@@ -2495,6 +2518,59 @@ function livingWorldV2(mode){
  }
 }
 
+// ================= CIUDAD · ESTADIO MUNICIPAL Y TRIBUNAS CON PÚBLICO =================
+function ordinaryCityStadium(){
+ const structure=new THREE.MeshStandardMaterial({color:0xa1a79b,roughness:1});
+ const concrete=new THREE.MeshStandardMaterial({color:0xb4b7ae,roughness:1});
+ const brick=new THREE.MeshStandardMaterial({color:0xa76b53,roughness:1});
+ const seatA=new THREE.MeshStandardMaterial({color:0x657c75,roughness:.93});
+ const seatB=new THREE.MeshStandardMaterial({color:0xa7b7ac,roughness:.93});
+ const add=(g,m,x,y,z)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y,z);cityG.add(o);return o};
+ const back=-HZ-20;
+ // Gradas tradicionales y cubierta de zinc, sin hologramas ni luces neón.
+ for(let i=0;i<9;i++){
+  const z=back-i*1.65,y=1.6+i*1.35;
+  add(new THREE.BoxGeometry(87,1.45,1.65),structure,0,y,z);
+  add(new THREE.BoxGeometry(84,.22,1.1),i%2?seatA:seatB,0,y+.73,z+.15);
+ }
+ add(new THREE.BoxGeometry(92,1.5,12),concrete,0,15.8,back-15);
+ add(new THREE.BoxGeometry(92,.38,12.4),seatA,0,16.6,back-15);
+ for(const x of [-44,-28,0,28,44])add(new THREE.BoxGeometry(.9,14,.9),concrete,x,8.5,back-14);
+ // Marcador convencional pintado, reloj y nombre del estadio.
+ const sc=document.createElement('canvas');sc.width=768;sc.height=192;const q=sc.getContext('2d');
+ q.fillStyle='#314b43';q.fillRect(0,0,768,192);
+ q.fillStyle='#e3e1c5';q.fillRect(11,11,746,170);
+ q.fillStyle='#35594d';q.fillRect(19,19,730,154);
+ q.fillStyle='#f3f0d5';q.textAlign='center';q.textBaseline='middle';
+ q.font='bold 63px Arial';q.fillText('ESTADIO CIUDAD',384,75);
+ q.font='bold 30px Arial';q.fillText('POKÉ STRIKERS  •  LIGA LOCAL',384,135);
+ const tex=new THREE.CanvasTexture(sc);tex.encoding=THREE.sRGBEncoding;
+ const board=add(new THREE.PlaneGeometry(49,12.25),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}),0,22,back-9.1);
+ add(new THREE.BoxGeometry(51,13.4,.9),brick,0,22,back-9.8);
+ // Público de muchos colores, instanciado para no penalizar celulares.
+ const N=520;
+ const people=new THREE.InstancedMesh(new THREE.BoxGeometry(.46,.92,.4),new THREE.MeshStandardMaterial({color:0xffffff,roughness:1}),N);
+ const o=new THREE.Object3D();let seed=943;
+ const rnd=()=>{seed=seed*16807%2147483647;return(seed-1)/2147483646};
+ const colors=[0xeac591,0x8aa0ae,0xc26d58,0x587b5d,0xf0db9b,0x636b7f,0xce967a];
+ for(let i=0;i<N;i++){
+  const row=i%8,col=Math.floor(i/8);
+  o.position.set(-41+col*1.27+(.2-rnd()*.4),3.1+row*1.36,back-2.4-row*1.65);
+  o.rotation.set(0,rnd()*.28-.14,0);
+  o.scale.set(.8,1+rnd()*.3,.85);o.updateMatrix();people.setMatrixAt(i,o.matrix);
+  people.setColorAt(i,new THREE.Color(colors[Math.floor(rnd()*colors.length)]));
+ }
+ people.frustumCulled=false;cityG.add(people);
+ // Farolas de barrio, árboles y paseos: mobiliario cotidiano.
+ const lamp=new THREE.MeshStandardMaterial({color:0x525d55,roughness:.8});
+ const glass=new THREE.MeshBasicMaterial({color:0xffefd2});
+ for(const x of [-63,-32,32,63]){
+  const post=add(new THREE.CylinderGeometry(.13,.19,11,6),lamp,x,4,-57);
+  add(new THREE.BoxGeometry(3,.28,.35),lamp,x+1.4,9.6,-57);
+  add(new THREE.BoxGeometry(1.4,.3,.8),glass,x+2.4,9.35,-57);
+ }
+}
+
 // Shaders de arquitectura para los ocho estadios: juntas minerales y luz animada.
 function stadiumWallMaterial(base,accent){
  const mat=new THREE.MeshStandardMaterial({color:base,roughness:.82,metalness:.12,emissive:accent,emissiveIntensity:.12});
@@ -2604,7 +2680,7 @@ void main(){
 const _bs=buildStadium;buildStadium=function(m){
  if(BIOMES[m]){buildBiome(m);buildEnds(m);livingLandscape(m);livingWorldV2(m);stadiumLightShow(m,BIOMES[m].glow);envApply();envChipUpdate();return}
  BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=cityFloorTex;cityFloor.material.needsUpdate=true;
- if(m==='city'){stadiumMode=m;cityG.clear();livingCity();}else{_bs(m);cityLife(m);}buildEnds(m);livingLandscape(m);livingWorldV2(m);if(m!=='city')stadiumLightShow(m,m==='sunset'?0xff9d5c:0x9bd9ff);envApply();envChipUpdate()};
+ if(m==='city'){stadiumMode=m;cityG.clear();livingCity();}else{_bs(m);cityLife(m);}buildEnds(m);if(m==='city')ordinaryCityStadium();livingLandscape(m);livingWorldV2(m);if(m!=='city')stadiumLightShow(m,m==='sunset'?0xff9d5c:0x9bd9ff);envApply();envChipUpdate()};
 cityG.clear();livingCity();
 // Fondo de los arcos: gradas escalonadas, muro con franjas de luz, techo, vallas y skyline.
 function buildEnds(mode){
@@ -2623,14 +2699,14 @@ function buildEnds(mode){
   const roof=new THREE.Mesh(new THREE.BoxGeometry(8,.4,tw+6),new THREE.MeshStandardMaterial({color:TH?TH.roof:0x1b2340,roughness:.8}));roof.position.set(s*(HX+13.6),10.2,0);if(!TH)cityG.add(roof);
   const ad=new THREE.Mesh(new THREE.PlaneGeometry(tw-6,1.3),new THREE.MeshBasicMaterial({map:adT}));ad.position.set(s*(HX+2.45),.75,0);ad.rotation.y=s>0?-Math.PI/2:Math.PI/2;cityG.add(ad);
   // skyline detrás del muro
-  if(!TH)for(let row=0;row<2;row++)for(let i=0;i<(row?9:12);i++){
+  if(!TH&&mode!=='city')for(let row=0;row<2;row++)for(let i=0;i<(row?9:12);i++){
    const w=5+Math.random()*3,h=(row?20:12)+Math.random()*(row?20:16),d=5+Math.random()*3,
     x=s*(HX+(row?34:23)+Math.random()*6),z=-47+i*(row?11:8.2)+Math.random()*2;
    const bm=new THREE.Mesh(new THREE.BoxGeometry(d,h,w),facade());bm.position.set(x,h/2-1,z);cityG.add(bm);
   }
  }
 }
-buildEnds(stadiumMode);livingLandscape(stadiumMode);livingWorldV2(stadiumMode);
+buildEnds(stadiumMode);ordinaryCityStadium();livingLandscape(stadiumMode);livingWorldV2(stadiumMode);
 
 const DMW=1024,DMH=614,dmC=document.createElement('canvas');dmC.width=DMW;dmC.height=DMH;const dmq=dmC.getContext('2d');
 const dmT=srgb(new THREE.CanvasTexture(dmC));
