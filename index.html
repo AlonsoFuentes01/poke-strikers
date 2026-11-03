@@ -2318,6 +2318,75 @@ function stadiumV2(mode,glow){
  for(const x of [-65,65]){const sign=new THREE.Mesh(new THREE.PlaneGeometry(18,4.5),m);sign.position.set(x,10,-37);cityG.add(sign);}
 }
 
+// Sprites pixel-art instanciados, con siluetas específicas para cada bioma.
+// Una textura por grupo; cada grupo se dibuja de una sola pasada.
+function pixelBiomeTexture(mode){
+ const c=document.createElement('canvas');c.width=96;c.height=128;const q=c.getContext('2d');
+ const rect=(x,y,w,h,col)=>{q.fillStyle=col;q.fillRect(x,y,w,h)};
+ const branch=(x1,y1,x2,y2,col,width)=>{q.strokeStyle=col;q.lineWidth=width;q.beginPath();q.moveTo(x1,y1);q.lineTo(x2,y2);q.stroke()};
+ if(['city','classic','sunset'].includes(mode)){
+  rect(41,88,13,38,'#765438');rect(45,104,6,22,'#a67c4b');
+  for(const [x,y,w,h] of [[22,55,53,24],[15,43,62,27],[28,26,43,28],[36,16,28,24]]){
+   rect(x,y,w,h,mode==='sunset'?'#a57d4c':'#438e58');
+   rect(x+5,y+4,w-12,6,mode==='sunset'?'#cfaf62':'#6dab65');
+  }
+  for(const [x,y] of [[18,62],[34,31],[50,50],[62,37]])rect(x,y,10,5,'#a8ce81');
+ }else if(mode==='beach'){
+  rect(43,54,10,73,'#967146');rect(46,65,4,48,'#bc9869');
+  for(let k=0;k<8;k++){
+   const a=k*Math.PI/4;branch(48,53,48+Math.cos(a)*35,53+Math.sin(a)*17,'#277e61',9);
+   branch(48,50,48+Math.cos(a)*27,50+Math.sin(a)*12,'#56ba76',5);
+  }
+  rect(37,43,19,13,'#42976c');
+ }else if(mode==='arctic'){
+  rect(41,86,13,40,'#6b7379');
+  for(const [y,w] of [[29,21],[43,32],[60,40],[77,31]]){
+   for(let i=0;i<4;i++)rect(48-w/2+i*2,y+i*4,w-i*4,7,'#739ea5');
+   rect(47-w/2,y+2,w,4,'#e4f5ee');
+  }
+ }else if(mode==='desert'){
+  rect(41,39,16,88,'#65905a');rect(44,48,4,67,'#92ad6d');
+  rect(24,69,17,13,'#65905a');rect(20,45,9,31,'#65905a');
+  rect(57,85,18,12,'#65905a');rect(68,57,9,35,'#65905a');
+ }else if(mode==='volcano'){
+  rect(18,100,62,25,'#30272a');rect(26,75,47,27,'#493334');
+  rect(34,52,33,25,'#38292c');rect(40,35,21,19,'#4d3533');
+  rect(44,66,6,55,'#f0773b');rect(50,73,3,28,'#ffb453');
+  rect(33,103,5,19,'#bf5f34');rect(69,94,4,18,'#de8646');
+ }else if(mode==='space'){
+  rect(45,28,7,93,'#7f8caa');rect(38,26,22,10,'#a0accb');
+  rect(18,52,60,35,'#4d638a');rect(21,55,54,28,'#748dba');
+  for(let x=24;x<76;x+=12)for(let y=58;y<82;y+=11)rect(x,y,8,7,'#86cee8');
+  rect(27,91,42,9,'#9f8dca');
+ }
+ const tex=new THREE.CanvasTexture(c);tex.encoding=THREE.sRGBEncoding;
+ tex.magFilter=THREE.NearestFilter;tex.minFilter=THREE.LinearFilter;tex.generateMipmaps=false;
+ if(typeof SCENIC_TEXTURES!=='undefined')SCENIC_TEXTURES.push(tex);
+ return tex;
+}
+function pixelBiomeInstances(mode,list){
+ if(!list.length)return;
+ const tex=pixelBiomeTexture(mode);
+ const mat=new THREE.MeshBasicMaterial({map:tex,transparent:true,alphaTest:.08,
+  depthWrite:false,side:THREE.DoubleSide,fog:false});
+ const geo=new THREE.PlaneGeometry(1,1),mesh=new THREE.InstancedMesh(geo,mat,list.length);
+ const obj=new THREE.Object3D();
+ list.forEach((o,i)=>{
+  const w=o.w||7,h=o.h||10;
+  obj.position.set(o.x,(o.y||-1.5)+h*.5,o.z);
+  obj.rotation.set(0,0,0);obj.scale.set(w,h,1);obj.updateMatrix();
+  mesh.setMatrixAt(i,obj.matrix);
+ });
+ mat.onBeforeCompile=shader=>{
+  shader.uniforms.uPixelWind=BIO.T;
+  shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nuniform float uPixelWind;')
+   .replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.x+=max(0.,uv.y-.3)*sin(uPixelWind*1.5+instanceMatrix[3].x*.16+instanceMatrix[3].z*.1)*.035;');
+ };
+ mat.customProgramCacheKey=()=> 'pixel-foliage-wind-v1';
+ mesh.instanceMatrix.needsUpdate=true;mesh.frustumCulled=false;
+ cityG.add(mesh);return mesh;
+}
+
 // ================= V2.1 · MUNDO VIVO: VEGETACIÓN Y VIENTO =================
 // Plantas agrupadas por geometría: pocas draw calls, movimiento íntegro en GPU.
 function livingLandscape(mode){
@@ -2677,19 +2746,52 @@ function ambientStory(mode){
  const timber=mat(mode==='desert'?0x685344:0x8a6a4b);
  const roof=mat(mode==='city'?0x99594a:mode==='beach'?0xd2b76b:0x627d81);
  // Pequeñas construcciones detrás del público: balcones y toldos combinan geometría 3D y sprites.
- const houses=(mode==='city'||mode==='sunset'||mode==='classic')?7:mode==='beach'?4:3;
- for(let i=0;i<houses;i++){
-  const x=-93+i*(187/Math.max(1,houses-1))+(rnd()-.5)*4;
-  const z=-65-rnd()*9,h=8+rnd()*8;
-  const block=add(new THREE.BoxGeometry(11,h,5),plaster,x,h/2-1.5,z);
-  add(new THREE.BoxGeometry(12,.65,6.2),roof,x,h-1.2,z);
-  const balcony=add(new THREE.BoxGeometry(6,.28,2.3),timber,x,h*.67,z+3.5);
-  for(const off of [-2.6,0,2.6]){
-   add(new THREE.BoxGeometry(.12,2,.13),timber,x+off,h*.67+1,z+4.55);
+ // Elementos ambientados según el bioma: únicamente casas en zonas habitadas.
+ // Para volcanes usamos basalto; glaciar pinos helados; desierto cactus;
+ // espacio instalaciones. No se generan viviendas genéricas.
+ const props=[],urban=['city','classic','sunset'].includes(mode);
+ const count=urban?12:mode==='beach'?13:mode==='arctic'?17:mode==='desert'?22:mode==='volcano'?18:14;
+ for(let k=0;k<count;k++){
+  const x=-120+(k+.5)*240/count+(rnd()-.5)*7,z=-68-rnd()*20;
+  const h=urban?11+rnd()*9:mode==='beach'?12+rnd()*8:mode==='volcano'?8+rnd()*10:12+rnd()*10;
+  props.push({x,y:-1.4,z,w:mode==='space'?8:mode==='volcano'?7:mode==='beach'?9:urban?10:7,h});
+ }
+ if(urban){
+  // Fachadas de barrios pixeladas, con balcones, ventanas, techos y toldos.
+  const c=document.createElement('canvas');c.width=96;c.height=128;const q=c.getContext('2d');
+  const painted=mode==='sunset'?'#c58f78':mode==='classic'?'#b8bda1':'#cbb8a2';
+  q.fillStyle=painted;q.fillRect(8,24,80,102);
+  q.fillStyle=mode==='sunset'?'#8d665c':'#84634b';q.fillRect(4,16,88,12);
+  for(let row=0;row<3;row++)for(let col=0;col<2;col++){
+   const xx=22+col*38,yy=34+row*27;
+   q.fillStyle='#485e69';q.fillRect(xx,yy,19,18);
+   q.fillStyle='#b1d3d4';q.fillRect(xx+2,yy+2,5,9);
+   q.fillStyle='#70543e';q.fillRect(xx-3,yy+18,25,5);
+   if(row===1){
+    q.fillRect(xx-3,yy+23,25,4);
+    for(let j=0;j<4;j++)q.fillRect(xx-2+j*7,yy+22,2,13);
+   }
   }
-  add(new THREE.BoxGeometry(6,.2,.14),timber,x,h*.67+2,z+4.55);
-  const wMat=new THREE.MeshBasicMaterial({color:mode==='space'?0xa0b7e9:0x516b77});
-  add(new THREE.PlaneGeometry(4,3.2),wMat,x,h*.66+2.8,z+2.56);
+  if(mode==='sunset'){q.fillStyle='#edd9b6';q.fillRect(13,70,22,4);q.fillRect(19,74,10,9);}
+  const tex=new THREE.CanvasTexture(c);tex.encoding=THREE.sRGBEncoding;tex.magFilter=THREE.NearestFilter;tex.minFilter=THREE.LinearFilter;SCENIC_TEXTURES.push(tex);
+  const geom=new THREE.PlaneGeometry(1,1),m=new THREE.MeshBasicMaterial({map:tex,transparent:true,alphaTest:.04,side:THREE.DoubleSide,depthWrite:false,fog:false});
+  const im=new THREE.InstancedMesh(geom,m,props.length),dummy=new THREE.Object3D();
+  props.forEach((p,k)=>{dummy.position.set(p.x,p.h*.5-1.4,p.z);dummy.scale.set(p.w,p.h,1);dummy.rotation.set(0,0,0);dummy.updateMatrix();im.setMatrixAt(k,dummy.matrix);});
+  im.frustumCulled=false;cityG.add(im);
+ }else if(mode==='beach'){
+  // Kioscos de playa 2D, sin fachadas residenciales genéricas.
+  const c=document.createElement('canvas');c.width=96;c.height=128;const q=c.getContext('2d');
+  q.fillStyle='#b78053';q.fillRect(16,54,64,73);
+  q.fillStyle='#e3d7a4';q.fillRect(13,45,70,16);
+  for(let k=0;k<5;k++){q.fillStyle=k%2?'#f7ebc9':'#54b3a2';q.fillRect(10+k*15,35,15,17);}
+  q.fillStyle='#487e80';q.fillRect(28,71,40,37);q.fillStyle='#f7d9a6';q.fillRect(34,76,13,17);
+  const tex=new THREE.CanvasTexture(c);tex.encoding=THREE.sRGBEncoding;tex.magFilter=THREE.NearestFilter;tex.minFilter=THREE.LinearFilter;SCENIC_TEXTURES.push(tex);
+  const mat=new THREE.MeshBasicMaterial({map:tex,transparent:true,side:THREE.DoubleSide,depthWrite:false});
+  const im=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),mat,props.length),dummy=new THREE.Object3D();
+  props.forEach((p,k)=>{dummy.position.set(p.x,p.h*.5-1.4,p.z);dummy.scale.set(p.w,p.h,1);dummy.updateMatrix();im.setMatrixAt(k,dummy.matrix);});
+  im.frustumCulled=false;cityG.add(im);
+ }else{
+  pixelBiomeInstances(mode,props);
  }
  // Carteles cotidianos 2D en estructuras 3D, sin la estética de pantallas gigantes.
  const sign=document.createElement('canvas');sign.width=512;sign.height=128;
