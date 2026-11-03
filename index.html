@@ -745,7 +745,8 @@ function tex(id,col){
 }
 // Tamaño objetivo (alto visible del cuerpo): curva suave con la altura real de PokéAPI, limitada a 2.0–3.3
 // (la portería mide 3.6 de alto, la cancha 60x36 y el público 1.6–2.0).
-function spriteTargetH(hdm){const rh=Math.max(.2,(hdm||10)/10);return cl(1.75+.7*Math.pow(rh,.45),2.0,3.3)}
+// Tamaño visual +18% (aprox.) para identificar especies PMD a distancia; no altera colisiones.
+function spriteTargetH(hdm){const rh=Math.max(.2,(hdm||10)/10);return cl(2.05+.85*Math.pow(rh,.45),2.45,3.9)}
 function spriteBox(src,fw,fh,cols){
  let x0=fw,y0=fh,x1=-1,y1=-1;
  try{const c=document.createElement('canvas');c.width=fw;c.height=fh;const q=c.getContext('2d',{willReadFrequently:true});
@@ -756,7 +757,7 @@ function spriteBox(src,fw,fh,cols){
  return{x0,y0,x1,y1}
 }
 function fitSprite(src,fw,fh,cols,hdm){
- const b=spriteBox(src,fw,fh,cols),bw=b.x1-b.x0+1,bh=b.y1-b.y0+1;let k=spriteTargetH(hdm)/bh;if(bw*k>3.6)k=3.6/bw;
+ const b=spriteBox(src,fw,fh,cols),bw=b.x1-b.x0+1,bh=b.y1-b.y0+1;let k=spriteTargetH(hdm)/bh;if(bw*k>4.15)k=4.15/bw;
  return{k,ox:(fw/2-(b.x0+b.x1+1)/2)*k,oy:(b.y1+1-fh/2)*k+.02,hr:cl(bw*k*.42,1.0,1.6)}
 }
 async function loadPMDSprite(p){
