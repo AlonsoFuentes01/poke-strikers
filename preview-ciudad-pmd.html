@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Poké Strikers — Estadio Ciudad · Estudio visual PMD</title>
+<style>html,body{margin:0;height:100%;background:#17263e;color:#fff;font-family:system-ui}main{min-height:100%;display:grid;place-items:center;padding:16px;box-sizing:border-box}.wrap{width:min(100%,1536px)}canvas{width:100%;height:auto;image-rendering:pixelated;display:block;box-shadow:0 20px 65px #0008;border-radius:6px}.bar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:0 0 10px;flex-wrap:wrap}.bar strong{font-size:17px}.bar span{font-size:13px;color:#cfd8ec}.note{margin-top:10px;color:#c5cee4;font-size:13px}</style></head>
+<body><main><div class="wrap"><div class="bar"><strong>Estadio Ciudad — reconstrucción artística · fase estática</strong><span>Escena independiente · no integrada en partidas</span></div><canvas id="art" width="1024" height="600"></canvas><p class="note">Composición sin HUD ni jugadores: permite evaluar el estadio antes de integrar sprites PMD reales, entrenadores y animaciones.</p></div></main>
+<script>
+(() => {
+const canvas=document.getElementById('art'),q=canvas.getContext('2d');q.imageSmoothingEnabled=false;
+let seed=40929;function rnd(){seed=(seed*16807)%2147483647;return(seed%100000)/100000}
+const C={sky:'#72b8f0',skylight:'#beddf9',cloud:'#fffaf0',shadow:'#374462',stone:'#dbc4a7',warm:'#f4e0bd',brick:'#aa8180',brickdark:'#775975',roof:'#d45f54',roof2:'#a84c55',light:'#fba778',glass:'#65badb',glasslight:'#c2f6ff',green:'#4c9a76',green2:'#83bc64',green3:'#b9d77c',gold:'#e3bf6e',blue:'#3d80b2',path:'#b7a3aa',pathlight:'#d6bec0'};
+function rect(x,y,w,h,c){q.fillStyle=c;q.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h))}
+function poly(arr,c){q.fillStyle=c;q.beginPath();q.moveTo(...arr[0]);for(let i=1;i<arr.length;i++)q.lineTo(...arr[i]);q.closePath();q.fill()}
+function circle(x,y,r,c){q.fillStyle=c;q.beginPath();q.arc(x,y,r,0,Math.PI*2);q.fill()}
+function gradient(top,bottom,y,h){let g=q.createLinearGradient(0,y,0,y+h);g.addColorStop(0,top);g.addColorStop(1,bottom);rect(0,y,1024,h,g)}
+function cloud(x,y,s){rect(x-29*s,y+8*s,94*s,12*s,'#87c2e9');for(const [xx,yy,w,h] of [[-30,4,50,15],[-10,-10,47,27],[23,-20,40,36],[48,-5,40,18]])rect(x+xx*s,y+yy*s,w*s,h*s,C.cloud);rect(x-12*s,y+13*s,76*s,3,'#d9eff6')}
+function mountain(x,y,w,h,c1,c2){poly([[x-w/2,258],[x-w*.34,y+h*.28],[x,y],[x+w*.23,y+h*.21],[x+w/2,258]],c1);poly([[x-w*.34,y+h*.28],[x,y],[x+w*.17,y+h*.33],[x-w*.06,y+h*.75]],c2)}
+function tree(x,y,s=1){
+ rect(x-5*s,y-20*s,10*s,25*s,'#816660');
+ for(const [dx,dy,r] of [[-20,-35,20],[6,-47,24],[27,-29,20],[-4,-26,25]]){
+ circle(x+dx*s+3*s,y+dy*s+3*s,r*s,'#276e62');circle(x+dx*s,y+dy*s,r*s,r<23?C.green:C.green2)}
+ for(let i=0;i<11;i++)rect(x+(rnd()-.5)*66*s,y-(25+rnd()*53)*s,3*s,3*s,rnd()>.5?'#a9d974':'#d9e58d');
+}
+function flower(x,y){rect(x-11,y-6,22,9,'#695c65');rect(x-12,y-8,24,4,C.stone);for(let i=0;i<5;i++){let xx=x-8+i*4;rect(xx,y-16-(i%2)*3,5,5,i%2?'#ffb18b':'#f48eb4');rect(xx+1,y-13-(i%2)*3,3,3,'#fff1a3')}}
+function house(x,y,w,h,roof=C.roof){
+ rect(x-2,y-h-2,w+4,h+3,C.shadow);rect(x,y-h,w,h,C.stone);
+ poly([[x-7,y-h+10],[x+10,y-h-11],[x+w-11,y-h-11],[x+w+7,y-h+10]],C.brickdark);
+ poly([[x-4,y-h+7],[x+12,y-h-9],[x+w-13,y-h-9],[x+w+4,y-h+7]],roof);
+ rect(x+2,y-h+10,w-4,3,C.warm);
+ for(let yy=y-h+23;yy+21<y;yy+=28)for(let xx=x+9;xx+15<x+w;xx+=23){
+  rect(xx-2,yy-2,16,21,C.brickdark);rect(xx,yy,12,16,C.glass);rect(xx+2,yy+2,5,6,C.glasslight);rect(xx+10,yy,2,17,'#417aa3');rect(xx-2,yy+16,17,3,C.warm)}
+}
+function lamp(x,y,s=1){rect(x-3*s,y-40*s,6*s,42*s,C.shadow);rect(x-8*s,y-46*s,16*s,15*s,C.shadow);rect(x-6*s,y-44*s,12*s,12*s,C.gold);rect(x-4*s,y-43*s,6*s,7*s,'#fff1ad');rect(x-9*s,y-50*s,18*s,5*s,C.warm)}
+function stair(x,y,w,h){rect(x-5,y-4,w+10,h+10,C.brickdark);rect(x,y,w,h,C.stone);for(let k=0;k<8;k++){let yy=y+k*h/8;rect(x,yy,w,3,C.warm);rect(x+2,yy+4,w-4,3,C.brick)}}
+function stall(x,y,w,color){
+ rect(x,y-65,w,69,C.shadow);rect(x+3,y-61,w-6,62,'#b7a090');rect(x+13,y-41,w-26,34,'#5f778e');
+ rect(x+6,y-66,w-12,18,C.brickdark);
+ for(let i=0;i<8;i++)rect(x+7+i*(w-14)/8,y-65,(w-14)/8-1,15,i%2?C.warm:color);
+ rect(x+12,y-12,w-24,6,C.roof2);
+ for(let i=0;i<9;i++)circle(x+20+i*(w-35)/9,y-18,3,i%2?'#ecab65':'#b5d372');
+}
+function crest(x,y,r){
+ circle(x,y,r+5,C.shadow);circle(x,y,r,C.warm);circle(x,y,r-4,'#f9f1dc');
+ q.fillStyle=C.roof;q.beginPath();q.arc(x,y,r-4,Math.PI,0);q.fill();
+ rect(x-r+4,y-3,2*r-8,6,C.shadow);circle(x,y,r*.26,C.shadow);circle(x,y,r*.16,C.warm);
+}
+// Recede: sky, cloud mass, mountains, irregular roof silhouettes.
+gradient('#58a6ef','#d4eaf5',0,258);
+for(let i=0;i<13;i++)cloud(20+i*82+(rnd()-.5)*60,27+rnd()*60,.42+rnd()*.40);
+for(let i=0;i<10;i++)mountain(i*122-48,119+rnd()*38,205,145,'#72ab9d','#4f9989');
+for(let i=0;i<9;i++)mountain(i*146-50,153+rnd()*30,184,125,'#4e9484','#368874');
+for(let i=0;i<15;i++){let x=i*72-24,h=76+(i*19)%49;house(x,240,66,h,i%3===0?'#bd6b68':i%2?C.roof:C.roof2)}
+// Landmark towers to recreate the reference's changing city skyline.
+function tower(x,y,h){rect(x-12,y-h,24,h,C.brickdark);rect(x-9,y-h+4,18,h-7,C.stone);rect(x-16,y-h-6,32,9,C.roof);rect(x-8,y-h-18,16,14,C.roof2);rect(x-2,y-h-26,4,9,C.gold);rect(x-3,y-h+14,6,18,C.glasslight)}
+tower(199,226,137);tower(806,217,157);tower(920,231,112);
+for(let i=0;i<16;i++)tree(i*72+4,249,.35+(i%3)*.07);
+// Foreground plaza and stairs, no fake or hand-painted spectators.
+rect(0,226,1024,25,C.brickdark);rect(0,230,1024,15,C.stone);rect(0,246,1024,35,C.brick);
+for(let x=0;x<1024;x+=32){rect(x,247,28,3,C.warm);rect(x+5,266,23,2,C.brickdark)}
+stair(173,233,89,102);stair(758,233,89,102);
+// Raised treed platforms at both ends.
+for(const x of [46,105,880,969])tree(x,318,.73);
+stall(112,342,115,C.roof);stall(788,342,114,'#dfaa54');
+for(let i=0;i<19;i++)flower(i*55+15,354);
+// Pokémon Center-like center architecture using pixel-drawn arches.
+rect(333,237,360,113,C.shadow);rect(342,242,342,110,C.stone);
+poly([[324,253],[346,216],[386,196],[639,196],[674,218],[702,253]],C.brickdark);
+poly([[328,249],[350,220],[388,202],[636,202],[672,221],[696,249]],C.roof);
+rect(335,253,360,14,C.shadow);rect(342,257,346,5,C.roof2);
+rect(375,274,72,67,C.brickdark);rect(381,279,60,57,C.glass);rect(390,282,22,12,C.glasslight);
+rect(576,274,72,67,C.brickdark);rect(581,279,61,57,C.glass);rect(589,282,24,12,C.glasslight);
+rect(466,274,91,76,C.brickdark);rect(472,280,79,69,C.glass);
+rect(507,280,6,68,C.shadow);rect(477,285,24,15,C.glasslight);
+crest(512,233,35);
+rect(320,344,385,10,C.brickdark);rect(332,345,363,6,C.warm);
+for(let i=0;i<11;i++)flower(354+i*31,351);
+for(const x of [80,279,743,941])lamp(x,350,.8);
+// Seat terraces are masonry ledges instead of painted/crowd silhouettes.
+rect(0,360,1024,20,C.brickdark);rect(0,360,1024,8,C.warm);
+rect(0,371,1024,17,C.stone);for(let x=0;x<1024;x+=48)rect(x,375,42,2,C.brick);
+rect(0,388,1024,17,C.brickdark);rect(0,388,1024,6,C.warm);
+for(let x=0;x<1024;x+=40)rect(x,399,35,2,C.brick);
+// Broad, readable game field in muted lavender/rose flagstones.
+poly([[104,394],[921,394],[1024,570],[0,570]],'#887e97');
+poly([[115,402],[909,402],[1002,557],[23,557]],C.path);
+for(let row=0;row<16;row++){
+ const y=404+row*10.3;
+ for(let col=-2;col<55;col++){
+  const step=17+row*.33,x=68+col*step+((row%2)*step/2);
+  if(x<0||x>1024)continue;
+  const n=rnd();let c=n<.22?'#aa97a4':n<.46?'#c4aab0':n<.72?'#d3b8b2':'#b5a3aa';
+  rect(x,y,step-1,9,c);rect(x+2,y+1,step-5,1,'#ead0c1');
+  if(rnd()<.14)rect(x+5,y+6,4,1,'#947c8f');
+ }
+}
+q.strokeStyle=C.warm;q.lineWidth=3;
+q.strokeRect(94,399,836,155);q.beginPath();q.moveTo(512,399);q.lineTo(512,554);q.stroke();
+q.beginPath();q.ellipse(512,476,69,30,0,0,Math.PI*2);q.stroke();
+q.strokeRect(95,437,114,82);q.strokeRect(814,437,114,82);
+q.strokeRect(95,453,33,49);q.strokeRect(895,453,33,49);
+circle(512,476,3,C.warm);
+// Small goals are new white stone-pixel nets, no old 3D mesh.
+function goal(x,y,flip=1){
+ rect(x,y,9,75,C.shadow);rect(x+2,y+2,5,71,'#fff5ee');
+ rect(x,y-2,47*flip,6,'#fff5ee');
+ for(let i=0;i<6;i++)rect(x+7+i*7*flip,y+4,1,61,'#efd9d5');
+ for(let j=0;j<8;j++)rect(x+7,y+8+j*8,40*flip,1,'#e5d7d5');
+}
+goal(93,424,1);goal(930,424,-1);
+// Lower terraces and planter sets.
+rect(0,556,1024,45,C.shadow);rect(0,562,1024,20,C.stone);
+for(let x=0;x<1024;x+=42){rect(x,562,36,3,C.warm);rect(x+8,578,29,2,C.brickdark)}
+for(let x=40;x<1024;x+=110)flower(x,570);
+for(const x of [22,1002])lamp(x,567,.95);
+})();
+</script></body></html>
