@@ -435,6 +435,19 @@ button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
  #tabs button,#modePick button,#stadiumPick button{border-width:2px!important}
 }
 
+
+/* Illustrated stadium cards · same wizard, richer pixel-art previews */
+#wiz #stadiumPick button,#stadiumPick button{
+ background-image:linear-gradient(0deg,#19384eea 0%,#19384e91 28%,transparent 78%),var(--md-thumb)!important;
+ background-size:100% 100%,cover!important;background-position:center!important;
+ color:#fff6cf!important;text-shadow:2px 2px 0 #20364e,0 2px 5px #1b2d44!important;
+ border:3px solid #4b6471!important;image-rendering:pixelated;
+}
+#wiz #stadiumPick button.on,#stadiumPick button.on{border-color:#ffda87!important;box-shadow:0 0 0 2px #263d52,0 5px 0 #8b5a47!important}
+#wiz #stadiumPick button:hover,#stadiumPick button:hover{filter:saturate(1.24) brightness(1.12)!important}
+@keyframes mdSpriteLift{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+#cols .card.on img,#wzSummary img{animation:mdSpriteLift 1.8s steps(3) infinite}
+
 </style></head><body>
 </div>
 <div id="vig"></div><div id="flash"></div><canvas id="mini" width="176" height="106"></canvas><div id="envChip"></div><div id="netChip"></div>
@@ -4814,6 +4827,59 @@ function mdIllustratedWorld(mode){
  // Add atmospheric NPCs already using PMD SpriteCollab's Walk-Anim where available.
 }
 
+// Pixel-art miniatures for the existing stadium choices. Layout untouched.
+function mdStadiumCards(){
+ const palettes={
+  city:['#5aaee7','#c6e7e0','#a6c49d','#e5bb94','#b46252'],
+  classic:['#5da8e0','#d5ecdc','#74b69a','#d2b184','#38856b'],
+  sunset:['#7067a9','#efb695','#b47f88','#d7a279','#b65b56'],
+  beach:['#288fe8','#a4e6ed','#1a96bc','#eed79e','#46ad81'],
+  volcano:['#7b72a5','#efaa86','#67526d','#dc905c','#f77f3f'],
+  arctic:['#4b96c9','#d7f1f1','#7bb5d0','#e3f6f0','#8ecfe2'],
+  space:['#18274d','#5b6193','#343c74','#9ac7d6','#9a88dd'],
+  desert:['#4ca5db','#ffe2ad','#dba26c','#f2c489','#b77854']
+ };
+ for(const b of document.querySelectorAll('#stadiumPick button[data-stadium]')){
+  const mode=b.dataset.stadium,p=palettes[mode];if(!p)continue;
+  const c=document.createElement('canvas');c.width=240;c.height=116;
+  const q=c.getContext('2d');q.imageSmoothingEnabled=false;
+  const v=(x,y,w,h,col)=>{q.fillStyle=col;q.fillRect(x,y,w,h)};
+  for(let k=0;k<4;k++)v(0,k*23,240,27,p[k%2]);
+  if(mode==='space'){
+   v(0,0,240,87,p[0]);
+   for(let i=0;i<45;i++){const x=(i*37)%237,y=(i*21)%85;v(x,y,1+i%3,1+i%3,'#f8efd9')}
+   q.fillStyle=p[4];q.beginPath();q.arc(174,37,25,0,7);q.fill();
+  }else{
+   for(let i=0;i<5;i++){
+    const x=i*62-18,y=27+i%2*17;
+    v(x+6,y+6,54,8,'#97bcd8');v(x,y,49,7,'#f8fcf0');
+    v(x+12,y-8,32,13,'#fffdf1');
+   }
+  }
+  if(mode==='city'||mode==='sunset'||mode==='classic'){
+   for(let i=0;i<11;i++){
+    const x=i*25,h=29+i%4*8,y=92-h;
+    v(x-1,y-2,24,h+5,'#273e51');v(x+2,y,20,h,p[3]);
+    v(x+5,y+7,5,8,'#6bbccf');v(x+13,y+7,5,8,'#6bbccf');v(x+1,y+21,23,4,p[4]);
+   }
+  }else if(mode==='desert'){
+   for(let i=0;i<6;i++){const x=i*51-12,h=23+i%3*13;v(x,96-h,38,h,p[3]);v(x-4,95-h,46,5,p[4]);}
+  }else if(mode==='volcano'||mode==='arctic'){
+   q.fillStyle=p[2];q.beginPath();q.moveTo(0,98);q.lineTo(125,23);q.lineTo(240,98);q.fill();
+   q.fillStyle=p[3];q.beginPath();q.moveTo(55,84);q.lineTo(125,23);q.lineTo(143,88);q.fill();
+   if(mode==='volcano'){v(117,32,11,61,'#fd883f');v(121,42,5,42,'#ffd170');}
+   else {v(117,31,16,8,'#eefcff');v(99,48,10,10,'#e6f8ff');}
+  }else if(mode==='beach'){
+   v(0,64,240,39,'#138ebc');for(let i=0;i<11;i++)v(i*24,77+i%3*7,16,2,'#c5faff');
+   v(0,97,240,18,p[3]);v(31,51,5,42,'#78573c');v(20,35,24,27,p[4]);
+  }else{
+   for(let i=0;i<8;i++){const x=i*32;v(x,71+i%2*6,30,31,p[3]);v(x+6,73,18,10,'#93cce9');}
+  }
+  v(0,98,240,18,p[2]);for(let i=0;i<14;i++)v(i*19,101+i%3,12,2,p[4]);
+  b.style.setProperty('--md-thumb','url("'+c.toDataURL('image/png')+'")');
+ }
+}
+
 // Modern illustrated stage router. All game rules, camera, controls and UI tabs unchanged.
 const _bs=buildStadium;
 buildStadium=function(m){
@@ -4882,6 +4948,7 @@ function buildEnds(mode){
 }
 cityFloor.material.map=null;cityFloor.material.color.setHex(0x9fa69f);cityFloor.material.needsUpdate=true;
 buildEnds(stadiumMode);buildCityV3();mdPaintPitch(stadiumMode);mdIllustratedWorld(stadiumMode);syncBiomeWeather();
+mdStadiumCards();
 
 const DMW=1024,DMH=614,dmC=document.createElement('canvas');dmC.width=DMW;dmC.height=DMH;const dmq=dmC.getContext('2d');
 const dmT=srgb(new THREE.CanvasTexture(dmC));
