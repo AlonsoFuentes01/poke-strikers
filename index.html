@@ -5610,22 +5610,70 @@ function dugTrainers(){
 }
 // Arte pixel plano del banquillo (una sola textura 2D, sin geometría 3D)
 const pxT=(w,hh,f,rep)=>{const c=document.createElement('canvas');c.width=w;c.height=hh;f(c.getContext('2d'),w,hh);const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.magFilter=t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;if(rep){t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rep[0],rep[1])}return t};
+
+// Banquillos nuevos de madera y tejado de tejas PMD; mantienen entrenadores Showdown
+// y los tres suplentes animados de cada equipo.
 const dugTexSet=(col,name,subs,mir)=>{
- const m=hex(col),d=shadeC(col,.55),dd=shadeC(col,.22),lt=shadeC(col,1.4),Rr=(q,f,x,y,w,hh)=>{q.fillStyle=f;q.fillRect(x,y,w,hh)};
- const wall=pxT(80,48,(q,w,hh)=>{for(let y=0;y<hh;y+=2)Rr(q,y%4?dd:shadeC(col,.3),0,y,w,2);for(let x=0;x<w;x+=10)Rr(q,d,x,0,1,hh);for(let i=0;i<4;i++){const cx=10+i*20,cy=i%2?32:16;Rr(q,'rgba(255,255,255,.1)',cx-4,cy-1,9,3);Rr(q,'rgba(255,255,255,.1)',cx-2,cy-3,5,7)}Rr(q,m,0,hh-6,w,3);Rr(q,lt,0,hh-6,w,1);Rr(q,'rgba(0,0,0,.3)',0,hh-3,w,3)});
- const side=pxT(24,24,(q,w,hh)=>{Rr(q,shadeC(col,.5),0,0,w,hh);for(let y=0;y<hh;y+=4)Rr(q,'rgba(0,0,0,.25)',0,y,w,1);Rr(q,m,0,hh-4,w,4);Rr(q,lt,0,hh-4,w,1)});
- const roofTop=pxT(32,32,(q,w,hh)=>{Rr(q,shadeC(col,.8),0,0,w,hh);for(let y=0;y<hh;y+=8)for(let x=0;x<w;x+=8){Rr(q,(x+y)%16?m:shadeC(col,1.1),x+1,y+1,7,7);Rr(q,'rgba(255,255,255,.22)',x+1,y+1,7,1)}},[4,1.2]);
- const roofFront=pxT(176,28,(q,w,hh)=>{Rr(q,m,0,0,w,hh);Rr(q,lt,0,0,w,3);Rr(q,d,0,hh-4,w,4);Rr(q,'rgba(0,0,0,.25)',0,hh-1,w,1);
-  q.save();if(mir){q.translate(w,0);q.scale(-1,1)}q.textAlign='center';q.textBaseline='middle';q.fillStyle='rgba(0,0,0,.55)';q.font='900 15px Bungee,Impact,sans-serif';q.fillText(String(name).toUpperCase().slice(0,12),w/2+1,15);q.fillStyle='#fff';q.fillText(String(name).toUpperCase().slice(0,12),w/2,14);
-  q.font='900 7px Bungee,Impact,sans-serif';q.fillStyle='#d6e4ff';q.textAlign='left';q.fillText('BANQUILLO',8,14);q.fillStyle='#ffd23f';q.textAlign='right';q.fillText('CAMBIOS '+subs+'/'+MAXSUB,w-8,14);q.restore()});
- const roofUnder=pxT(8,8,(q,w,hh)=>{Rr(q,shadeC(col,.3),0,0,w,hh)});
- const floor=pxT(16,16,(q,w,hh)=>{Rr(q,'#232b3d',0,0,w,hh);Rr(q,'#2c3650',0,0,8,8);Rr(q,'#2c3650',8,8,8,8);Rr(q,shadeC(col,.5),0,0,w,1);Rr(q,shadeC(col,.5),0,0,1,hh)},[8,2.4]);
- const benchTop=pxT(32,8,(q,w,hh)=>{Rr(q,m,0,0,w,hh);for(let x=0;x<w;x+=8)Rr(q,lt,x,0,1,hh);Rr(q,'rgba(255,255,255,.3)',0,0,w,1);Rr(q,'rgba(0,0,0,.25)',0,hh-2,w,2)});
- const benchFront=pxT(32,8,(q,w,hh)=>{Rr(q,'#7a5232',0,0,w,hh);for(let x=0;x<w;x+=6)Rr(q,'#5b3a1f',x,0,1,hh);Rr(q,'#a8774a',0,0,w,1)});
- const steel=pxT(8,8,(q,w,hh)=>{Rr(q,'#8794aa',0,0,w,hh);Rr(q,'#dfe6f2',0,0,2,hh);Rr(q,'#5b667a',w-2,0,2,hh)});
- const cool=pxT(8,12,(q,w,hh)=>{Rr(q,'#4db8ff',0,0,w,hh);Rr(q,'#1c8fd1',0,8,w,4);Rr(q,'#eaf6ff',0,0,w,3);Rr(q,'#fff',2,1,2,2)});
+ const team=hex(col),dark='#493f46',wood='#7e5a4e',woodLight='#be9169',
+  wallBase='#dbc5a0',plaster='#f4deb1',roofBase='#b96957',roofDark='#794f53',
+  ink='#394b55',shine='#ffe9b0';
+ const fill=(q,c,x,y,w,h)=>{q.fillStyle=c;q.fillRect(x,y,w,h)};
+ const wall=pxT(96,64,(q,w,h)=>{
+  fill(q,wallBase,0,0,w,h);
+  for(let y=0;y<h;y+=12)for(let x=-10+(y%24?11:0);x<w;x+=23){
+   fill(q,woodLight,x,y,22,11);fill(q,plaster,x+2,y+2,18,7);
+  }
+  fill(q,wood,0,0,w,4);fill(q,ink,0,h-6,w,6);
+ });
+ const side=pxT(32,32,(q,w,h)=>{
+  fill(q,wood,0,0,w,h);for(let x=0;x<w;x+=8){
+   fill(q,woodLight,x+1,0,3,h);fill(q,dark,x+6,0,2,h);
+  }for(let y=0;y<h;y+=16)fill(q,ink,0,y,w,2);
+ });
+ const roofTop=pxT(64,64,(q,w,h)=>{
+  fill(q,roofDark,0,0,w,h);
+  for(let y=0;y<h;y+=13)for(let x=-9+(y%26?12:0);x<w;x+=25){
+   fill(q,roofBase,x,y,23,11);fill(q,'#e7a276',x+1,y+1,21,4);
+   fill(q,dark,x+3,y+10,18,2);
+  }
+ },[2,2]);
+ const roofFront=pxT(256,48,(q,w,h)=>{
+  fill(q,roofDark,0,0,w,h);fill(q,roofBase,3,3,w-6,h-9);
+  fill(q,shine,5,4,w-10,4);fill(q,ink,0,h-6,w,6);
+  q.save();if(mir){q.translate(w,0);q.scale(-1,1)}
+  q.textAlign='center';q.textBaseline='middle';
+  q.font='900 24px monospace';q.fillStyle=ink;q.fillText(String(name).toUpperCase().slice(0,13),w/2,27);
+  q.fillStyle=shine;q.font='bold 10px monospace';q.textAlign='left';q.fillText('BANQUILLO',9,14);
+  q.fillStyle=shine;q.textAlign='right';q.fillText('CAMBIOS '+subs+'/'+MAXSUB,w-9,14);
+  q.restore();
+ });
+ const roofUnder=pxT(16,16,(q,w,h)=>{
+  fill(q,wood,0,0,w,h);for(let x=0;x<w;x+=6)fill(q,dark,x,0,2,h);
+ });
+ const floor=pxT(32,32,(q,w,h)=>{
+  fill(q,ink,0,0,w,h);
+  for(let y=0;y<h;y+=8)for(let x=0;x<w;x+=8)
+   fill(q,(x+y)%16?'#8a786b':'#b1a08a',x+1,y+1,6,6);
+ },[6,3]);
+ const benchTop=pxT(32,16,(q,w,h)=>{
+  fill(q,wood,0,0,w,h);
+  for(let y=0;y<h;y+=6)fill(q,woodLight,0,y,w,3);
+  fill(q,ink,0,h-3,w,3);
+ });
+ const benchFront=pxT(32,16,(q,w,h)=>{
+  fill(q,wood,0,0,w,h);
+  for(let x=0;x<w;x+=9)fill(q,dark,x,0,2,h);
+  fill(q,woodLight,0,0,w,3);
+ });
+ const steel=pxT(16,16,(q,w,h)=>{
+  fill(q,ink,0,0,w,h);fill(q,woodLight,3,0,5,h);fill(q,shine,4,0,2,h);
+ });
+ const cool=pxT(16,16,(q,w,h)=>{
+  fill(q,wood,0,0,w,h);fill(q,team,3,4,w-6,h-7);fill(q,shine,4,4,w-8,3);
+ });
  return{wall,side,roofTop,roofFront,roofUnder,floor,benchTop,benchFront,steel,cool};
 };
+
 // caja con textura distinta por cara y tinte por cara (da volumen sin iluminación: look 2D "dibujado en 3D")
 const dugBox=(g,w,hh,d,x,y,z,faces)=>{ // faces: [+x,-x,+y,-y,+z,-z] = [tex,tint]
  const mats=faces.map(([t,k])=>new THREE.MeshBasicMaterial({map:t,color:new THREE.Color(k,k,k)}));
