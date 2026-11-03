@@ -629,6 +629,25 @@ function build(o){
  });
  for(const x of [-40,-19,19,40])plane(lantern,2.7,5.2,x,3.1,HZ+7.4,foreground);
 
+
+ // Humo térmico suave en los extremos de las gradas y el río.
+ const smokeTex=mkTex(canvas(96,96,q=>{
+  for(const [x,y,r,color] of [[34,63,25,'rgba(114,85,100,.35)'],
+                              [59,46,28,'rgba(195,143,132,.25)'],
+                              [68,69,17,'rgba(66,47,70,.32)']]){
+   circ(q,x,y,r,color);
+  }
+ }));
+ const smokeClouds=[];
+ for(const side of [-1,1])for(let i=0;i<5;i++){
+  const x=side*(35+i*4.5),y=5+i*.9,z=i%2?HZ+20:-35;
+  const material=new THREE.SpriteMaterial({map:smokeTex,transparent:true,
+   opacity:.22,depthWrite:false});
+  const sp=new THREE.Sprite(material);sp.position.set(x,y,z);
+  sp.scale.set(3.8+i*.48,3.8+i*.48,1);scene.add(sp);
+  smokeClouds.push({sp,x,y,z,phase:rand()*7,speed:.24+rand()*.6,size:3.8+i*.48});
+ }
+
  const embers=[];
  const emberTex=mkTex(canvas(32,32,q=>{
   rect(q,10,8,11,14,C.lava);rect(q,13,9,5,12,C.core);
@@ -672,6 +691,15 @@ function build(o){
   });
  };
  scene.userData.pmdTick=(dt,t)=>{
+  const pulse=.92+.08*Math.sin(t*.0021);
+  riverMesh.material.color.setRGB(1,pulse,.86+.14*pulse);
+  lavaMat.color.setRGB(1,.86+.14*Math.sin(t*.0025+1),.88);
+  for(const s of smokeClouds){
+   const p=(t*.00015*s.speed+s.phase)%1;
+   s.sp.position.set(s.x+Math.sin(t*.0005+s.phase)*.65,s.y+p*3.2,s.z);
+   s.sp.scale.set(s.size*(1+p*.32),s.size*(1+p*.34),1);
+   s.sp.material.opacity=.25*Math.sin(Math.PI*p);
+  }
   for(const e of embers){
    const p=(t*.00014*e.speed+e.phase)%1;
    e.m.position.set(e.x+Math.sin(t*.0004+e.phase)*.55,e.y+p*6,e.z);
