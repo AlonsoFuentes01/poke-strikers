@@ -517,7 +517,7 @@ button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
 <div class="cfgSec">JUEGO</div>
 <div class="crow"><label>Calidad gráfica <span id="vQualT"></span></label><input id="vQual" type="range" min="1" max="3" step="1"><small>Alta: sombras nítidas, resolución completa y color cinematográfico · Baja: sin sombras (más rápido)</small></div>
 <div class="crow"><label>Nivel de la IA <span id="vAiT"></span></label><input id="vAi" type="range" min="1" max="3" step="1"><small>Afecta a rivales: reacción, velocidad, placajes y puntería</small></div>
-<div class="crow chk"><label>Cámara panorámica <input id="vPano" type="checkbox"></label><small>Sube y levanta un poco la cámara para ver el cielo y el paisaje del estadio. Desmárcala para la cámara clásica</small></div>
+<div class="crow chk"><label>Cámara ortográfica 2D <input id="vPano" type="checkbox" disabled></label><small>Vista fija, sin movimientos ni perspectiva. Solo zoom en momentos especiales.</small></div>
 <div class="crow chk"><label>Apuntar con el mouse <input id="vMouse" type="checkbox"></label><small>El tiro y el pase salen hacia donde está el cursor</small></div>
 <div class="cfgSec">INTERFAZ</div>
 <div class="crow"><button id="layEdit" type="button" style="width:100%;padding:10px;border-radius:10px;border:0;background:#2a7fd0;color:#fff;font-weight:800">🧩 Mover y cambiar tamaño de botones / interfaz</button><small>Arrastra cada elemento donde quieras y ajusta su tamaño. Se guarda en este dispositivo.</small></div>
@@ -1535,8 +1535,8 @@ let paused=false,alpha=0;
 const camLook=new THREE.Vector3(0,.6,0),lookT=new THREE.Vector3(0,.6,0),camBall=new THREE.Vector3(),vb={x:0,z:0};
 function snap(){if(P)P.forEach(p=>{p.px=p.x;p.pz=p.z});if(B){B.px=B.x;B.pz=B.z}}
 const AU={ctx:null,master:null,sfx:null,mus:null,amb:null,ambG:null,nb:null,next:0,step:0};
-const DEF={master:70,music:30,sfx:90,speed:70,gamma:100,ai:2,mouse:1,q:2,pano:1},CFG=Object.assign({},DEF);
-try{Object.assign(CFG,JSON.parse(localStorage.getItem('pokeStrikersCfg')||'{}'))}catch(e){}
+const DEF={master:70,music:30,sfx:90,speed:70,gamma:100,ai:2,mouse:1,q:2,pano:0},CFG=Object.assign({},DEF);
+try{Object.assign(CFG,JSON.parse(localStorage.getItem('pokeStrikersCfg')||'{}'))}catch(e){}CFG.pano=0;
 function applyCfg(){
  PACE=CFG.speed/100;const g=CFG.gamma/100;
  ['gR','gG','gB'].forEach(i=>{const el=$(i);if(el)el.setAttribute('exponent',g)});
@@ -1603,8 +1603,8 @@ function mstep(s,t){
 function musicTick(){const c=AU.ctx;if(!c||c.state!=='running'||paused)return;if(AU.next<c.currentTime)AU.next=c.currentTime+.05;while(AU.next<c.currentTime+.25){mstep(AU.step++,AU.next);AU.next+=60/124/4}}
 // panel de ajustes
 const CFGROWS=[['vMaster','master'],['vMusic','music'],['vSfx','sfx'],['vSpeed','speed'],['vGamma','gamma'],['vAi','ai'],['vQual','q']];
-function syncCfgUI(){CFGROWS.forEach(([id,k])=>{$(id).value=CFG[k];$(id+'T').textContent=k==='gamma'?(CFG[k]/100).toFixed(2):k==='ai'?['Fácil','Normal','Difícil'][CFG[k]-1]||'Normal':k==='q'?['Baja','Media','Alta'][CFG[k]-1]||'Media':CFG[k]+'%'});$('vMouse').checked=!!CFG.mouse;$('vPano').checked=CFG.pano!==0}
-$('vPano').onchange=()=>{CFG.pano=$('vPano').checked?1:0;applyCfg()};
+function syncCfgUI(){CFGROWS.forEach(([id,k])=>{$(id).value=CFG[k];$(id+'T').textContent=k==='gamma'?(CFG[k]/100).toFixed(2):k==='ai'?['Fácil','Normal','Difícil'][CFG[k]-1]||'Normal':k==='q'?['Baja','Media','Alta'][CFG[k]-1]||'Media':CFG[k]+'%'});$('vMouse').checked=!!CFG.mouse;$('vPano').checked=false}
+$('vPano').onchange=()=>{$('vPano').checked=false;CFG.pano=0};
 $('vMouse').onchange=()=>{CFG.mouse=$('vMouse').checked?1:0;applyCfg();if(typeof keysHint==='function')keysHint();document.body.classList.toggle('mouseaim',!!(CFG.mouse&&ready))};
 CFGROWS.forEach(([id,k])=>{$(id).oninput=()=>{CFG[k]=+$(id).value;syncCfgUI();applyCfg()}});
 function openCfg(o){paused=o;$('cfg').classList.toggle('open',o);if(o)syncCfgUI();if(AU.ctx&&AU.ctx.state==='suspended')AU.ctx.resume()}
@@ -1688,7 +1688,7 @@ function refTick(){}
 renderBinds();keysHint();
 // ================= ENTORNO VISUAL: cielo, clima, daño de césped, minimapa =================
 const mixn=(a,b,k)=>a+(b-a)*k;
-const STN={city:'Ciudad',sunset:'Atardecer',classic:'Clásico'};
+const STN={city:'Ciudad PMD'};
 const WXN={clear:['☀️','Despejado'],cloudy:['☁️','Nublado'],rain:['🌧️','Lluvia'],storm:['⛈️','Tormenta'],fog:['🌫️','Niebla'],snow:['❄️','Nieve']};
 const WXP={
  clear:{cloud:.12,rain:0,snow:0,fog:0,dark:0,wet:0,thunder:0},
@@ -1734,16 +1734,7 @@ function stadiumWeatherTitle(mode,k){
  if(mode==='desert'&&k==='cloudy')return ['💨','Viento de arena'];
  return WXN[k]||WXN.clear;
 }
-const STADIUM_WEATHER={
- city:['clear','cloudy','rain','storm','fog'],
- classic:['clear','cloudy','rain','storm','fog'],
- sunset:['clear','cloudy','rain','fog'],
- beach:['clear','cloudy','rain','storm'],
- volcano:['clear','cloudy','fog'],
- arctic:['clear','cloudy','fog','snow'],
- space:['clear'],
- desert:['clear','cloudy']
-};
+const STADIUM_WEATHER={city:['clear','cloudy','rain','storm','fog']};
 function allowedWeather(mode){return STADIUM_WEATHER[mode]||STADIUM_WEATHER.city;}
 function pickBiomeWeather(mode,except){
  const list=allowedWeather(mode).filter(k=>k!==except);
