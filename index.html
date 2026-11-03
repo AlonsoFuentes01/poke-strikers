@@ -270,13 +270,25 @@ body.netHost #modeLbl,body.netGuest #modeLbl,body.netHost #modePick,body.netGues
  #msg{font-size:clamp(22px,6vw,40px);top:28%}
  #toast{font-size:13px;top:calc(28% + 44px)}
 }
+
+/* ===== joystick táctil + editor de interfaz ===== */
+#joy{width:112px;height:112px;border-radius:50%;background:radial-gradient(circle,#0b1a3a99 0%,#07152dcc 70%);border:2px solid #ffffff55;box-shadow:0 3px 0 #0008,inset 0 0 18px #54e7ff22;position:relative;pointer-events:auto;touch-action:none;user-select:none}
+#joyK{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#bff3ff,#2a7fd0);border:2px solid #fff;box-shadow:0 3px 0 #0008;pointer-events:none}
+#joy:before{content:"";position:absolute;inset:14px;border-radius:50%;border:1px dashed #ffffff30}
+#layBar{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:300;display:none;align-items:center;gap:8px;background:#07132df2;border:2px solid #6ce8ff;border-radius:12px;padding:6px 10px;font:800 12px Nunito,sans-serif;color:#fff;box-shadow:0 4px 0 #071127}
+#layBar button{padding:6px 10px;border-radius:8px;border:0;font-weight:800;background:#f6fbff;color:#122447}#layBar #layDone{background:#35c46a;color:#fff}
+#layBar input{width:120px}
+body.laying #layBar{display:flex}
+body.laying .layEl{outline:2px dashed #ffd23f!important;outline-offset:2px;cursor:move;touch-action:none!important}
+body.laying .layEl.laySel{outline:3px solid #35c46a!important}
+body.laying #touch{display:flex!important}
 </style></head><body>
 </div>
 <div id="vig"></div><div id="flash"></div><canvas id="mini" width="176" height="106"></canvas><div id="envChip"></div><div id="netChip"></div>
 <div id="top"><div class="chip" id="n0"></div><div id="score">0 : 0</div><div class="chip" id="n1"></div></div>
 <div id="clock">90</div><div id="msg"></div><div id="toast"></div>
 <div id="keys"><span id="keysTxt"></span> · <b>🎮 Xbox:</b> stick mover · A pase · RB pase aéreo · B placaje · X cambiar · RT tiro (mantener/cargar) · LB correr · Y poder<div id="warn"></div></div>
-<div id="touch"><div class="pad"><button data-a="up">▲</button><button data-a="left">◀</button><button data-a="down">▼</button><button data-a="right">▶</button></div><div class="actions"><button data-a="switch">CAMBIAR</button><button data-a="sprint">CORRER</button><button class="pass" data-a="pass">PASE</button><button class="pass" data-a="lob">AIRE</button><button data-a="tackle">PLACAR</button><button class="shoot" data-a="shoot">TIRO</button></div></div>
+<div id="touch"><div id="joy"><div id="joyK"></div></div><div class="actions"><button data-a="switch">CAMBIAR</button><button data-a="sprint">CORRER</button><button class="pass" data-a="pass">PASE</button><button class="pass" data-a="lob">AIRE</button><button data-a="tackle">PLACAR</button><button class="shoot" data-a="shoot">TIRO</button></div></div>
 <div id="bars"><div>Energía</div><div class="bar"><i id="b1" style="background:#5bd16b"></i></div><div>Tiro cargado</div><div class="bar"><i id="b2"></i></div></div><div id="powerHud"><div>⚡ PODER DE EQUIPO <b id="powerPct">0%</b></div><div class="bar"><i id="bp"></i></div><div id="powerHint">Mantén la posesión para cargar · Q activa</div></div><button id="powerBtn" title="Activar poder">⚡ PODER (Q)</button>
 <button id="setBtn" title="Ajustes (Esc)">⚙ Ajustes</button>
 <div id="cfg"><div id="cfgBox"><h2>Ajustes</h2><p>El juego se pausa mientras esta ventana está abierta. (Esc para abrir o cerrar)</p>
@@ -290,6 +302,8 @@ body.netHost #modeLbl,body.netGuest #modeLbl,body.netHost #modePick,body.netGues
 <div class="crow"><label>Nivel de la IA <span id="vAiT"></span></label><input id="vAi" type="range" min="1" max="3" step="1"><small>Afecta a rivales: reacción, velocidad, placajes y puntería</small></div>
 <div class="crow chk"><label>Cámara panorámica <input id="vPano" type="checkbox"></label><small>Sube y levanta un poco la cámara para ver el cielo y el paisaje del estadio. Desmárcala para la cámara clásica</small></div>
 <div class="crow chk"><label>Apuntar con el mouse <input id="vMouse" type="checkbox"></label><small>El tiro y el pase salen hacia donde está el cursor</small></div>
+<div class="cfgSec">INTERFAZ</div>
+<div class="crow"><button id="layEdit" type="button" style="width:100%;padding:10px;border-radius:10px;border:0;background:#2a7fd0;color:#fff;font-weight:800">🧩 Mover y cambiar tamaño de botones / interfaz</button><small>Arrastra cada elemento donde quieras y ajusta su tamaño. Se guarda en este dispositivo.</small></div>
 <div class="cfgSec">CONTROLES</div>
 <div id="bindList"></div>
 <div id="bindHint">Pulsa un botón y luego la tecla o botón del mouse que quieras. Esc cancela · clic derecho = pase con balón / placaje sin balón.</div>
@@ -328,7 +342,7 @@ body.netHost #modeLbl,body.netGuest #modeLbl,body.netHost #modePick,body.netGues
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/DRACOLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/BufferGeometryUtils.js"></script>
-<div id="impactFlash"></div>
+<div id="impactFlash"></div><div id="layBar"><b id="layName">Toca un elemento</b><input id="laySize" type="range" min="40" max="220" value="100"><span id="layPct">100%</span><button id="layReset" type="button">Restablecer</button><button id="layDone" type="button">Listo</button></div>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 const L={
@@ -1098,6 +1112,8 @@ function user(){
  if(NET.role==='guest'&&NETG.ctl>=0&&P[NETG.ctl])return P[NETG.ctl];
  return userOf(LT());
 }
+const JOY={x:0,z:0,on:false};let TOUCHM=matchMedia('(pointer:coarse)').matches;
+['pointerdown','pointermove'].forEach(ev=>addEventListener(ev,e=>{if(e.pointerType==='touch'){TOUCHM=true}else if(e.pointerType==='mouse'){TOUCHM=false}document.body.classList.toggle('touchm',TOUCHM)},{passive:true,capture:true}));
 const axes=()=>{
  let x=(held('right')?1:0)-(held('left')?1:0),z=(held('down')?1:0)-(held('up')?1:0);
  try{
@@ -1130,6 +1146,7 @@ const axes=()=>{
    padPrev=now;
   }else{padPrev=[];padH.sprint=padH.shoot=false}
  }catch(e){}
+ if(JOY.on){x=JOY.x*FLIPX();z=JOY.z;return[cl(x,-1,1),cl(z,-1,1)]}
  return [cl(x*FLIPX(),-1,1),cl(z,-1,1)];
 }
 
@@ -1150,13 +1167,15 @@ function codeName(c){
 }
 // --- apuntado con el mouse: se proyecta el cursor sobre el suelo ---
 const mouse={nx:0,ny:0,seen:false},aim={x:0,z:0},_rc=new THREE.Raycaster(),_pl=new THREE.Plane(new THREE.Vector3(0,1,0),0),_hit=new THREE.Vector3(),_v2=new THREE.Vector2();
-const mouseOn=()=>!L4.on&&!!(CFG.mouse&&mouse.seen);
+const mouseOn=()=>!L4.on&&!TOUCHM&&!!(CFG.mouse&&mouse.seen);
 function aimPt(){_v2.set(mouse.nx,mouse.ny);_rc.setFromCamera(_v2,cam);if(_rc.ray.intersectPlane(_pl,_hit)){aim.x=cl(_hit.x,-HX-8,HX+8);aim.z=cl(_hit.z,-HZ-4,HZ+4)}return aim}
 addEventListener('mousemove',e=>{const r=R.domElement.getBoundingClientRect();mouse.nx=((e.clientX-r.left)/r.width*2-1)*FLIPX();mouse.ny=-((e.clientY-r.top)/r.height*2-1);mouse.seen=true;document.body.classList.toggle('mouseaim',!!(CFG.mouse&&ready))});
 // Dirección de tiro/pase: cursor > stick/teclado > hacia la portería rival.
 function aimDir(u){
  if(mouseOn()){const a=aimPt(),dx=a.x-u.x,dz=a.z-u.z;if(Math.hypot(dx,dz)>.7)return[dx,dz]}
- const[ax,az]=axes();if(ax||az)return[ax,az];return[gx(u.t)-u.x,-u.z*.5];
+ const[ax,az]=axes();if(ax||az)return[ax,az];
+ if(TOUCHM&&(u.fx||u.fz))return[u.fx,u.fz];   // táctil: apunta hacia donde mira el jugador
+ return[gx(u.t)-u.x,-u.z*.5];
 }
 // Receptor del pase: el compañero más cercano al cursor (o a la dirección elegida).
 function passTarget(u){
@@ -2495,6 +2514,68 @@ function ambTick(t){
   if(r<.6)nz(3.4,.07,'bandpass',900,500,0,A,true);else{tn(1600,900,.6,'sine',.012,0,A);tn(1500,800,.6,'sine',.01,.7,A)}                           // viento / ave
  }
 }
+
+// ================= JOYSTICK TÁCTIL =================
+(function(){
+ const joy=$('joy'),knob=$('joyK');if(!joy)return;let pid=null,cx=0,cy=0,R=40;
+ const set=(x,y)=>{knob.style.transform='translate('+x+'px,'+y+'px)'};
+ const move=e=>{
+  let dx=e.clientX-cx,dy=e.clientY-cy;const d=Math.hypot(dx,dy);if(d>R){dx*=R/d;dy*=R/d}
+  set(dx,dy);const m=Math.hypot(dx,dy)/R;
+  if(m<.16){JOY.x=JOY.z=0}else{const k=(m-.16)/.84/m;JOY.x=dx/R*k*1.0/ (1) ;JOY.z=dy/R*k;const n=Math.hypot(JOY.x,JOY.z);if(n>1){JOY.x/=n;JOY.z/=n}}
+ };
+ joy.addEventListener('pointerdown',e=>{if(document.body.classList.contains('laying'))return;e.preventDefault();pid=e.pointerId;try{joy.setPointerCapture(pid)}catch(_){}const r=joy.getBoundingClientRect();cx=r.left+r.width/2;cy=r.top+r.height/2;R=r.width*.36;JOY.on=true;move(e)});
+ joy.addEventListener('pointermove',e=>{if(e.pointerId!==pid)return;e.preventDefault();move(e)});
+ const end=e=>{if(e.pointerId!==pid)return;pid=null;JOY.on=false;JOY.x=JOY.z=0;set(0,0)};
+ joy.addEventListener('pointerup',end);joy.addEventListener('pointercancel',end);
+ addEventListener('blur',()=>{JOY.on=false;JOY.x=JOY.z=0;set(0,0);pid=null});
+})();
+// Flecha de apuntado en la cancha (solo táctil, con balón)
+const aimArrow=(()=>{const c=document.createElement('canvas');c.width=64;c.height=128;const q=c.getContext('2d');q.fillStyle='rgba(255,236,120,.95)';q.strokeStyle='rgba(0,0,0,.55)';q.lineWidth=4;q.beginPath();q.moveTo(32,6);q.lineTo(58,52);q.lineTo(40,52);q.lineTo(40,122);q.lineTo(24,122);q.lineTo(24,52);q.lineTo(6,52);q.closePath();q.fill();q.stroke();
+ const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;const m=new THREE.Mesh(new THREE.PlaneGeometry(1.5,3).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({map:t,transparent:true,opacity:.85,depthWrite:false,fog:false}));m.visible=false;m.renderOrder=4;S.add(m);return m})();
+function aimArrowTick(){
+ if(!TOUCHM||!ready||L4.on||paused||!B){aimArrow.visible=false;return}
+ const u=user();if(!u||B.o!==u||FK){aimArrow.visible=false;return}
+ const[dx,dz]=aimDir(u),n=Math.hypot(dx,dz)||1,ux=dx/n,uz=dz/n;
+ aimArrow.position.set(u.x+ux*2.6,.08,u.z+uz*2.6);aimArrow.rotation.y=Math.atan2(-ux,-uz);aimArrow.scale.setScalar(1+Math.min(charge,1.2)*.8);aimArrow.visible=true;
+}
+// ================= EDITOR DE INTERFAZ (posición y tamaño) =================
+const LAY_ELS=[['joy','#joy','Joystick'],['bsw','#touch [data-a=switch]','Botón CAMBIAR'],['bsp','#touch [data-a=sprint]','Botón CORRER'],['bpa','#touch [data-a=pass]','Botón PASE'],['blo','#touch [data-a=lob]','Botón AIRE'],['bta','#touch [data-a=tackle]','Botón PLACAR'],['bsh','#touch [data-a=shoot]','Botón TIRO'],
+ ['pbtn','#powerBtn','Botón PODER'],['bars','#bars','Barras de energía'],['phud','#powerHud','Poder de equipo'],['top','#top','Marcador'],['clock','#clock','Reloj'],['mini','#mini','Minimapa'],['env','#envChip','Clima/estadio'],['keys','#keys','Ayuda de controles'],['pcard','#pokeCard','Ficha del Pokémon'],['set','#setBtn','Ajustes'],['chg','#chg','Equipos'],['sub','#subBtn','Cambios']];
+let LAY={};try{LAY=JSON.parse(localStorage.getItem('pokeStrikersLayout')||'{}')||{}}catch(e){LAY={}}
+const layEl=id=>{const r=LAY_ELS.find(a=>a[0]===id);return r?document.querySelector(r[1]):null};
+function layApply(id){const el=layEl(id);if(!el)return;const v=LAY[id];if(!v){el.style.translate='';el.style.scale='';return}el.style.translate=(v.x||0)+'px '+(v.y||0)+'px';el.style.scale=String((v.s||100)/100)}
+function layApplyAll(){LAY_ELS.forEach(a=>layApply(a[0]))}
+const laySave=()=>{try{localStorage.setItem('pokeStrikersLayout',JSON.stringify(LAY))}catch(e){}};
+layApplyAll();
+(function(){
+ let sel=null,drag=null,prevPause=false;
+ const vis=el=>el&&getComputedStyle(el).display!=='none';
+ const idOf=t=>{if(!t||!t.closest)return null;for(const a of LAY_ELS){const el=document.querySelector(a[1]);if(el&&(t===el||el.contains(t)))return a[0]}return null};
+ const select=id=>{sel=id;LAY_ELS.forEach(a=>{const el=document.querySelector(a[1]);if(el)el.classList.toggle('laySel',a[0]===id)});const r=LAY_ELS.find(a=>a[0]===id);$('layName').textContent=r?r[2]:'Toca un elemento';const s=(LAY[id]&&LAY[id].s)||100;$('laySize').value=s;$('layPct').textContent=s+'%'};
+ function enter(){
+  if(!document.body.classList.contains('playing')){toast('Entra a un partido para editar la interfaz');return}
+  openCfg(false);prevPause=paused;paused=true;
+  LAY_ELS.forEach(a=>{const el=document.querySelector(a[1]);if(el&&vis(el))el.classList.add('layEl')});
+  document.body.classList.add('laying');
+  select(null);
+ }
+ function leave(){document.body.classList.remove('laying');document.querySelectorAll('.layEl').forEach(e=>e.classList.remove('layEl','laySel'));paused=prevPause&&false;laySave()}
+ $('layEdit').onclick=enter;$('layDone').onclick=leave;
+ $('layReset').onclick=()=>{if(sel){delete LAY[sel];layApply(sel);select(sel)}else{LAY={};layApplyAll()}laySave()};
+ $('laySize').oninput=e=>{if(!sel)return;const v=LAY[sel]||(LAY[sel]={x:0,y:0,s:100});v.s=+e.target.value;$('layPct').textContent=v.s+'%';layApply(sel)};
+ addEventListener('pointerdown',e=>{
+  if(!document.body.classList.contains('laying'))return;
+  if(e.target.closest&&e.target.closest('#layBar'))return;
+  e.preventDefault();e.stopPropagation();
+  const id=idOf(e.target);if(!id)return;select(id);
+  const v=LAY[id]||(LAY[id]={x:0,y:0,s:100});drag={id,sx:e.clientX,sy:e.clientY,x0:v.x||0,y0:v.y||0,pid:e.pointerId};
+ },true);
+ addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.pid)return;e.preventDefault();const v=LAY[drag.id];v.x=Math.round(drag.x0+e.clientX-drag.sx);v.y=Math.round(drag.y0+e.clientY-drag.sy);layApply(drag.id)},true);
+ const end=e=>{if(drag&&e.pointerId===drag.pid){drag=null;laySave()}};
+ addEventListener('pointerup',end,true);addEventListener('pointercancel',end,true);
+ ['click','mousedown','touchstart'].forEach(ev=>addEventListener(ev,e=>{if(document.body.classList.contains('laying')&&!(e.target.closest&&e.target.closest('#layBar'))){e.preventDefault();e.stopPropagation()}},true));
+})();
 const _dv=new THREE.Vector3();
 function dugTrainerPos(){
  if(dugTr.length){const rc=R.domElement.getBoundingClientRect(),fl=typeof NETG!=='undefined'&&NETG.flip;
@@ -2509,6 +2590,7 @@ function dugTrainerPos(){
 }
 {const _rr=R.render.bind(R);R.render=function(a,b){_rr(a,b);if(a===S&&b===cam)try{dugTrainerPos()}catch(e){}}}
 function dugTick(t){
+ aimArrowTick();
  adT.offset.x=(t*.000018)%1;ambTick(t);
  if(t-dugT>300){dugT=t;try{dugSync()}catch(e){}}
 
