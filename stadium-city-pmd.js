@@ -113,8 +113,8 @@ function build(o){
  // Pixel tiles based on the actual visual reference, not a retextured old model.
  const pavement=canvas(1024,614,(q)=>{
   // Baldosas irregulares a tamaño nativo: sin estirar el suelo ni crear rejillas blancas.
-  r(q,0,0,1024,614,'#987f88');
-  const stones=['#bda8a5','#c7b4aa','#b19c9f','#d2b6aa','#bca6ad','#c6b3a2','#b6a3a0'];
+  r(q,0,0,1024,614,'#846e81');
+  const stones=['#ac97a0','#bba4a7','#a9969e','#c3aca8','#a794a0','#b5a1a6','#ad979e'];
   for(let row=0;row<33;row++){
    const yy=row*19,offset=row%2?18:0;
    for(let col=-1;col<32;col++){
@@ -310,7 +310,7 @@ function build(o){
  // Capas paralelas, misma escala de lectura y sin bloques dispersos.
  plane(sky,117,62,0,-12,-56);
  plane(town,102,48,0,0,-44);
- plane(tribune,91,29,0,14.5,-28);
+ plane(tribune,91,29,0,11.5,-28);
  // Side gardens are decor, not old stands. Keep outside the gameplay perimeter.
  const garden=canvas(256,192,q=>{
   r(q,0,164,256,28,C.stoneDark);
