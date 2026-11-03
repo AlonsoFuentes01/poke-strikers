@@ -713,8 +713,10 @@ const cityFloor={visible:false,material:{map:null,color:new THREE.Color(0xffffff
 const cam=new THREE.OrthographicCamera(-50,50,30,-30,.1,600);
 // La cámara se acerca, conserva el partido completo y sitúa la plaza justo detrás de la cancha.
 const CAMERA_2D_POS=new THREE.Vector3(0,110,220),CAMERA_2D_LOOK=new THREE.Vector3(0,4,-2);
+const CAMERA_PLAY_POS=new THREE.Vector3(0,145,.02),CAMERA_PLAY_LOOK=new THREE.Vector3(0,0,0);
+let cameraTopMix=0;
 // Inicio con vista general. El encuadre del partido amplía los Pokémon.
-const CAM_ZOOM_GAME=1.19,CAM_ZOOM_INTRO=.64,CAM_INTRO_SECONDS=4.6;
+const CAM_ZOOM_GAME=1.04,CAM_ZOOM_INTRO=.64,CAM_INTRO_SECONDS=4.6;
 let targetZoom2D=CAM_ZOOM_GAME,camIntroLeft=0,stadiumEntrance=null;
 let ballCamX=0,ballCamZ=0;
 // Entrada en formación: salen del edificio por el centro, bajan y toman sus puestos.
@@ -768,14 +770,14 @@ stadiumIntro.style.cssText='position:fixed;left:50%;top:24%;transform:translate(
 stadiumIntro.innerHTML='<div style="display:inline-block;padding:10px 24px;background:#243651dc;border:3px solid #eed49b;border-radius:10px;box-shadow:0 5px 0 #131f37a0;color:#ffe8af;font:bold clamp(17px,3.3vw,38px) system-ui,sans-serif;letter-spacing:2px">🏟️ ESTADIO CIUDAD</div><div style="color:#fff5d9;font:700 clamp(11px,1.7vw,18px) system-ui,sans-serif;margin-top:10px;letter-spacing:3px">POKÉ STRIKERS</div>';
 document.body.appendChild(stadiumIntro);
 function showStadiumIntro(){
- camIntroLeft=CAM_INTRO_SECONDS;cam.zoom=CAM_ZOOM_INTRO;
+ cameraTopMix=0;camIntroLeft=CAM_INTRO_SECONDS;cam.zoom=CAM_ZOOM_INTRO;
  targetZoom2D=CAM_ZOOM_INTRO;cam.updateProjectionMatrix();
  stadiumIntro.style.display='block';stadiumIntro.style.opacity='0';
  beginPlayersEntrance();
 }
-function hideStadiumIntro(){camIntroLeft=0;stadiumIntro.style.display='none';stadiumEntrance=null;}
+function hideStadiumIntro(){camIntroLeft=0;stadiumIntro.style.display='none';stadiumEntrance=null;cameraTopMix=0;}
 function resetCamera2D(){
- ballCamX=0;ballCamZ=0;
+ cameraTopMix=0;ballCamX=0;ballCamZ=0;
  cam.position.copy(CAMERA_2D_POS);cam.up.set(0,1,0);cam.lookAt(CAMERA_2D_LOOK);
  cam.zoom=CAM_ZOOM_GAME;targetZoom2D=CAM_ZOOM_GAME;camIntroLeft=0;
  cam.updateProjectionMatrix();
@@ -2180,7 +2182,7 @@ function render(t){pollSplashPad();aimTick(t);ctlTick(t);const dt=Math.min(.1,cl
     {let jy=0,rz=p.stun>0?Math.sin(t/55)*.12:(p.lunge>0?-.14:0);
      if(p.skill>0){const ph=1-p.skill/24,w=Math.sin(Math.min(1,ph)*Math.PI);jy=w*1.7;rz=Math.sign(p.fx||1)*w*.95}
      else if(p.dive>0){const w=Math.sin((1-p.dive/16)*Math.PI);jy=w*1.2;rz=(p.t?1:-1)*w*.9}
-     p.spriteMesh.rotation.z=rz;
+     p.visualTilt=rz;p.spriteMesh.rotation.z=rz;
       const moving=!!p.mv,phase=t*.0025+p.ph*2;
       const breath=moving?0:Math.sin(phase)*.018;
       const pace=moving?Math.sin(t*.018+p.ph)*.022:0;
@@ -2230,30 +2232,48 @@ function render(t){pollSplashPad();aimTick(t);ctlTick(t);const dt=Math.min(.1,cl
    const p=1-camIntroLeft/CAM_INTRO_SECONDS;
    // 0–1.0 s: plano panorámico, 1.0–4.6 s: acercamiento progresivo.
    const k=Math.max(0,Math.min(1,(p-.20)/.80)),ease=k*k*(3-2*k);
+   const turn=Math.max(0,Math.min(1,(p-.60)/.40));
+   cameraTopMix=turn*turn*(3-2*turn);
    nextZoom=CAM_ZOOM_INTRO+(CAM_ZOOM_GAME-CAM_ZOOM_INTRO)*ease;
    const alpha=Math.max(0,Math.min(1,p/.10,(.86-p)/.15));
    stadiumIntro.style.opacity=String(alpha);
    stadiumIntro.style.transform='translate(-50%,0) scale('+(1.06-.06*ease).toFixed(3)+')';
    if(camIntroLeft===0){stadiumIntro.style.display='none';finishPlayersEntrance();}
-  }else if(fkCam)nextZoom=1.24;
-  else if(goalCelebration||(cameraCue&&cameraCue.kind==='goal'))nextZoom=1.29;
-  else if(cameraCue&&cameraCue.kind==='shot')nextZoom=1.24;
-  else if(cameraCue)nextZoom=1.20;
-  // Evitar cortar ambas porterías al hacer zoom en dispositivos estrechos.
-  const maxWidthZoom=(cam.right-cam.left)/(HX*2+4);
-  if(!camIntroLeft)nextZoom=Math.min(nextZoom,Math.max(.82,Math.min(1.25,maxWidthZoom)));
+  }else{
+   cameraTopMix=Math.min(1,cameraTopMix+dt*1.9);
+   if(fkCam)nextZoom=1.08;
+   else if(goalCelebration||(cameraCue&&cameraCue.kind==='goal'))nextZoom=1.10;
+   else if(cameraCue&&cameraCue.kind==='shot')nextZoom=1.08;
+   else if(cameraCue)nextZoom=1.06;
+  }
+  // El terreno ocupa casi toda la altura visible y conserva ambas porterías.
+  const maxWidthZoom=(cam.right-cam.left)/(HX*2+3);
+  const maxHeightZoom=(cam.top-cam.bottom)/(HZ*2+1);
+  if(!camIntroLeft)nextZoom=Math.min(nextZoom,Math.max(.75,Math.min(maxWidthZoom,maxHeightZoom)));
   targetZoom2D=nextZoom;
   const newZoom=cam.zoom+(targetZoom2D-cam.zoom)*(1-Math.exp(-dt*5.3));
   if(Math.abs(newZoom-cam.zoom)>.00001){cam.zoom=newZoom;cam.updateProjectionMatrix()}
-   // Seguir parte del movimiento del balón sin perder visión de conjunto.
-   const track=ready&&!over&&camIntroLeft===0;
-   const tx=track?cl((B.x||0)*.38,-8,8):0;
-   const tz=track?cl((B.z||0)*.22,-3,3):0;
-   const smooth=1-Math.exp(-dt*2.5);
-   ballCamX+=(tx-ballCamX)*smooth;
-   ballCamZ+=(tz-ballCamZ)*smooth;
-   cam.position.set(CAMERA_2D_POS.x+ballCamX,CAMERA_2D_POS.y,CAMERA_2D_POS.z+ballCamZ);
-   cam.lookAt(CAMERA_2D_LOOK.x+ballCamX,CAMERA_2D_LOOK.y,CAMERA_2D_LOOK.z+ballCamZ);
+  // Seguimiento discreto del balón, sin esconder grandes porciones de campo.
+  const track=ready&&!over&&camIntroLeft===0;
+  const tx=track?cl((B.x||0)*.17,-4.5,4.5):0;
+  const tz=track?cl((B.z||0)*.10,-1.8,1.8):0;
+  const smooth=1-Math.exp(-dt*2.6);
+  ballCamX+=(tx-ballCamX)*smooth;
+  ballCamZ+=(tz-ballCamZ)*smooth;
+  // Interpolación de posición, orientación y punto de interés.
+  const mix=cameraTopMix;
+  cam.position.set(CAMERA_2D_POS.x+ballCamX,
+   CAMERA_2D_POS.y+(CAMERA_PLAY_POS.y-CAMERA_2D_POS.y)*mix,
+   CAMERA_2D_POS.z+(CAMERA_PLAY_POS.z-CAMERA_2D_POS.z)*mix+ballCamZ);
+  cam.up.set(0,1-mix,-mix).normalize();
+  cam.lookAt(CAMERA_2D_LOOK.x+ballCamX,
+   CAMERA_2D_LOOK.y+(CAMERA_PLAY_LOOK.y-CAMERA_2D_LOOK.y)*mix,
+   CAMERA_2D_LOOK.z+(CAMERA_PLAY_LOOK.z-CAMERA_2D_LOOK.z)*mix+ballCamZ);
+  // Las láminas de Pokémon se orientan hacia la cámara para no quedar de canto.
+  for(const p of P)if(p.spriteMesh){
+   p.spriteMesh.quaternion.copy(cam.quaternion);
+   if(p.visualTilt)p.spriteMesh.rotateZ(p.visualTilt);
+  }
   if((t|0)%2===0)crowd.forEach(c=>{if(!c.fit&&c.anim.ready&&c.anim.box){const b=c.anim.box,bh=b.y1-b.y0+1,bw=b.x1-b.x0+1;let k=c.hc/bh;if(bw*k>2.6)k=2.6/bw;c.s.scale.set(c.anim.fw*k,c.anim.fh*k,1);c.s.position.x+=(c.anim.fw/2-(b.x0+b.x1+1)/2)*k;c.by=c.baseY+(b.y1+1-c.anim.fh/2)*k+.02;c.s.position.y=c.by;c.fit=true}c.s.position.y=c.by+Math.abs(Math.sin(t*.0033*c.sp+c.ph))*(cheer>0?.16:.035);if(c.anim.ready&&c.anim.frames.length>1&&c.anim.lastTick!==t){c.anim.lastTick=t;c.anim.elapsed+=dt;if(c.anim.elapsed>(cheer>0?.16:.29)){c.anim.elapsed=0;c.anim.frame=(c.anim.frame+1)%c.anim.frames.length;c.anim.mat.map=c.anim.frames[c.anim.frame];c.anim.mat.needsUpdate=true;}}});
   if(conf.visible){for(let i=0;i<NC;i++){cp[i*3+1]-=.12;cp[i*3]+=Math.sin(t*.003+i)*.02}conf.geometry.attributes.position.needsUpdate=true;if(!cheer)conf.visible=false}
  }
