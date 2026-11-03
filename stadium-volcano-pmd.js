@@ -791,7 +791,7 @@ function buildBench(o){
   }
  });
  const mat=(t,transparent=false,depthTest=true)=>new THREE.MeshBasicMaterial({
-  map:t,transparent,alphaTest:transparent?.05:0,
+  map:t,transparent,alphaTest:transparent ? .05 : 0,
   side:THREE.DoubleSide,depthWrite:!transparent,depthTest,toneMapped:false,fog:false
  });
  const plane=(w,h,x,y,z,t,order,transparent=false)=>{
@@ -809,7 +809,7 @@ function buildBench(o){
  plane(20.7,8.0,cx,5.16,zSeat-2.25,back,1);
  // Tres asientos bajos con sombras, debajo de los suplentes.
  const seatMat=new THREE.MeshBasicMaterial({color:0x8a7080});
- for(const dx of [-3.9,.45,4.85]){
+ for(const dx of [-1.45,2.95,7.35]){
   const seat=new THREE.Mesh(new THREE.BoxGeometry(3.25,.26,1.4),seatMat);
   seat.position.set(cx+dx,1.13,zSeat-1.0);
   seat.renderOrder=2;dugG.add(seat);
