@@ -550,7 +550,7 @@ button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
 <div class="pickLbl" id="modeLbl">MODO LOCAL</div><div id="modePick"><button type="button" data-mode="1" class="on">🎮 1 jugador</button><button type="button" data-mode="4">👥 2 vs 2 · 4 jugadores</button></div>
 <div id="l4Cfg"><div class="l4row"><b style="color:#ffd23f">P1 · Eq.1</b><select id="l4s0"></select></div><div class="l4row"><b style="color:#7dff8a">P2 · Eq.1</b><select id="l4s1"></select></div><div class="l4row"><b style="color:#66e0ff">P3 · Eq.2</b><select id="l4s2"></select></div><div class="l4row"><b style="color:#ff7ad9">P4 · Eq.2</b><select id="l4s3"></select></div>
 <small id="l4Warn"></small><small><b>Teclado A:</b> WASD mover · Shift correr · F tiro (mantén) · G pase · T pase aéreo · R placaje · Q poder<br><b>Teclado B:</b> Flechas mover · Shift der. correr · / tiro (mantén) · . pase · , pase aéreo · ; placaje · P poder<br><b>Mando:</b> stick mover · LB correr · RT tiro (mantén) · A pase · RB pase aéreo · B placaje · Y poder<br>Cada jugador maneja a su Pokémon fijo; un puesto en «CPU» (o con el mando desconectado) lo juega la IA. Con un solo teclado, para 4 humanos conviene usar mandos: algunos teclados no registran tantas teclas a la vez. No funciona en online.</small></div>
-<div class="pickLbl">ESTADIO</div><div id="stadiumPick" aria-label="Elegir estadio"><button type="button" data-stadium="city" class="on">🏙️ Ciudad</button><button type="button" data-stadium="sunset">🌇 Atardecer</button><button type="button" data-stadium="classic">🏟️ Clásico</button><button type="button" data-stadium="beach">🏝️ Playa</button><button type="button" data-stadium="volcano">🌋 Volcán</button><button type="button" data-stadium="arctic">🧊 Glaciar</button><button type="button" data-stadium="space">🪐 Espacio</button><button type="button" data-stadium="desert">🏜️ Desierto</button></div>
+<div class="pickLbl">ESTADIO ÚNICO · 2D</div><div id="stadiumPick" aria-label="Estadio Ciudad"><button type="button" data-stadium="city" class="on">🏙️ Ciudad PMD</button></div>
 <div id="weatherPick" hidden><button type="button" data-weather="clear" class="on">☀️ Despejado</button><button type="button" data-weather="cloudy">☁️ Nublado</button><button type="button" data-weather="rain">🌧️ Lluvia</button><button type="button" data-weather="storm">⛈️ Tormenta</button><button type="button" data-weather="fog">🌫️ Niebla</button><button type="button" data-weather="snow">❄️ Nieve</button><button type="button" data-weather="auto">🎲 Cambiante</button></div>
 <div id="cols"><section><h3>Tu equipo</h3><div class="grid" id="g0"></div></section><section><h3>Rival</h3><div class="grid" id="g1"></div></section></div>
 <div id="spriteCredit" style="font:11px Nunito,sans-serif;color:#e6efff;opacity:.82;max-width:620px">Sprites estilo Pokémon Mystery Dungeon: PMD Sprite Repository / colaboradores (CC BY-NC 4.0). Créditos de artistas en el repositorio.</div><div id="netBar"></div><button id="go">¡Jugar!</button><button id="readyBtn" type="button">✅ ¡Estoy listo!</button><button id="bdOpen" type="button">🛠️ Armar equipo (6 Pokémon)</button><button id="onlineBtn" type="button">🌐 Jugar online (código de sala)</button></div>
@@ -690,7 +690,7 @@ function drawMenu(){
 drawMenu();
 
 // ---------- escena ----------
-const R=new THREE.WebGLRenderer({antialias:true});R.setPixelRatio(Math.min(1.35,devicePixelRatio));R.outputEncoding=THREE.sRGBEncoding;R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=.9;R.shadowMap.enabled=false;document.body.prepend(R.domElement);
+const R=new THREE.WebGLRenderer({antialias:false});R.setPixelRatio(1);R.outputEncoding=THREE.sRGBEncoding;R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=.9;R.shadowMap.enabled=false;document.body.prepend(R.domElement);
 const srgb=t=>(t.encoding=THREE.sRGBEncoding,t);
 // Shader de borde iluminado (rim-light) para dar volumen arcade sin un postprocesado caro.
 function addRimShader(mat, rimColor=0x69dfff, strength=.25){
@@ -707,15 +707,24 @@ const S=new THREE.Scene();S.background=new THREE.Color(0x3f6f9c);S.fog=new THREE
 const cityG=new THREE.Group();S.add(cityG);let stadiumMode='city';
 // Escenario antiguo desinstalado: no quedan carreteras ni planos de la vieja ciudad.
 const cityFloor={visible:false,material:{map:null,color:new THREE.Color(0xffffff),needsUpdate:false}};
-const cam=new THREE.PerspectiveCamera(43,1,.1,500);cam.position.set(0,7.4,13.5);cam.lookAt(0,1.2,-2.5);
-const rs=()=>{R.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()};addEventListener('resize',rs);rs();
+// Cámara 2D ortográfica: posición, ángulo y centro ABSOLUTAMENTE FIJOS.
+const cam=new THREE.OrthographicCamera(-50,50,30,-30,.1,600);
+const CAMERA_2D_POS=new THREE.Vector3(0,100,150),CAMERA_2D_LOOK=new THREE.Vector3(0,9,-16);
+let targetZoom2D=1;
+function resetCamera2D(){cam.position.copy(CAMERA_2D_POS);cam.up.set(0,1,0);cam.lookAt(CAMERA_2D_LOOK);cam.zoom=1;targetZoom2D=1;cam.updateProjectionMatrix()}
+function resizeCamera2D(){
+ const aspect=Math.max(.4,innerWidth/Math.max(1,innerHeight)),halfHeight=Math.max(30,38/aspect);
+ cam.left=-halfHeight*aspect;cam.right=halfHeight*aspect;cam.top=halfHeight;cam.bottom=-halfHeight;
+ cam.updateProjectionMatrix();R.setSize(innerWidth,innerHeight);
+}
+resetCamera2D();const rs=resizeCamera2D;addEventListener('resize',rs);rs();
 S.add(new THREE.HemisphereLight(0xf7fdff,0x78916e,.95));const fillLight=new THREE.DirectionalLight(0xffffff,.5);fillLight.position.set(-12,18,8);S.add(fillLight);const sun=new THREE.DirectionalLight(0xfff7df,.65);sun.position.set(10,30,12);S.add(sun);
 // Skyline modular: edificios, ventanas luminosas y carteles que rodean la cancha.
 // Legacy stadium builder removed. New PMD renderer defined below.
 
 // Reutiliza la ilustración integrada del inicio para vestir también la selección de equipos/estadio.
 try{$('menu').style.backgroundImage='linear-gradient(90deg,rgba(5,14,39,.62) 0%,rgba(5,14,39,.34) 45%,rgba(5,14,39,.06) 100%)';$('menu').style.backgroundSize='cover';$('menu').style.backgroundPosition='center';}catch(e){}
-document.querySelectorAll('#stadiumPick button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#stadiumPick button').forEach(x=>x.classList.toggle('on',x===b));buildStadium(b.dataset.stadium)}));
+document.querySelectorAll('#stadiumPick button').forEach(b=>b.addEventListener('click',()=>{b.classList.add('on');buildStadium('city')}));
 const loader=new THREE.TextureLoader();loader.setCrossOrigin('anonymous');const texC={},pmdC={};
 function tex(id,col){
  if(texC[id])return texC[id];
@@ -974,7 +983,7 @@ function showMenuPreview(hidePlayers=false){
  [0,1].forEach(t=>T[t].p.slice(0,3).forEach((id,i)=>P.push(mkPlayer(id,T[t].c,t,i===2,i))));
  P.forEach((p,i)=>{const lane=i%3;p.x=p.t?6.8-lane*1.35:-6.8+lane*1.35;p.z=-4.5+lane*4.5;p.g.position.set(p.x,0,p.z);p.g.visible=!hidePlayers;loadStats(p)});
  buildCrowd();
- cam.position.set(0,8.2,16.2);cam.lookAt(0,1.0,-1.5);
+ resetCamera2D();
 }
 async function loadStats(p){if(p.statsPromise)return p.statsPromise;p.statsPromise=(async()=>{applyStats(p,await getStats(p.id))})();return p.statsPromise}
 let crowdBuilt=false;const crowdArtwork=new Map(),crowdAnim=new Map();
@@ -1595,7 +1604,7 @@ async function start(){
  BENCH=[[],[]];SUBS=[0,0];
  [0,1].forEach(t=>T[t].p.forEach((id,i)=>{if(i<3)P.push(mkPlayer(id,T[t].c,t,i==2,i));else{const b=mkPlayer(id,T[t].c,t,false,i-3);b.g.visible=false;BENCH[t].push(b)}}));
  await Promise.all([...P,...BENCH[0],...BENCH[1]].map(loadStats));buildCrowd(T);
- finishGoalCelebration();lastGoalShooter=null;score=[0,0];time=5400;beginStadiumAtmosphere();envChipUpdate();sta=1;charge=0;cameraCue=null;impactCue=0;power=0;powerBoost=0;possessionTicks=0;alt=false;l4Setup();netMatchInit();kickoff();cam.position.set(0,11.5,18.5);cam.lookAt(0,.8,0);camLook.set(0,.8,0);lookT.set(0,.8,0);camBall.set(0,0,0);vb.x=vb.z=0;hud();$('msg').textContent=netOn()?'ESPERANDO AL RIVAL…':'';ready=true;if(!netOn())sfx('whistle');netReadyHook();
+ finishGoalCelebration();lastGoalShooter=null;score=[0,0];time=5400;beginStadiumAtmosphere();envChipUpdate();sta=1;charge=0;cameraCue=null;impactCue=0;power=0;powerBoost=0;possessionTicks=0;alt=false;l4Setup();netMatchInit();kickoff();resetCamera2D();camLook.set(0,.8,0);lookT.set(0,.8,0);camBall.set(0,0,0);vb.x=vb.z=0;hud();$('msg').textContent=netOn()?'ESPERANDO AL RIVAL…':'';ready=true;if(!netOn())sfx('whistle');netReadyHook();
 }
 // Online: la partida (y la revancha) solo empieza cuando AMBOS jugadores confirman "Listo".
 $('go').onclick=()=>{if(netOn())setReady(!NET.myReady);else start()};$('re').onclick=()=>{if(netOn())setReady(!NET.myReady);else start()};
@@ -3259,31 +3268,12 @@ function pmdNewStadium(mode){
 }
 
 // Modern illustrated stage router. All game rules, camera, controls and UI tabs unchanged.
-function buildStadium(m){
- disposeScenicTextures();
- BIO.anims.length=0;
- cityG.clear();
- cityFloor.visible=false;
- stadiumMode=m;
- // La cúpula del cielo anterior no debe mezclarse con el panorama PMD.
- skyM.visible=m!=='city';
- if(m==='city'){
-  window.PMD_CITY.build({THREE,cityG,HX,HZ,GW,apron,pitchMat,SCENIC_TEXTURES});
-  S.background.setHex(0x75bafa);S.fog.color.setHex(0x75bafa);
-  S.fog.near=180;S.fog.far=460;
- }else{
-  mdPaintPitch(m);mdPaintApron(m);pmdNewStadium(m);
-  // Nuevos arcos funcionales para las otras selecciones.
-  const gmat=new THREE.MeshBasicMaterial({color:0xfaf1df});
-  for(const side of [-1,1]){
-   for(const z of [-GW,GW]){
-    const post=new THREE.Mesh(new THREE.BoxGeometry(.35,3.6,.35),gmat);
-    post.position.set(side*HX,1.8,z);cityG.add(post);
-   }
-   const bar=new THREE.Mesh(new THREE.BoxGeometry(.35,.35,GW*2+.2),gmat);
-   bar.position.set(side*HX,3.6,0);cityG.add(bar);
-  }
- }
+function buildStadium(){
+ disposeScenicTextures();BIO.anims.length=0;cityG.clear();
+ cityFloor.visible=false;stadiumMode='city';skyM.visible=false;
+ window.PMD_CITY.build({THREE,cityG,HX,HZ,GW,apron,pitchMat,SCENIC_TEXTURES});
+ S.background.setHex(0x75bafa);S.fog.color.setHex(0x75bafa);
+ S.fog.near=190;S.fog.far=490;
  syncBiomeWeather();envApply();envChipUpdate();
 }
 // Primera construcción: una sola escena nueva, sin geometría antigua.
@@ -3378,7 +3368,7 @@ function render(t){pollSplashPad();aimTick(t);ctlTick(t);const dt=Math.min(.1,cl
    }
    const tr=Math.abs(p.fx)>.05?Math.atan2(p.fx,p.fz):(p.t?Math.PI:0);let dd=tr-p.ry;dd=Math.atan2(Math.sin(dd),Math.cos(dd));p.ry+=dd*.18;
    if(p.spriteMesh){
-    p.spriteMesh.rotation.y=fkCam?Math.atan2(cam.position.x-p.g.position.x,cam.position.z-p.g.position.z):0;
+    p.spriteMesh.rotation.y=0;
     {let jy=0,rz=p.stun>0?Math.sin(t/55)*.12:(p.lunge>0?-.14:0);
      if(p.skill>0){const ph=1-p.skill/24,w=Math.sin(Math.min(1,ph)*Math.PI);jy=w*1.7;rz=Math.sign(p.fx||1)*w*.95}
      else if(p.dive>0){const w=Math.sin((1-p.dive/16)*Math.PI);jy=w*1.2;rz=(p.t?1:-1)*w*.9}
@@ -3397,58 +3387,24 @@ function render(t){pollSplashPad();aimTick(t);ctlTick(t);const dt=Math.min(.1,cl
   const tbx=B.px==null?B.x:B.px+(B.x-B.px)*alpha,tbz=B.pz==null?B.z:B.pz+(B.z-B.pz)*alpha;if(B.o){const e=1-Math.exp(-dt*16);vb.x+=(tbx-vb.x)*e;vb.z+=(tbz-vb.z)*e}else{vb.x=tbx;vb.z=tbz}ballM.position.set(vb.x,.6+(B.h||0),vb.z);ballM.rotation.x+=B.vz*.4;ballM.rotation.z-=B.vx*.4;ballM.material.emissive.setHex(B.sup?0xff2200:0);ballSh.position.set(vb.x,.03,vb.z);ballSh.scale.setScalar(1/(1+(B.h||0)*.18));
   if(L4.on)l4HudTick();$('b1').style.width=sta*100+'%';$('b2').style.width=Math.min(100,charge*100)+'%';$('bp').style.width=power+'%';$('powerPct').textContent=Math.floor(power)+'%';$('powerBtn').style.display=ready?'block':'none';$('powerBtn').classList.toggle('readyPower',power>=100);$('powerBtn').disabled=power<100;$('b2').style.background=charge>=1?'#ff4d4d':'#ffd23f';
   $('clock').textContent=Math.max(0,Math.ceil(time/60));if(((t/16)|0)%2===0)drawMini();
-  if(fkCam){
-   const sh=!!fvc.shot,back=sh?13:17,hh=sh?4.4:8.5,la=sh?26:12,cx=cl(fvc.bx-fvc.fx*back,-HX-.5,HX+.5),cz=cl(fvc.bz-fvc.fz*back,-HZ-6,HZ+6),ease=1-Math.exp(-dt*3.2);
-   cam.position.x+=(cx-cam.position.x)*ease;cam.position.y+=(hh-cam.position.y)*ease;cam.position.z+=(cz-cam.position.z)*ease;
-   if(fvc.phase==='fly')lookT.set(vb.x+fvc.fx*6,1.3+(B.h||0)*.4,vb.z+fvc.fz*6);else lookT.set(fvc.bx+fvc.fx*la,sh?1.6:.8,fvc.bz+fvc.fz*la);
-  }else if(cameraCue){
-   cameraCue.t+=dt;const c=cameraCue,elapsed=c.t;
-   if(c.kind==='goal'){
-     // Acercamiento gradual durante 3 s; la cámara vuelve a su modo habitual al reiniciar.
-     const p=c.player,progress=Math.min(1,elapsed/GOAL_CELEBRATION_SECONDS);
-     const ease=1-Math.exp(-dt*1.8);
-     const px=p.px==null?p.x:p.px+(p.x-p.px)*alpha;
-     const pz=p.pz==null?p.z:p.pz+(p.z-p.pz)*alpha;
-     cam.position.x+=(px-cam.position.x)*ease;
-     cam.position.y+=(5.8-cam.position.y)*ease;
-     cam.position.z+=(pz+9.5-cam.position.z)*ease;
-     lookT.set(px,1.9,pz);
-     const targetFov=progress<.8?38:40;
-     cam.fov+=(targetFov-cam.fov)*Math.min(1,dt*2.1);
-     cam.updateProjectionMatrix();
-    }else if(c.kind==='shot'){
-    // Cinemática lenta: primero se lee el tiro (0-.48s), luego se sigue la pelota hasta 1.65s.
-    // El movimiento de cámara usa dt para que la transición sea suave y consistente.
-    const playerPhase=elapsed<.48;
-    let tx,tz,cy,back;
-    if(playerPhase){tx=c.player.x;tz=c.player.z;cy=7.8;back=8.5;}
-    else {const k=Math.min(1,(elapsed-.48)/.28);tx=c.ballX+(B.x-c.ballX)*k;tz=c.ballZ+(B.z-c.ballZ)*k;cy=8.8;back=10.0;}
-    const aimX=playerPhase?c.player.x:B.x, aimZ=playerPhase?c.player.z:B.z;
-    const desiredX=tx,desiredY=cy,desiredZ=tz+back;
-    const ease=1-Math.exp(-dt*4.8);
-    cam.position.x+=(desiredX-cam.position.x)*ease;cam.position.y+=(desiredY-cam.position.y)*ease;cam.position.z+=(desiredZ-cam.position.z)*ease;
-    lookT.set(aimX,.8,aimZ);
-    if(elapsed>1.65)cameraCue=null;
-   }else{
-    const midX=(c.player.x+c.other.x)*.5,midZ=(c.player.z+c.other.z)*.5;
-    const ease=1-Math.exp(-dt*4.2);
-    cam.position.x+=(midX-cam.position.x)*ease;cam.position.y+=(10.5-cam.position.y)*ease;cam.position.z+=(midZ+13.5-cam.position.z)*ease;lookT.set(midX,.6,midZ);
-    if(elapsed>.62)cameraCue=null;
-   }
-  }else{
-   // Cámara tipo FIFA: sigue un punto suavizado del balón (sin saltos al girar o subir/bajar).
-   const e1=1-Math.exp(-dt*4);camBall.x+=(vb.x-camBall.x)*e1;camBall.z+=(vb.z-camBall.z)*e1;
-   const e2=1-Math.exp(-dt*2.2),fx=cl(camBall.x*.85,-24,24),fz=cl(camBall.z*.3,-4,4),pn=CFG.pano!==0,cY=pn?16:13.5,cZ=pn?27:21,lZ=pn?-9:0,lY=pn?.2:.6,tF=pn?46:43;
-   if(Math.abs(cam.fov-tF)>.01){cam.fov+=(tF-cam.fov)*Math.min(1,e2*2);cam.updateProjectionMatrix()}
-   cam.position.x+=(fx-cam.position.x)*e2;cam.position.y+=(cY-cam.position.y)*e2;cam.position.z+=(cZ+fz-cam.position.z)*e2;
-   lookT.set(cl(camBall.x*.92,-27,27),lY,camBall.z*.5+lZ);
+  // Animaciones de cámara permitidas: zoom exclusivamente.
+  if(cameraCue){
+   cameraCue.t+=dt;
+   if(cameraCue.kind==='shot'&&cameraCue.t>1.65)cameraCue=null;
+   else if(cameraCue.kind!=='goal'&&cameraCue.kind!=='shot'&&cameraCue.t>.62)cameraCue=null;
   }
-  camLook.lerp(lookT,1-Math.exp(-dt*5));cam.lookAt(camLook);
-  if(!isFinite(cam.position.x+cam.position.y+cam.position.z)){cam.position.set(0,13.5,21);camLook.set(0,.6,0);lookT.copy(camLook)}
+  let nextZoom=1;
+  if(fkCam)nextZoom=1.16;
+  else if(goalCelebration||(cameraCue&&cameraCue.kind==='goal'))nextZoom=1.22;
+  else if(cameraCue&&cameraCue.kind==='shot')nextZoom=1.13;
+  else if(cameraCue)nextZoom=1.08;
+  targetZoom2D=nextZoom;
+  const newZoom=cam.zoom+(targetZoom2D-cam.zoom)*(1-Math.exp(-dt*3.8));
+  if(Math.abs(newZoom-cam.zoom)>.00001){cam.zoom=newZoom;cam.updateProjectionMatrix()}
   if((t|0)%2===0)crowd.forEach(c=>{if(!c.fit&&c.anim.ready&&c.anim.box){const b=c.anim.box,bh=b.y1-b.y0+1,bw=b.x1-b.x0+1;let k=c.hc/bh;if(bw*k>2.6)k=2.6/bw;c.s.scale.set(c.anim.fw*k,c.anim.fh*k,1);c.s.position.x+=(c.anim.fw/2-(b.x0+b.x1+1)/2)*k;c.by=c.baseY+(b.y1+1-c.anim.fh/2)*k+.02;c.s.position.y=c.by;c.fit=true}c.s.position.y=stadiumMode==='city'?c.by:c.by+Math.abs(Math.sin(t*.004*c.sp+c.ph))*(cheer>0?.12:.025);if(stadiumMode!=='city'&&c.anim.ready&&c.anim.frames.length>1){c.anim.elapsed+=dt;if(c.anim.elapsed>.18){c.anim.elapsed=0;c.anim.frame=(c.anim.frame+1)%c.anim.frames.length;c.anim.mat.map=c.anim.frames[c.anim.frame];c.anim.mat.needsUpdate=true;}}});
   if(conf.visible){for(let i=0;i<NC;i++){cp[i*3+1]-=.12;cp[i*3]+=Math.sin(t*.003+i)*.02}conf.geometry.attributes.position.needsUpdate=true;if(!cheer)conf.visible=false}
  }
- gfxShake(1);R.render(S,cam);gfxShake(-1);
+ R.render(S,cam);
 }
 // ================= GRÁFICOS+ : sombras reales, estela y luz del balón, fuegos artificiales, marcador LED, reflectores =================
 const GFX={q:0,shake:0,flash:0,ledStr:'',ledT:-999,sx:0,sy:0,sz:0};
@@ -3730,10 +3686,7 @@ function gfxTick(dt,t){
  
 }
 const _et=envTick;envTick=function(dt,t){_et(dt,t);gfxTick(dt,t);dugTick(t)};
-function gfxShake(sign){
- if(sign>0){const a=GFX.shake*.3;GFX.sx=(Math.random()-.5)*a;GFX.sy=(Math.random()-.5)*a;GFX.sz=(Math.random()-.5)*a*.5;cam.position.x+=GFX.sx;cam.position.y+=GFX.sy;cam.position.z+=GFX.sz}
- else{cam.position.x-=GFX.sx;cam.position.y-=GFX.sy;cam.position.z-=GFX.sz;GFX.sx=GFX.sy=GFX.sz=0}
-}
+function gfxShake(sign){/* cámara 2D: sin sacudidas */}
 // --- 8) ganchos: placajes, súper tiros y goles ---
 const _ti0=tackleImpact;tackleImpact=function(p,o){_ti0(p,o);ringFx(o.x,o.z,0xffd23f,4.2,.55);GFX.shake=Math.max(GFX.shake,.45)};
 const _b0=burst;burst=function(c){_b0(c);fireworks(c);GFX.flash=.9;GFX.shake=Math.max(GFX.shake,1);ringFx(B.x,B.z,c,10,1.2)};
@@ -3741,7 +3694,7 @@ const _k0=kick;kick=function(p,dx,dz,pw,sup,cin){_k0(p,dx,dz,pw,sup,cin);if(sup&
 // --- 9) calidad gráfica (Ajustes) ---
 function applyQuality(){
  const q=cl(CFG.q|0||2,1,3);if(q===GFX.q)return;GFX.q=q;
- R.setPixelRatio(q===1?1:q===2?Math.min(1.35,devicePixelRatio):Math.min(2,devicePixelRatio));R.setSize(innerWidth,innerHeight);
+ R.setPixelRatio(1);resizeCamera2D();
  const sh=q>=2;R.shadowMap.enabled=sh;sun.castShadow=sh;
  const ms=q>=3?2048:1024;if(sun.shadow.mapSize.x!==ms){sun.shadow.mapSize.set(ms,ms);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}}
  beams.forEach(b=>{b.visible=q>=2});ballSh.visible=!sh;
@@ -4076,7 +4029,7 @@ function netClosed(msg){
 // El anfitrión inicia la partida para los dos; el invitado la inicia al recibir el aviso.
 function netHostStart(){
  if(NET.peerTeam)sel[1]=NET.peerTeam;NET.guestReady=false;NET.myReady=NET.peerReady=false;
- netSend({t:'start',teams:[sel[0],sel[1]],defs:{[sel[0]]:teamDef(sel[0]),[sel[1]]:teamDef(sel[1])},std:stadiumMode,wx:WXk});
+ netSend({t:'start',teams:[sel[0],sel[1]],defs:{[sel[0]]:teamDef(sel[0]),[sel[1]]:teamDef(sel[1])},std:'city',wx:WXk});
  start();
 }
 function guestStart(m){
@@ -4084,7 +4037,7 @@ function guestStart(m){
  if(m.defs&&typeof m.defs==='object')Object.keys(m.defs).forEach(k=>netRegTeam({k,d:m.defs[k]}));
  if(!(Array.isArray(m.teams)&&m.teams.length===2&&m.teams.every(teamOk)))return;
  sel[0]=m.teams[0];sel[1]=m.teams[1];$('online').classList.remove('open');
- WXmode='fixed';if(ENVPAL[m.std])buildStadium(m.std);if(WXP[m.wx])setWeather(m.wx,true);
+ WXmode='fixed';buildStadium('city');if(WXP[m.wx]&&allowedWeather('city').includes(m.wx))setWeather(m.wx,true);
  NET.guestReady=false;start();
 }
 function netMatchInit(){
