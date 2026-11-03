@@ -2708,27 +2708,51 @@ function dugTrainers(){
  });
 }
 // El banquillo se construye en stadium-city-pmd.js, no hay materiales heredados.
+const BENCH_H={130:65,95:88,208:92,321:145,131:25,54:8,55:12,121:11,120:8,74:4,75:10,76:14,139:10,140:5,141:13,129:9};
+function dugFitSprite(s){
+ const u=s.userData,a=u.pmdAnim;
+ if(!a||!a.ready||!a.box||u.fitted&&u.fitHeight===u.heightDm)return;
+ const b=a.box,fw=a.fw,fh=a.fh,bw=Math.max(1,b.x1-b.x0+1),bh=Math.max(1,b.y1-b.y0+1);
+ const metres=Math.max(.1,u.heightDm/10);
+ let target=cl(2.35+1.3*Math.log2(metres+.65),2.5,5.8);
+ if(u.id===130)target=Math.max(target,5.35);
+ const k=Math.min(target/bh,([130,95,208,321].includes(u.id)?7.1:4.3)/bw);
+ const geo=new THREE.PlaneGeometry(fw*k,fh*k);
+ geo.translate((fw/2-(b.x0+b.x1+1)/2)*k,(b.y1+1-fh/2)*k,0);
+ s.geometry.dispose();s.geometry=geo;
+ if(u.shadow)u.shadow.scale.set(Math.max(1,Math.min(3.3,bw*k*.41)),Math.max(.44,Math.min(1.15,bw*k*.16)),1);
+ u.fitHeight=u.heightDm;u.fitted=true;
+}
 function dugSync(){
  if(!names[0])return;
  const mir=typeof NETG!=='undefined'&&NETG.flip?1:0,live=ready&&BENCH[0].length;
  const ids=[0,1].map(t=>live?BENCH[t].map(p=>p.id):(team(sel[t]).p||[]).slice(3,6));
- const key=[names.join('|'),cols.join('|'),ids.map(a=>a.join(',')).join('/'),SUBS.join(','),mir].join('~');
+ const key=[stadiumMode,names.join('|'),cols.join('|'),ids.map(a=>a.join(',')).join('/'),SUBS.join(','),mir].join('~');
  if(key===dugKey)return;dugKey=key;
- while(dugG.children.length){const o=dugG.children.pop();if(o.userData.own){(Array.isArray(o.material)?o.material:[o.material]).forEach(mt=>{if(mt.map&&!mt.map.userData.keep)mt.map.dispose()})}}dugSprites=[];
- // Se usan las gradas PNG del escenario como banquillos, sin marquesinas 3D.
- // Mantener sprites auténticos de los suplentes y entrenadores oficiales.
- const zSeat=-(HZ+6.1);
+ for(const o of [...dugG.children]){dugG.remove(o);o.traverse(p=>{if(p.geometry)p.geometry.dispose();if(p.material)(Array.isArray(p.material)?p.material:[p.material]).forEach(m=>m.dispose());});}dugSprites=[];
+ const zSeat=-(HZ+6.1),volcano=stadiumMode==='volcano';
+ if(volcano&&window.PMD_VOLCANO&&window.PMD_VOLCANO.buildBench)
+  for(const t of [0,1])window.PMD_VOLCANO.buildBench({THREE,dugG,cx:t?DUGX:-DUGX,zSeat,team:t,color:cols[t]});
+ const seats=[[-14.9,-10.5,-6.1],[12,16.4,20.8]];
  [0,1].forEach(t=>{
   const cx=t?DUGX:-DUGX;
   ids[t].forEach((id,i)=>{
-   const entry=crowdAnimFor(id);
-   const material=new THREE.MeshBasicMaterial({map:entry.mat.map,transparent:true,
-    alphaTest:.05,side:THREE.DoubleSide,depthWrite:false});
-   const pokemon=new THREE.Mesh(new THREE.PlaneGeometry(3.25,3.25).translate(0,1.625,0),material);
-   pokemon.position.set(cx-1.1+i*3.05,1.2,zSeat);
-   pokemon.userData.ph=i*1.9+t*.7;pokemon.userData.y0=1.2;
-   pokemon.userData.pmdAnim=entry;
-   pokemon.renderOrder=3;dugG.add(pokemon);dugSprites.push(pokemon);
+   const anim=crowdAnimFor(id);
+   const mat=new THREE.MeshBasicMaterial({map:anim.mat.map,transparent:true,alphaTest:.045,
+    side:THREE.DoubleSide,depthWrite:false,depthTest:true,toneMapped:false});
+   const sprite=new THREE.Mesh(new THREE.PlaneGeometry(3.2,3.2),mat);
+   const foot=volcano?1.30:1.2,x=volcano?seats[t][i]:cx-1.1+i*3.05;
+   sprite.position.set(x,foot,zSeat);sprite.renderOrder=4;dugG.add(sprite);dugSprites.push(sprite);
+   const u=sprite.userData;u.ph=i*1.9+t*.7;u.y0=foot;u.id=id;
+   u.pmdAnim=anim;u.heightDm=BENCH_H[id]||10;u.fitHeight=0;u.fitted=false;
+   if(volcano){
+    const shadow=new THREE.Mesh(new THREE.CircleGeometry(1,20),new THREE.MeshBasicMaterial({
+     color:0x211728,transparent:true,opacity:.38,depthWrite:false,side:THREE.DoubleSide
+    }));
+    shadow.rotation.x=-Math.PI/2;shadow.position.set(x,1.31,zSeat+.04);
+    shadow.scale.set(1.45,.70,1);shadow.renderOrder=2;dugG.add(shadow);u.shadow=shadow;
+   }
+   getStats(id).then(st=>{if(!st.fail&&Number.isFinite(st.h)&&st.h>0)u.heightDm=st.h;}).catch(()=>{});
   });
  });
  dugTrainers();
@@ -2833,8 +2857,9 @@ function dugTrainerPos(){
  if(dugTr.length){const rc=R.domElement.getBoundingClientRect(),fl=typeof NETG!=='undefined'&&NETG.flip;
   dugTr.forEach(o=>{const im=o.im;if(!im.dataset.ok||!im.naturalHeight){return}
    const cx=(o.t?DUGX:-DUGX)-5.6,z=-(HZ+6.1);
-   _dv.set(cx,3.65,z).project(cam);const vis=_dv.z<1;const ty=(-_dv.y*.5+.5)*rc.height;
-   _dv.set(cx,.06,z).project(cam);const by=(-_dv.y*.5+.5)*rc.height;let sx=(_dv.x*.5+.5)*rc.width;if(fl)sx=rc.width-sx;
+   const foot=stadiumMode==='volcano'?1.30:.06;
+   _dv.set(cx,foot+3.6,z).project(cam);const vis=_dv.z<1;const ty=(-_dv.y*.5+.5)*rc.height;
+   _dv.set(cx,foot,z).project(cam);const by=(-_dv.y*.5+.5)*rc.height;let sx=(_dv.x*.5+.5)*rc.width;if(fl)sx=rc.width-sx;
    const hh=by-ty,ww=hh*im.naturalWidth/im.naturalHeight;
    if(!vis||hh<8||hh>600||ready===false&&false){im.style.display='none';return}
    im.style.display='block';im.style.width=ww+'px';im.style.height=hh+'px';const now=performance.now(),bob=-(Math.max(0,Math.sin(now*.0042+o.t*2))*.035+(cheer>0?Math.abs(Math.sin(now*.011+o.t))*.18:0))*hh;im.style.transform='translate('+(rc.left+sx-ww/2)+'px,'+(rc.top+ty+bob)+'px)'+(fl?' scaleX(-1)':'');
@@ -2846,9 +2871,19 @@ function dugTick(t){
 
  if(t-dugT>300){dugT=t;try{dugSync()}catch(e){}}
 
- dugSprites.forEach(s=>{const u=s.userData,ph=u.ph||0,hop=stadiumMode==='city'?0:Math.max(0,Math.sin(t*.0042+ph)),j=stadiumMode==='city'?0:cheer>0?Math.abs(Math.sin(t*.011+ph))*1.1:0;
-  s.position.y=(u.y0||1.15)+hop*.16+j;s.rotation.z=stadiumMode==='city'?0:Math.sin(t*.0023+ph)*.07+(cheer>0?Math.sin(t*.02+ph)*.12:0);s.scale.set(1-hop*.03,1+hop*.05+j*.04,1);
-  if(u.pmdAnim&&u.pmdAnim.ready&&u.pmdAnim.mat.map!==s.material.map){s.material.map=u.pmdAnim.mat.map;s.material.needsUpdate=true;}if(typeof SPT!=='undefined')s.material.color.copy(SPT)});
+ dugSprites.forEach(s=>{
+  const u=s.userData,ph=u.ph||0;
+  if(u.pmdAnim&&u.pmdAnim.ready){
+   if(u.pmdAnim.mat.map!==s.material.map){s.material.map=u.pmdAnim.mat.map;s.material.needsUpdate=true;}
+   dugFitSprite(s);
+  }
+  const breath=Math.sin(t*.0024+ph)*.013,cheerBob=cheer>0?Math.abs(Math.sin(t*.012+ph))*.055:0;
+  s.position.y=(u.y0||1.2)+Math.sin(t*.0022+ph)*.013+cheerBob;
+  s.rotation.z=cheer>0?Math.sin(t*.011+ph)*.018:0;
+  s.scale.set(1-breath*.35,1+breath,1);
+  if(stadiumMode==='volcano')s.material.color.setHex(0xffffff);
+  else if(typeof SPT!=='undefined')s.material.color.copy(SPT);
+ });
 }
 function gfxTick(dt,t){
  GFX.shake=Math.max(0,GFX.shake-dt*2.2);GFX.flash=Math.max(0,GFX.flash-dt*2.6);
