@@ -80,22 +80,27 @@ function build(o){
   window(q,x-12,base-123,24,33);window(q,x-12,base-60,24,36);
  }
  // Pixel tiles based on the actual visual reference, not a retextured old model.
- const pavement=canvas(512,512,(q)=>{
-  r(q,0,0,512,512,C.field);
-  for(let row=0;row<16;row++){
-   let y=row*32;for(let col=-1;col<16;col++){
-    const x=col*39+(row%2)*19,shade=rand();
-    r(q,x+1,y+1,37,30,C.ink);
-    r(q,x+3,y+3,33,26,shade<.25?'#b9aa9e':shade<.75?'#d3bca9':'#dac6b8');
-    r(q,x+5,y+5,27,3,'#ead8c4');
-    if(rand()<.22)r(q,x+18,y+16,11,2,'#a9958a');
-    if(rand()<.18)r(q,x+6,y+24,4,2,'#9d8b87');
+ const pavement=canvas(1024,614,(q)=>{
+  // Baldosas irregulares a tamaño nativo: sin estirar el suelo ni crear rejillas blancas.
+  r(q,0,0,1024,614,'#987f88');
+  const stones=['#bda8a5','#c7b4aa','#b19c9f','#d2b6aa','#bca6ad','#c6b3a2','#b6a3a0'];
+  for(let row=0;row<33;row++){
+   const yy=row*19,offset=row%2?18:0;
+   for(let col=-1;col<32;col++){
+    const xx=col*34+offset,shade=stones[Math.floor(rand()*stones.length)];
+    r(q,xx+1,yy+1,32,17,shade);
+    // Borde cálido de un píxel, nunca blanco brillante.
+    r(q,xx+3,yy+2,24,1,'rgba(255,228,204,.18)');
+    r(q,xx+1,yy+16,32,1,'rgba(75,60,76,.22)');
+    if(rand()<.24)r(q,xx+9+rand()*12,yy+8+rand()*5,4+rand()*5,1,'rgba(99,83,88,.19)');
+    if(rand()<.12)r(q,xx+24,yy+4,2,3,'rgba(237,200,166,.35)');
    }
   }
+  for(let i=0;i<460;i++)r(q,rand()*1024,rand()*614,2+rand()*3,1,rand()<.5?'#a89398':'#d0b9b0');
  });
  const pitchC=canvas(1024,614,(q)=>{
   // Continuous textured stone court: same logical 60 × 36 playing field.
-  q.drawImage(pavement,0,0,1024,614);
+  q.drawImage(pavement,0,0);
   for(let i=0;i<230;i++){
    let x=rand()*1024,y=rand()*614;r(q,x,y,3+rand()*9,1+rand()*3,'rgba(98,75,87,.13)');
   }
@@ -209,9 +214,11 @@ function build(o){
       depthWrite:false,toneMapped:false,fog:false}));
   mesh.position.set(x,y,z);mesh.rotation.y=rot;scene.add(mesh);return mesh;
  }
- plane(sky,440,149,0,64,-210);
- plane(town,300,100,0,42,-113);
- plane(tribune,118,43.8,0,19.7,-HZ-37);
+ // Capas situadas para la nueva proyección ortográfica, sin fuga de perspectiva.
+ // La vista es fija: las capas se muestran completas sin mover la cámara.
+ plane(sky,166,93,0,-35,-94);
+ plane(town,128,56,0,-7,-75);
+ plane(tribune,108,43.8,0,9,-HZ-37);
  // Side gardens are decor, not old stands. Keep outside the gameplay perimeter.
  const garden=canvas(256,192,q=>{
   r(q,0,164,256,28,C.stoneDark);
