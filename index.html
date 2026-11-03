@@ -860,6 +860,98 @@ diffuseColor.rgb=mix(diffuseColor.rgb,sc,cov*.97);wxCover=cov;wxPud=pud;`)
 pitchMat.onBeforeCompile=wxPatch;
 pitchMat.customProgramCacheKey=()=>'pitch-wx';
 const pitch=new THREE.Mesh(new THREE.PlaneGeometry(HX*2,HZ*2),pitchMat);pitch.rotation.x=-Math.PI/2;S.add(pitch);
+// Mystery Dungeon · suelo distinto para cada estadio. Se pinta la misma cancha
+// (60x36 unidades), sin modificar colisiones, líneas de gol ni controles.
+let MD_PITCH_MODE='',MD_PITCH_TEXTURE=null;
+function mdPaintPitch(mode){
+ if(MD_PITCH_MODE===mode)return;
+ MD_PITCH_MODE=mode;
+ const colors={
+  city:['#b6a48a','#c9b69c','#e5ccab','#716b63','#213d4b'],
+  classic:['#58a85a','#7cc969','#b4dc72','#3e8752','#244d42'],
+  sunset:['#ac875f','#c29b74','#ebc292','#805c5c','#473c50'],
+  beach:['#79be73','#a6d76d','#d3e494','#d4bc86','#3b796a'],
+  volcano:['#ba7450','#d39160','#ecaf70','#795548','#563949'],
+  arctic:['#9dc9d6','#b8dbe5','#e8f4ed','#74a6c3','#426b85'],
+  space:['#536d89','#6c86a4','#adc2c8','#324968','#213c58'],
+  desert:['#dca768','#f3c17d','#ffe0a1','#a5765d','#795241']
+ }[mode]||['#58a85a','#7cc969','#b4dc72','#3e8752','#244d42'];
+ const c=document.createElement('canvas');c.width=960;c.height=576;
+ const q=c.getContext('2d');q.imageSmoothingEnabled=false;
+ const box=(x,y,w,h,color)=>{q.fillStyle=color;q.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h));};
+ let seed=3571+mode.length*69;for(const ch of mode)seed+=ch.charCodeAt(0)*9;
+ const rnd=()=>{seed=seed*16807%2147483647;return(seed-1)/2147483646;};
+ box(0,0,960,576,colors[0]);
+ const natural=['classic','beach'].includes(mode);
+ const stone=['city','sunset','volcano','desert'].includes(mode);
+ if(natural){
+  for(let i=0;i<12;i++)box(i*80,0,80,576,i%2?colors[0]:colors[1]);
+  for(let i=0;i<9000;i++){
+   const x=rnd()*960,y=rnd()*576,sz=2+rnd()*6;
+   box(x,y,sz,1+rnd()*3,rnd()<.55?colors[2]:colors[3]);
+  }
+  if(mode==='beach'){
+   for(let i=0;i<3400;i++){const x=rnd()*960,y=rnd()*576;
+    if(x<82||x>875||y<52||y>516)box(x,y,2+rnd()*7,1+rnd()*3,colors[4]);
+   }
+  }
+ }else if(stone){
+  for(let y=0;y<576;y+=46)for(let x=-30+(Math.floor(y/46)%2)*26;x<960;x+=64){
+   const v=rnd();
+   box(x,y,61,43,colors[3]);
+   box(x+3,y+3,56,38,v<.3?colors[0]:v<.7?colors[1]:colors[2]);
+   box(x+5,y+5,49,3,colors[2]);
+   if(rnd()<.25){
+    box(x+15+rnd()*28,y+12+rnd()*14,12+rnd()*12,2,colors[3]);
+   }
+  }
+  if(mode==='volcano')for(let i=0;i<50;i++){
+   const x=rnd()*960,y=rnd()*576;
+   box(x,y,18+rnd()*22,2,'#f6c283');
+   box(x+5,y+3,3+rnd()*14,2,'#e46a3f');
+  }
+ }else if(mode==='arctic'){
+  for(let y=0;y<576;y+=54)for(let x=-15+(y%108?20:0);x<960;x+=72){
+   box(x,y,70,51,colors[3]);
+   box(x+3,y+3,65,46,colors[(Math.floor(rnd()*3))]);
+   box(x+5,y+5,40,4,colors[2]);
+   box(x+33,y+23,20,2,colors[4]);
+  }
+ }else if(mode==='space'){
+  for(let y=0;y<576;y+=52)for(let x=0;x<960;x+=64){
+   box(x,y,62,50,colors[4]);box(x+3,y+3,56,44,colors[(Math.floor(rnd()*3))]);
+   box(x+7,y+8,6,5,'#7fc8d6');
+   box(x+50,y+39,5,4,'#e4d6a2');
+  }
+ }
+ for(let i=0;i<2600;i++){
+  const x=rnd()*960,y=rnd()*576;
+  box(x,y,1+rnd()*5,1+rnd()*3,rnd()<.5?colors[3]:colors[2]);
+ }
+ // Los bordes y las líneas forman parte de la textura para evitar una nueva
+ // geometría que tape el campo. Centro Poké Ball sutil (no altera el saque).
+ q.strokeStyle='#fff8dd';q.lineWidth=5;q.strokeRect(10,10,940,556);
+ q.beginPath();q.moveTo(480,10);q.lineTo(480,566);q.stroke();
+ q.strokeRect(10,167,151,243);q.strokeRect(799,167,151,243);
+ q.strokeRect(10,225,51,126);q.strokeRect(899,225,51,126);
+ q.beginPath();q.arc(480,288,78,0,Math.PI*2);q.stroke();
+ q.beginPath();q.arc(480,288,15,0,Math.PI*2);
+ q.fillStyle='#f9ebc0';q.fill();q.strokeStyle=colors[4];q.lineWidth=4;q.stroke();
+ const band=natural?colors[3]:colors[4];
+ q.fillStyle=band;q.globalAlpha=.2;q.fillRect(401,283,158,8);q.globalAlpha=1;
+ // Penumbra y desgaste alrededor de los arcos. No cubre marcas.
+ for(let i=0;i<1200;i++){
+  const xx=rnd()<.5?14+rnd()*110:830+rnd()*110,yy=160+rnd()*250;
+  box(xx,yy,1+rnd()*7,1+rnd()*3,colors[3]);
+ }
+ const t=new THREE.CanvasTexture(c);
+ t.encoding=THREE.sRGBEncoding;t.magFilter=THREE.NearestFilter;
+ t.minFilter=THREE.LinearFilter;t.anisotropy=4;t.generateMipmaps=false;
+ if(MD_PITCH_TEXTURE)MD_PITCH_TEXTURE.dispose();
+ MD_PITCH_TEXTURE=t;pitchMat.map=t;pitchMat.needsUpdate=true;
+ pitchMat.color.setHex(0xffffff);
+}
+
 const apC=document.createElement('canvas');apC.width=1024;apC.height=640;paintGrass(apC.getContext('2d'),1024,640);
 const apron=new THREE.Mesh(new THREE.PlaneGeometry(HX*2+16,HZ*2+12+DZ),new THREE.MeshStandardMaterial({map:srgb(new THREE.CanvasTexture(apC)),color:0x9aa89a,roughness:1}));apron.rotation.x=-Math.PI/2;apron.position.set(0,-.03,-DZ/2);S.add(apron);apron.material.onBeforeCompile=wxPatch;apron.material.customProgramCacheKey=()=>'apron-wx';
 const ntC=document.createElement('canvas');ntC.width=128;ntC.height=64;const ntq=ntC.getContext('2d');ntq.strokeStyle='rgba(255,255,255,.85)';ntq.lineWidth=2;for(let i=0;i<=128;i+=16){ntq.beginPath();ntq.moveTo(i,0);ntq.lineTo(i,64);ntq.stroke()}for(let i=0;i<=64;i+=16){ntq.beginPath();ntq.moveTo(0,i);ntq.lineTo(128,i);ntq.stroke()}
@@ -4452,6 +4544,7 @@ void main(){
 }
 const _bs=buildStadium;buildStadium=function(m){
  disposeCityV3();disposeWorldV31();disposeBeachV4();disposeScenicTextures();
+  mdPaintPitch(m);
  if(BIOMES[m]){buildBiome(m);buildEnds(m);if(m!=='beach'){livingLandscape(m);livingWorldV2(m);ambientStory(m);stadiumLightShow(m,BIOMES[m].glow);}syncBiomeWeather();envApply();envChipUpdate();return}
  if(m==='city'){stadiumMode='city';cityG.clear();BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=null;cityFloor.material.color.setHex(0x9fa69f);cityFloor.material.needsUpdate=true;buildEnds('city');buildCityV3();syncBiomeWeather();envApply();envChipUpdate();return}
  BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=cityFloorTex;cityFloor.material.needsUpdate=true;
