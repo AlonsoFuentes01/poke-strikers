@@ -1975,28 +1975,17 @@ function bBeach(){
  water.rotation.x=-Math.PI/2;water.position.set(cx,-1.4,cz);return water};
  mkWater(900,300,0,-62-150+8,0,-62,0,-1);
  mkWater(300,420,150+150-8,-62+210,150,0,1,0);mkWater(300,420,-(150+150-8),-62+210,-150,0,-1,0);
- // palmeras (instanciadas)
- const palmTex=bcan(64,64,(q,w,h)=>{q.fillStyle='#7a5a38';q.fillRect(0,0,w,h);for(let x=0;x<w;x+=8){q.fillStyle='rgba(40,24,10,.45)';q.fillRect(x,0,3,h)}for(let i=0;i<260;i++){q.fillStyle='rgba(255,230,180,.1)';q.fillRect(brnd()*w,brnd()*h,2,1)}});palmTex.repeat.set(16,1);
- const trunkM=new THREE.MeshStandardMaterial({map:palmTex,roughness:.9}),frondM=new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,roughness:.7});
- // Hojas de palmera: ráfagas y ondulación real por vértice, sin animación CPU.
- frondM.onBeforeCompile=sh=>{
-  sh.uniforms.uPalmTime=BIO.T;
-  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uPalmTime;')
-   .replace('#include <begin_vertex>',`#include <begin_vertex>
-    float windPhase=uPalmTime*2.25+instanceMatrix[3].x*.08+instanceMatrix[3].z*.07;
-    float gust=sin(windPhase+uv.y*8.)*.7+sin(windPhase*.43+uv.y*4.)*.3;
-    transformed.x+=gust*pow(uv.y,1.8)*1.35;
-    transformed.z+=cos(windPhase*.85+uv.y*6.)*pow(uv.y,1.6)*.7;
-   `);
- };
- frondM.customProgramCacheKey=()=> 'palm-fronds-wind-v2';
- const nP=Math.round(34*bQ()),lists=[[],[],[]];
+ // Palmeras PIXEL ART 2D; se eliminan troncos y frondas modelados en 3D.
+ const nP=Math.round(34*bQ()),palmProps=[];
  for(let i=0;i<nP;i++){
   let x,z;const r=brnd();
-  if(r<.45){x=bR(-120,120);z=bR(-62,-45)}else if(r<.8){x=(brnd()<.5?-1:1)*bR(56,125);z=bR(-60,34)}else{x=(brnd()<.5?-1:1)*bR(52,70);z=bR(-40,36)}
-  lists[i%3].push({x,y:-1.55,z,ry:bR(0,6.28),s:bR(.9,1.5)});
+  if(r<.45){x=bR(-120,120);z=bR(-62,-45)}
+  else if(r<.8){x=(brnd()<.5?-1:1)*bR(56,125);z=bR(-60,34)}
+  else{x=(brnd()<.5?-1:1)*bR(52,70);z=bR(-40,36)}
+  const scale=bR(.9,1.5);
+  palmProps.push({x,y:-1.55,z,w:10*scale,h:14*scale});
  }
- for(let v=0;v<3;v++){const G=bPalmGeos();bScatter(G.trunk,trunkM,lists[v]);bScatter(G.fronds,frondM,lists[v])}
+ pixelBiomeInstances('beach',palmProps);
  // sombrillas de playa
  const umb=[];for(let i=0;i<Math.round(16*bQ());i++){const sx=brnd()<.5?-1:1;umb.push({x:sx*bR(54,100),y:-1.55,z:bR(-50,30),ry:bR(0,6.28),s:bR(1.2,1.8),rz:bR(-.12,.12)})}
  const uTex=bcan(128,32,(q,w,h)=>{for(let i=0;i<8;i++){q.fillStyle=i%2?'#ffffff':['#ff4d6d','#ffb703','#06d6a0','#4cc9f0'][(brnd()*4)|0];q.fillRect(i*16,0,16,h)}});
@@ -2118,10 +2107,16 @@ function bArctic(){
  for(let i=0;i<Math.round(60*bQ());i++){const sx=brnd()<.5?-1:1,r=brnd();let x,z;if(r<.55){x=sx*bR(55,78);z=bR(-48,40)}else{x=bR(-100,100);z=bR(-68,-48)}cry.push({x,y:-1.6,z,sx:bR(.8,2),sy:bR(4,17),sz:bR(.8,2),rz:bR(-.2,.2),rx:bR(-.2,.2),ry:bR(0,3)})}
  const cm=new THREE.MeshStandardMaterial({color:0x9fe6ff,emissive:0x2fb6ff,emissiveIntensity:.7,roughness:.1,metalness:.3,transparent:true,opacity:.85,flatShading:true});
  bScatter(cg,cm,cry);BIO.anims.push((dt,T)=>{cm.emissiveIntensity=.55+.25*Math.sin(T*1.4)});
- // pinos nevados
- const pn=[];for(let i=0;i<Math.round(46*bQ());i++){const sx=brnd()<.5?-1:1,r=brnd();let x,z;if(r<.5){x=sx*bR(56,130);z=bR(-60,40)}else{x=bR(-130,130);z=bR(-80,-50)}pn.push({x,y:-1.55,z,s:bR(1.2,2.3),ry:bR(0,6)})}
- const pg=bmerge([new THREE.ConeGeometry(3,4.2,8).translate(0,3,0),new THREE.ConeGeometry(2.3,3.6,8).translate(0,5.6,0),new THREE.ConeGeometry(1.5,3,8).translate(0,7.8,0),new THREE.CylinderGeometry(.35,.4,2,6).translate(0,1,0)]);
- bScatter(pg,new THREE.MeshStandardMaterial({color:0xcfe5ee,roughness:.9,flatShading:true}),pn);
+ // Pinos nevados 2D, no conos tridimensionales.
+ const snowPines=[];
+ for(let i=0;i<Math.round(46*bQ());i++){
+  const sx=brnd()<.5?-1:1,r=brnd();let x,z;
+  if(r<.5){x=sx*bR(56,130);z=bR(-60,40)}
+  else{x=bR(-130,130);z=bR(-80,-50)}
+  const scale=bR(1.2,2.3);
+  snowPines.push({x,y:-1.55,z,w:5.8*scale,h:9.4*scale});
+ }
+ pixelBiomeInstances('arctic',snowPines);
  // auroras boreales
  const aur=(R_,y0,seed)=>{const g=new THREE.PlaneGeometry(520,120,140,1),p=g.attributes.position;
   for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i)+60,th=x/260*.95;p.setXYZ(i,Math.sin(th)*R_,y0+y+Math.sin(th*4+seed)*10,-Math.cos(th)*R_+20)}
@@ -2424,27 +2419,17 @@ function livingLandscape(mode){
   fragmentShader:'varying vec3 vC;void main(){gl_FragColor=vec4(vC,1.);}',
   side:THREE.DoubleSide,depthWrite:true});
  const field=new THREE.Mesh(geo,mat);field.frustumCulled=false;cityG.add(field);
- // Árboles tridimensionales en grupos instanciados, fuera de la cancha.
+ // Vegetación dibujada en pixel art, agrupada en un solo mesh instanciado.
  if(!desert){
   const amount=mode==='city'?130:beach?95:180;
-  const trunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.24,.4,1,5),new THREE.MeshStandardMaterial({color:beach?0x947044:0x654b32,roughness:1}),amount);
-  const foliage=new THREE.InstancedMesh(new THREE.ConeGeometry(1,2.4,6),new THREE.MeshStandardMaterial({color:beach?0x38a45a:0x348c43,roughness:1,flatShading:true,side:THREE.DoubleSide}),amount);
-  const obj=new THREE.Object3D();
+  const plants=[];
   for(let i=0;i<amount;i++){
    let x=(rand()-.5)*210,z=-35-rand()*95;
-   if(rand()<.35){x=(rand()<.5?-1:1)*(HX+22+rand()*52);z=(rand()-.5)*105;}
-   const h=3+rand()*5;
-   obj.position.set(x,h*.5-1.4,z);obj.scale.set(1,h,1);obj.rotation.set(0,rand()*6.28,0);obj.updateMatrix();trunks.setMatrixAt(i,obj.matrix);
-   obj.position.set(x,h+1-1.4,z);obj.scale.set(1.4+rand()*1.8,2.4+rand()*2.6,1.4+rand()*1.8);obj.updateMatrix();foliage.setMatrixAt(i,obj.matrix);
-   foliage.setColorAt(i,new THREE.Color(greens[Math.floor(rand()*greens.length)]));
+   if(rand()<.35){x=(rand()<.5?-1:1)*(HX+22+rand()*52);z=(rand()-.5)*105}
+   const h=beach?9+rand()*8:6+rand()*5;
+   plants.push({x,y:-1.4,z,w:beach?h*.78:h*.74,h});
   }
-  foliage.material.onBeforeCompile=sh=>{
-   sh.uniforms.uWindTime=BIO.T;
-   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uWindTime;')
-    .replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.x+=sin(uWindTime*1.4+instanceMatrix[3].x*.14+instanceMatrix[3].z*.1)*max(0.,position.y+1.)*.12;');
-  };
-  foliage.material.customProgramCacheKey=()=> 'living-tree-wind-v1';
-  trunks.frustumCulled=false;foliage.frustumCulled=false;cityG.add(trunks,foliage);
+  pixelBiomeInstances(mode,plants);
  }
  // Partículas de viento: polen, arena o pequeñas hojas a distintas alturas.
  const particles=mode==='desert'?180:mode==='beach'?115:95;
@@ -2541,39 +2526,17 @@ function livingWorldV2(mode){
   const banner=new THREE.Mesh(fabricGeo,clothMat);
   banner.position.set(x+side*4,11.2,z);banner.rotation.y=side<0?Math.PI:0;cityG.add(banner);
  }
- // Vegetación y geología: cada zona se siente distinta, nunca sobre la cancha.
+ // Geología y vegetación ilustrada: cactus 2D, hielo 2D, basalto 2D y antenas 2D.
  if(['arctic','volcano','desert','space'].includes(mode)){
-  const N=mode==='space'?110:mode==='desert'?140:100;
-  const isRock=mode==='space';
-  const trunkMat=new THREE.MeshStandardMaterial({color:mode==='arctic'?0x594f52:mode==='volcano'?0x211a19:mode==='desert'?0x65834c:0x35406f,roughness:.95});
-  const crownMat=new THREE.MeshStandardMaterial({color:mode==='arctic'?0xc4e1dc:mode==='volcano'?0x40352b:mode==='desert'?0x548b4a:0x9c8cee,roughness:.82,metalness:mode==='space'?.24:0,flatShading:true});
-  // Las copas de la tundra y los árboles secos se doblan con el viento.
-  crownMat.onBeforeCompile=sh=>{
-   sh.uniforms.uWorldWind=BIO.T;
-   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uWorldWind;')
-    .replace('#include <begin_vertex>',`#include <begin_vertex>
-    float gust=sin(uWorldWind*1.45+instanceMatrix[3].x*.12+instanceMatrix[3].z*.08);
-    transformed.x+=gust*max(0.,position.y)*.27;
-    transformed.z+=sin(uWorldWind*.85+instanceMatrix[3].z*.15)*max(0.,position.y)*.16;
-    `);
-  };
-  crownMat.customProgramCacheKey=()=> 'biome-crown-wind-v2';
-  const tGeo=new THREE.CylinderGeometry(mode==='desert'?.34:.22,.46,1,5);
-  const cGeo=mode==='space'?new THREE.OctahedronGeometry(1,0):mode==='desert'?new THREE.SphereGeometry(1,6,5):new THREE.ConeGeometry(1,2,6);
-  const trunks=new THREE.InstancedMesh(tGeo,trunkMat,N);
-  const crowns=new THREE.InstancedMesh(cGeo,crownMat,N);
-  const dummy=new THREE.Object3D();
+  const N=mode==='space'?75:mode==='desert'?105:70;
+  const props=[];
   for(let i=0;i<N;i++){
    const side=rnd()<.5?-1:1;
    const x=side*(HX+24+rnd()*84),z=-HZ-22-rnd()*125;
-   const h=mode==='arctic'?4+rnd()*9:mode==='volcano'?2+rnd()*6:mode==='desert'?2+rnd()*4:3+rnd()*8;
-   dummy.rotation.set(0,rnd()*Math.PI*2,0);
-   dummy.position.set(x,h*.5-1.2,z);dummy.scale.set(1,h,1);dummy.updateMatrix();trunks.setMatrixAt(i,dummy.matrix);
-   dummy.position.set(x,h+1.1-1.2,z);
-   dummy.scale.set(isRock?2:1.5+rnd()*1.3,isRock?2:mode==='desert'?.8:2.4+rnd()*2, isRock?2:1.5+rnd()*1.3);
-   dummy.updateMatrix();crowns.setMatrixAt(i,dummy.matrix);
+   const h=mode==='arctic'?8+rnd()*11:mode==='volcano'?5+rnd()*9:mode==='desert'?5+rnd()*7:7+rnd()*12;
+   props.push({x,y:-1.2,z,w:h*.6,h});
   }
-  crowns.frustumCulled=false;trunks.frustumCulled=false;cityG.add(trunks,crowns);
+  pixelBiomeInstances(mode,props);
  }
  // Ciudad reconocible: autos circulando por el paseo exterior, fuera de las gradas.
  if(mode==='city'){
