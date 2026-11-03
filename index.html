@@ -282,6 +282,106 @@ body.laying #layBar{display:flex}
 body.laying .layEl{outline:2px dashed #ffd23f!important;outline-offset:2px;cursor:move;touch-action:none!important}
 body.laying .layEl.laySel{outline:3px solid #35c46a!important}
 body.laying #touch{display:flex!important}
+
+/* ================= MENÚ POR PASOS (asistente) ================= */
+#menu>h1,#menu>div:not(#wiz),#menu>.pickLbl,#menu>#tabs,#menu>#modePick,#menu>#l4Cfg,#menu>#stadiumPick,#menu>#weatherPick,#menu>#cols,#menu>#netBar,#menu>button,#menuMonsters{display:none!important}
+#menu{padding:0!important;overflow:hidden;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%,rgba(10,22,56,.15),rgba(3,8,22,.55))!important}
+#wiz{position:absolute!important;left:50%;top:50%;transform:translate(-50%,-50%);width:min(1000px,96vw);max-height:min(650px,95vh);display:flex!important;flex-direction:column;box-sizing:border-box;text-align:left;
+ background:linear-gradient(180deg,rgba(9,22,54,.93),rgba(4,11,30,.95));border:1px solid rgba(255,255,255,.16);border-radius:20px;box-shadow:0 30px 80px #000a,0 0 0 1px #0006,inset 0 1px 0 #ffffff22;backdrop-filter:blur(10px);overflow:hidden;transition:top .35s ease,transform .35s ease,max-height .35s ease}
+#wiz.dock{top:auto;bottom:12px;transform:translate(-50%,0);max-height:min(400px,62vh)}
+#wiz.dock .wzSub{display:none}#wiz.dock .wzPane h2{font-size:16px;margin-bottom:8px}#wiz.dock .wzHead{padding:8px 22px}#wiz.dock .wzBody{padding:12px 22px}
+#wiz.dock #stadiumPick button{height:72px}
+.wzHead{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 22px 12px;border-bottom:1px solid rgba(255,255,255,.08);flex:0 0 auto}
+.wzLogo{font:clamp(15px,2vw,22px) Bungee,Impact,sans-serif;color:#ffd23f;text-shadow:0 2px 0 #b66a12,0 4px 14px #000a;letter-spacing:.5px;white-space:nowrap}
+.wzSteps{display:flex;align-items:center;gap:6px;list-style:none;margin:0;padding:0}
+.wzSteps li{display:flex;align-items:center;gap:7px;font:800 12px Nunito,sans-serif;color:#9fb6e0;cursor:pointer;padding:5px 10px 5px 6px;border-radius:999px;transition:.2s}
+.wzSteps li i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#ffffff18;border:1px solid #ffffff30;font:800 11px Nunito,sans-serif;color:#cfe0ff}
+.wzSteps li.done{color:#bff3cd}.wzSteps li.done i{background:#2fae5a;border-color:#7dffa0;color:#fff}
+.wzSteps li.on{color:#fff;background:#ffffff14}.wzSteps li.on i{background:#ffd23f;border-color:#fff3b0;color:#1b2340}
+.wzSteps li+li:before{content:"";width:14px;height:2px;background:#ffffff22;margin-right:3px;border-radius:2px}
+.wzBody{flex:1 1 auto;min-height:0;overflow:auto;padding:18px 22px;scrollbar-width:thin;scrollbar-color:#ffffff40 transparent}
+.wzPane{display:none;animation:wzIn .3s ease}.wzPane.on{display:block}
+@keyframes wzIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.wzPane h2{margin:0 0 4px;font:clamp(18px,2.2vw,26px) Bungee,Impact,sans-serif;color:#fff;text-shadow:0 2px 8px #0008}
+.wzPane .wzSub{margin:0 0 16px;color:#a9c0ea;font:700 13px Nunito,sans-serif}
+.wzModes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.wzModes .mc{cursor:pointer;border-radius:16px;padding:20px 16px;text-align:center;background:linear-gradient(160deg,#16306a,#0b1a40);border:2px solid #ffffff1f;transition:transform .18s,border-color .18s,box-shadow .18s;color:#fff;font-family:Nunito,sans-serif;position:relative}
+.wzModes .mc:hover{transform:translateY(-3px);border-color:#7fe7ff88}
+.wzModes .mc .ic{font-size:40px;line-height:1;margin-bottom:8px;filter:drop-shadow(0 4px 6px #0008)}
+.wzModes .mc b{display:block;font:15px Bungee,Impact,sans-serif;margin-bottom:4px}
+.wzModes .mc small{display:block;color:#b6c9ee;font:700 12px/1.35 Nunito,sans-serif}
+.wzModes .mc.on{border-color:#ffd23f;background:linear-gradient(160deg,#3a4f8e,#16306a);box-shadow:0 0 0 3px #ffd23f33,0 10px 26px #0008}
+.wzModes .mc.on:after{content:"✓";position:absolute;top:10px;right:12px;width:22px;height:22px;border-radius:50%;background:#ffd23f;color:#1b2340;font:900 13px/22px Nunito,sans-serif;text-align:center}
+#wiz #l4Cfg{max-width:100%!important;margin:14px 0 0!important;align-self:stretch;border-radius:14px;border:1px solid #ffffff22;background:#0a1a40aa}
+body.netHost .wzModes,body.netGuest .wzModes{display:none}
+.wzBar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+#wiz #tabs{display:flex!important;gap:6px;flex-wrap:wrap;margin:0!important}
+#wiz #tabs button{font:800 12px Nunito,sans-serif!important;padding:7px 14px;border-radius:999px;background:#ffffff12;border:1px solid #ffffff26;color:#d7e6ff;box-shadow:none;transition:.15s}
+#wiz #tabs button.on{background:#ffd23f;color:#1b2340;border-color:#fff3b0}
+#wiz #bdOpen{display:inline-block!important;margin:0!important;padding:7px 14px;font:800 12px Nunito,sans-serif!important;border-radius:999px;background:#ffffff12;color:#d7f7c8;border:1px solid #9dff8a55;box-shadow:none}
+.wzSide{display:none;gap:6px;margin-bottom:10px}.wzSide button{flex:1;padding:8px;border-radius:10px;border:1px solid #ffffff2a;background:#ffffff10;color:#d7e6ff;font:800 12px Nunito,sans-serif}.wzSide button.on{background:#ffd23f;color:#1b2340}
+#wiz #cols{display:grid!important;grid-template-columns:1fr 1fr;gap:14px;max-width:100%}
+#wiz #cols section{padding:12px!important;border-radius:14px!important;border:1px solid #ffffff1f!important;background:#ffffff0a!important;box-shadow:none!important;backdrop-filter:none!important;min-width:0}
+#wiz #cols h3{font:13px Bungee,Impact,sans-serif!important;margin:0 0 10px;color:#ffd23f;letter-spacing:.5px}
+#wiz .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr))!important;gap:8px;max-height:min(290px,38vh);overflow:auto;padding:2px;scrollbar-width:thin}
+#wiz .card{padding:8px 8px 6px;border-radius:12px;background:#ffffff0d;border:2px solid transparent;text-align:left;transition:.15s}
+#wiz .card b{font:800 13px Nunito,sans-serif!important}
+#wiz .card small{font:700 10px Nunito,sans-serif;opacity:.75;display:block;margin-top:1px}
+#wiz .card div{justify-content:flex-start;gap:0;margin-top:4px}#wiz .card img{width:34px;height:34px}
+#wiz .card .bn{display:none}
+#wiz .card.on{background:#ffffff26}
+.wzLbl{font:800 11px Nunito,sans-serif;letter-spacing:.2em;color:#9fb6e0;margin:2px 0 8px}
+#wiz #stadiumPick{display:flex!important;flex-wrap:nowrap;gap:10px;margin:0 0 14px!important;max-width:100%!important;width:100%;overflow-x:auto;padding:4px 2px 8px;scroll-snap-type:x proximity;scrollbar-width:thin;align-self:stretch}
+#wiz #stadiumPick button{flex:0 0 auto;width:118px;height:84px;padding:0 6px 7px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;font:800 12px Nunito,sans-serif;color:#fff;border:2px solid #ffffff30;box-shadow:inset 0 -30px 28px #000a;text-shadow:0 2px 6px #000;scroll-snap-align:start;transition:.15s;background:var(--bg,#223)}
+#wiz #stadiumPick button.on{border-color:#ffd23f;box-shadow:inset 0 -30px 28px #000a,0 0 0 3px #ffd23f44;transform:translateY(-2px);color:#fff}
+#wiz #stadiumPick [data-stadium=city]{--bg:linear-gradient(180deg,#1a3a70,#ff4fd8 150%)}#wiz #stadiumPick [data-stadium=sunset]{--bg:linear-gradient(180deg,#2a2050,#ff9b5a)}#wiz #stadiumPick [data-stadium=classic]{--bg:linear-gradient(180deg,#294a74,#9cc0df)}
+#wiz #stadiumPick [data-stadium=beach]{--bg:linear-gradient(180deg,#1f7ae0,#f5d48a)}#wiz #stadiumPick [data-stadium=volcano]{--bg:linear-gradient(180deg,#14070b,#ff5a1f)}#wiz #stadiumPick [data-stadium=arctic]{--bg:linear-gradient(180deg,#7fd0f0,#f1fbff)}
+#wiz #stadiumPick [data-stadium=space]{--bg:linear-gradient(180deg,#0a0420,#7a3cff)}#wiz #stadiumPick [data-stadium=desert]{--bg:linear-gradient(180deg,#e0a85a,#f7d98a)}
+#wiz #weatherPick{display:flex!important;gap:8px;flex-wrap:wrap;margin:0!important;max-width:100%!important;align-self:stretch}
+#wiz #weatherPick button{flex:0 0 auto;padding:8px 14px;border-radius:999px;font:800 12px Nunito,sans-serif;background:#ffffff12;border:1px solid #ffffff2a;color:#e6f0ff;box-shadow:none}
+#wiz #weatherPick button.on{background:#ffd23f;color:#1b2340;border-color:#fff3b0}
+#wzSum{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:stretch}
+#wzSum .tm{border-radius:16px;padding:14px;background:linear-gradient(160deg,#ffffff14,#ffffff06);border:2px solid var(--c,#ffffff33);text-align:center}
+#wzSum .tm b{display:block;font:16px Bungee,Impact,sans-serif;color:var(--c,#fff);margin-bottom:2px}
+#wzSum .tm small{display:block;color:#b6c9ee;font:700 11px Nunito,sans-serif;margin-bottom:8px}
+#wzSum .tm .sp{display:flex;justify-content:center;gap:2px}#wzSum .tm img{width:46px;height:46px;image-rendering:pixelated;object-fit:contain}
+#wzSum .vs{align-self:center;font:22px Bungee,Impact,sans-serif;color:#ffd23f;text-shadow:0 3px 0 #b66a12}
+#wzChips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}
+#wzChips span{padding:7px 14px;border-radius:999px;background:#ffffff12;border:1px solid #ffffff26;font:800 12px Nunito,sans-serif;color:#e6f0ff}
+#wzNet{padding:0 22px;flex:0 0 auto}#wzNet #netBar{display:none;margin:0 0 8px!important;width:100%!important;max-width:100%!important;box-sizing:border-box}
+.wzFoot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 22px;border-top:1px solid rgba(255,255,255,.08);flex:0 0 auto;background:#00000022}
+.wzFoot .cr{font:600 9px Nunito,sans-serif;color:#8aa3d0;max-width:34%;line-height:1.3;display:none}
+#wzBack{padding:10px 18px;border-radius:12px;border:1px solid #ffffff30;background:#ffffff10;color:#e6f0ff;font:800 13px Nunito,sans-serif}
+#wzBack[disabled]{opacity:.35;pointer-events:none}
+#wzMain{display:flex;gap:10px;align-items:center;margin-left:auto}
+#wzNext,#wiz #go,#wiz #readyBtn{padding:11px 26px!important;border-radius:12px!important;font:15px Bungee,Impact,sans-serif!important;margin:0!important;align-self:auto!important;letter-spacing:.3px;border:2px solid #fff2a6;background:linear-gradient(#ffe96a,#ffad1e);color:#1b2340;box-shadow:0 4px 0 #99510c,0 8px 18px #0006;cursor:pointer}
+#wiz #readyBtn{border-color:#caffb8;background:linear-gradient(#9dff8a,#38c24a);color:#06260d;box-shadow:0 4px 0 #1b7a2a}
+#wiz #readyBtn.on{background:linear-gradient(#ffe96a,#ffad1e);color:#3a2300}
+#wiz:not(.last) #go,#wiz:not(.last) #readyBtn{display:none!important}
+#wiz.last #wzNext{display:none}
+#wiz #onlineBtn{display:none!important}
+@media(max-width:760px){
+ .wzHead{padding:10px 12px}.wzSteps li span{display:none}.wzSteps li{padding:4px}.wzBody{padding:12px}
+ .wzModes{grid-template-columns:1fr}.wzModes .mc{display:flex;align-items:center;gap:12px;text-align:left;padding:12px}.wzModes .mc .ic{font-size:30px;margin:0}
+ #wiz #cols{grid-template-columns:1fr}.wzSide{display:flex}#wiz #cols.s0 section:nth-child(2),#wiz #cols.s1 section:nth-child(1){display:none!important}
+ #wzSum{grid-template-columns:1fr}#wzSum .vs{display:none}.wzFoot{padding:10px 12px}
+}
+@media(max-height:520px){
+ #wiz{max-height:97vh;border-radius:14px}.wzHead{padding:6px 14px}.wzLogo{font-size:13px}.wzBody{padding:8px 14px}.wzPane h2{font-size:16px}.wzPane .wzSub{margin-bottom:8px;font-size:11px}
+ .wzModes .mc{padding:8px}.wzModes .mc .ic{font-size:26px;margin-bottom:2px}.wzModes .mc small{display:none}
+ #wiz .grid{max-height:34vh}#wiz #stadiumPick button{width:96px;height:62px}.wzFoot{padding:6px 14px}#wzNext,#wiz #go,#wiz #readyBtn{padding:7px 18px!important;font-size:12px!important}
+ #wiz.dock{max-height:72vh}#wzSum .tm img{width:34px;height:34px}.wzLbl{margin:0 0 4px}
+ .wzPane h2,.wzPane .wzSub{display:none!important}.wzFoot .cr{display:none!important}
+ #wiz #tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#wiz #tabs button{white-space:nowrap;padding:5px 11px;font-size:11px!important}
+ .wzBar{flex-wrap:nowrap;margin-bottom:6px}#wzBd{flex:0 0 auto}#wiz #bdOpen{white-space:nowrap;padding:5px 10px;font-size:11px!important}
+ .wzSide{margin-bottom:6px}.wzSide button{padding:5px}#wiz .grid{max-height:none}
+ #wiz #stadiumPick{margin-bottom:6px!important}#wiz #stadiumPick button{width:92px;height:58px}#wiz #stadiumPick button span:first-child{font-size:20px!important}
+ #wiz #weatherPick button{padding:5px 10px;font-size:11px}
+ .wzModes{grid-template-columns:repeat(3,1fr)!important}.wzModes .mc{display:block!important;text-align:center!important}.wzModes .mc b{font-size:12px}
+ #wzSum{grid-template-columns:1fr auto 1fr!important}#wzSum .vs{display:block!important}#wzChips{margin-top:8px}
+}
+@media(max-width:1100px){.wzHead{padding-right:116px}}
+@media(max-height:400px){#wiz .wzLbl{display:none!important}#wiz #stadiumPick button{height:50px;width:84px}#wiz #stadiumPick button span:first-child{font-size:16px!important}#wiz .wzHead{padding-top:4px;padding-bottom:4px}#wiz #stadiumPick{margin-bottom:4px!important}}
 </style></head><body>
 </div>
 <div id="vig"></div><div id="flash"></div><canvas id="mini" width="176" height="106"></canvas><div id="envChip"></div><div id="netChip"></div>
@@ -465,7 +565,7 @@ function drawMenu(){
   for(const n in L[lg]){const T=L[lg][n],k=lg+'|'+n,c=document.createElement('div');c.className='card'+(sel[s]==k?' on':'');
    c.style.borderColor=sel[s]==k?hex(T.c):'transparent';
    const im=(i,x)=>`<img src="${spr(i)}" alt="" onerror="this.style.display='none'">`;
-   c.innerHTML=`<b style="color:${hex(T.c)}">${n}</b>${lg==='Personalizado'?'<button type="button" class="editBtn">✏️</button>':''}<small>${T.t} · 3 + 3 suplentes</small><div>${T.p.slice(0,3).map(im).join('')}</div><div class="bn">${T.p.slice(3).map(im).join('')}</div>`;
+   c.innerHTML=`<b style="color:${hex(T.c)}">${n}</b>${lg==='Personalizado'?'<button type="button" class="editBtn">✏️</button>':''}<small>${T.t} · 3+3</small><div>${T.p.slice(0,3).map(im).join('')}</div><div class="bn">${T.p.slice(3).map(im).join('')}</div>`;
    const eb=c.querySelector('.editBtn');if(eb)eb.onclick=e=>{e.stopPropagation();openBuilder(n)};
    c.onclick=()=>{sel[s]=k;if(typeof netTeamChanged==='function')netTeamChanged(s);drawMenu();if(typeof showMenuPreview==='function')showMenuPreview()};g.appendChild(c)}});
 }
@@ -1393,7 +1493,7 @@ async function start(){
 }
 // Online: la partida (y la revancha) solo empieza cuando AMBOS jugadores confirman "Listo".
 $('go').onclick=()=>{if(netOn())setReady(!NET.myReady);else start()};$('re').onclick=()=>{if(netOn())setReady(!NET.myReady);else start()};
-const toMenu=(fromNet)=>{document.body.classList.remove('l4');L4.on=false;netMenu(fromNet===true);ready=false;document.body.classList.remove('playing');splashActive=false;$('splash').style.display='none';$('end').style.display='none';$('msg').textContent='';$('menu').style.display='flex';showMenuPreview()};
+const toMenu=(fromNet)=>{document.body.classList.remove('l4');L4.on=false;netMenu(fromNet===true);ready=false;document.body.classList.remove('playing');splashActive=false;$('splash').style.display='none';$('end').style.display='none';$('msg').textContent='';$('menu').style.display='flex';showMenuPreview();if(window.wizGo)wizGo(2)};
 $('chg').onclick=toMenu;$('ch2').onclick=toMenu;
 
 // ---------- render ----------
@@ -3044,4 +3144,70 @@ let cinematicSlowSkip=0;
  if(cameraCue){cinematicSlowSkip^=1;snap();if(cinematicSlowSkip===0)update();}
  else{cinematicSlowSkip=0;snap();update();}
  acc-=1/60;steps++}if(steps===3)acc=Math.min(acc,1/60);alpha=cl(acc*60,0,1);try{netTick(now)}catch(e2){console.error('Error de red Poké Strikers:',e2)}try{render(now)}catch(err){console.error('Error de renderizado Poké Strikers:',err);$('warn').textContent='⚠ Error visual detectado. Prueba recargar el juego.'}requestAnimationFrame(loop)})(last);
+
+// ================= ASISTENTE DEL MENÚ (Modo → Equipo → Estadio/Clima → Jugar) =================
+(function(){
+ const menu=$('menu');if(!menu)return;
+ const wiz=document.createElement('div');wiz.id='wiz';
+ wiz.innerHTML=`
+ <div class="wzHead"><div class="wzLogo">Poké Strikers</div>
+  <ol class="wzSteps"><li data-s="1"><i>1</i><span>Modo</span></li><li data-s="2"><i>2</i><span>Equipo</span></li><li data-s="3"><i>3</i><span>Estadio</span></li><li data-s="4"><i>4</i><span>¡A jugar!</span></li></ol></div>
+ <div class="wzBody">
+  <section class="wzPane" data-step="1"><h2>¿Cómo quieres jugar?</h2><p class="wzSub">Elige el modo de juego</p>
+   <div class="wzModes">
+    <div class="mc" data-m="1"><div class="ic">🎮</div><div><b>1 jugador</b><small>Tú contra la IA</small></div></div>
+    <div class="mc" data-m="4"><div class="ic">👥</div><div><b>2 vs 2 local</b><small>Hasta 4 jugadores en el mismo dispositivo</small></div></div>
+    <div class="mc" data-m="net"><div class="ic">🌐</div><div><b>Online</b><small>Juega con un amigo con código de sala</small></div></div>
+   </div><div id="wzL4"></div></section>
+  <section class="wzPane" data-step="2"><h2>Elige tu equipo</h2><p class="wzSub">Escoge una liga y selecciona el equipo para ti y para tu rival</p>
+   <div class="wzBar"><div id="wzTabs"></div><div id="wzBd"></div></div>
+   <div class="wzSide"><button data-side="0" class="on">Tu equipo</button><button data-side="1">Rival</button></div><div id="wzCols"></div></section>
+  <section class="wzPane" data-step="3"><h2>Estadio y clima</h2><p class="wzSub">Mira cómo queda el estadio arriba mientras eliges</p>
+   <div class="wzLbl">ESTADIO</div><div id="wzSt"></div><div class="wzLbl">CLIMA</div><div id="wzWx"></div></section>
+  <section class="wzPane" data-step="4"><h2>¡Todo listo!</h2><p class="wzSub">Revisa tu partido y pulsa jugar</p><div id="wzSum"></div><div id="wzChips"></div></section>
+ </div>
+ <div id="wzNet"></div>
+ <div class="wzFoot"><button id="wzBack" type="button">‹ Atrás</button><div class="cr" id="wzCr"></div><div id="wzMain"><button id="wzNext" type="button">Siguiente ›</button></div></div>`;
+ menu.appendChild(wiz);
+ const mv=(id,to)=>{const e=$(id),t=$(to);if(e&&t)t.appendChild(e)};
+ mv('l4Cfg','wzL4');mv('tabs','wzTabs');mv('bdOpen','wzBd');mv('cols','wzCols');mv('stadiumPick','wzSt');mv('weatherPick','wzWx');mv('netBar','wzNet');mv('readyBtn','wzMain');mv('go','wzMain');
+ const cr=$('spriteCredit');if(cr){$('wzCr').innerHTML=cr.innerHTML;$('wzCr').style.display='block'}
+ // etiquetas de estadios y clima: emoji grande arriba
+ document.querySelectorAll('#stadiumPick button').forEach(b=>{const m=b.textContent.trim().match(/^(\S+)\s+(.*)$/);if(m)b.innerHTML='<span style="font-size:26px;line-height:1;margin-bottom:2px">'+m[1]+'</span><span>'+m[2]+'</span>'});
+ let step=1;const panes=[...wiz.querySelectorAll('.wzPane')],lis=[...wiz.querySelectorAll('.wzSteps li')];
+ function summary(){
+  const T=sel.map(team),net=document.body.classList.contains('netHost')||document.body.classList.contains('netGuest');
+  const tm=(t,i)=>t?`<div class="tm" style="--c:${hex(t.c)}"><b>${t.n}</b><small>${t.t||''}${i===0&&L4.mode===4?' · Equipo 1':''}</small><div class="sp">${t.p.slice(0,3).map(id=>`<img src="${spr(id)}" alt="">`).join('')}</div></div>`:'<div class="tm"><b>—</b></div>';
+  const _h=tm(T[0],0)+'<div class="vs">VS</div>'+(net&&NET.role==='guest'||net?`<div class="tm" style="--c:${T[1]?hex(T[1].c):'#fff'}"><b>${net&&!NET.peerTeam?'Rival online':T[1].n}</b><small>${net?'Online':T[1].t||''}</small><div class="sp">${net&&!NET.peerTeam?'<span style="font-size:34px">🌐</span>':T[1].p.slice(0,3).map(id=>`<img src="${spr(id)}" alt="">`).join('')}</div></div>`:tm(T[1],1));
+  const on=s=>{const b=document.querySelector(s+' button.on');return b?b.textContent.replace(/\s+/g,' ').trim():'—'};
+  const _c='<span>'+(net?'🌐 Online':L4.mode===4?'👥 2 vs 2 local':'🎮 1 jugador')+'</span><span>'+on('#stadiumPick')+'</span><span>'+on('#weatherPick')+'</span>';
+  if(wiz._sh!==_h){wiz._sh=_h;$('wzSum').innerHTML=_h}if(wiz._sc!==_c){wiz._sc=_c;$('wzChips').innerHTML=_c}
+ }
+ function go(n){
+  step=Math.max(1,Math.min(4,n));
+  panes.forEach(p=>p.classList.toggle('on',+p.dataset.step===step));
+  lis.forEach(l=>{const s=+l.dataset.s;l.classList.toggle('on',s===step);l.classList.toggle('done',s<step)});
+  wiz.classList.toggle('dock',step===3);wiz.classList.toggle('last',step===4);
+  $('wzBack').disabled=step===1;
+  if(step===4)summary();
+  wiz.querySelector('.wzBody').scrollTop=0;
+ }
+ window.wizGo=go;
+ $('wzNext').onclick=()=>go(step+1);$('wzBack').onclick=()=>go(step-1);
+ lis.forEach(l=>l.onclick=()=>go(+l.dataset.s));
+ wiz.querySelectorAll('.mc').forEach(c=>c.onclick=()=>{
+  const m=c.dataset.m;
+  if(m==='net'){$('onlineBtn').click();return}
+  const b=document.querySelector('#modePick button[data-mode="'+m+'"]');if(b)b.click();
+  if(m==='1')go(2);
+ });
+ wiz.querySelectorAll('.wzSide button').forEach(b=>b.onclick=()=>{wiz.querySelectorAll('.wzSide button').forEach(x=>x.classList.toggle('on',x===b));const c=$('cols');c.classList.remove('s0','s1');c.classList.add('s'+b.dataset.side)});
+ $('cols').classList.add('s0');
+ setInterval(()=>{
+  const net=document.body.classList.contains('netHost')||document.body.classList.contains('netGuest');
+  wiz.querySelectorAll('.mc').forEach(c=>{const m=c.dataset.m;c.classList.toggle('on',m==='net'?net:(!net&&+m===L4.mode))});
+  if(step===4)summary();
+ },400);
+ go(1);
+})();
 </script></body></html>
