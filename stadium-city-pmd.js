@@ -248,5 +248,71 @@ function build(o){
  }
  return scene;
 }
-global.PMD_CITY={build};
+
+// Banquillos también rediseñados desde cero. Sus Pokémon los carga el juego.
+function buildBench(o){
+ const {THREE,dugG,centerX,frontZ,backZ,name,color,subs,maxSubs}=o;
+ const shade=(k)=>{const c=new THREE.Color(color);c.multiplyScalar(k);return '#'+c.getHexString()};
+ const team=shade(1),lite=shade(1.43),dark=shade(.53);
+ const ink='#34465f',wall='#e5c8a3',wood='#8f6652',woodLight='#c3986e';
+ const canvas=(w,h,fn)=>{let c=document.createElement('canvas');c.width=w;c.height=h;const q=c.getContext('2d');q.imageSmoothingEnabled=false;fn(q,w,h);return c};
+ const fill=(q,x,y,w,h,col)=>{q.fillStyle=col;q.fillRect(x,y,w,h)};
+ const t=(c)=>{
+  const v=new THREE.CanvasTexture(c);v.encoding=THREE.sRGBEncoding;
+  v.magFilter=v.minFilter=THREE.NearestFilter;v.generateMipmaps=false;
+  return v;
+ };
+ const front=canvas(256,116,(q)=>{
+  fill(q,0,0,256,116,ink);fill(q,5,5,246,105,wall);
+  for(let y=10;y<112;y+=14){fill(q,6,y,244,3,woodLight);for(let x=12+(y%28?10:0);x<255;x+=33)fill(q,x,y+3,2,9,wood);}
+  fill(q,0,105,256,11,wood);fill(q,0,105,256,4,woodLight);
+  // Central open arch — occupants remain authentic sprites placed in 3D.
+  fill(q,14,33,228,71,ink);fill(q,20,39,216,65,wood);
+  for(let x=20;x<240;x+=13)fill(q,x,39,3,65,shade(.31));
+  fill(q,20,39,216,6,woodLight);
+ });
+ const roof=canvas(512,96,(q)=>{
+  fill(q,0,0,512,96,ink);fill(q,4,4,504,88,dark);
+  for(let y=9;y<96;y+=22)for(let x=0;x<512;x+=29){
+   fill(q,x+(y%44?12:0),y,26,19,team);
+   fill(q,x+(y%44?12:0)+3,y+3,20,3,lite);
+  }
+  fill(q,0,84,512,12,ink);fill(q,0,84,512,5,lite);
+ });
+ const plaque=canvas(512,70,(q)=>{
+  fill(q,0,0,512,70,ink);fill(q,7,6,498,57,dark);
+  fill(q,14,12,484,45,team);fill(q,17,15,478,6,lite);
+  q.fillStyle='#fff5df';q.textAlign='center';q.textBaseline='middle';
+  q.font='bold 36px monospace';q.fillText(String(name).toUpperCase().slice(0,13),256,36);
+  q.font='bold 11px monospace';q.fillText('BANQUILLO',64,55);
+  q.fillText('CAMBIOS '+subs+'/'+maxSubs,432,55);
+ });
+ const texs=[t(front),t(roof),t(plaque)];
+ const material=map=>new THREE.MeshBasicMaterial({map,side:THREE.DoubleSide,transparent:true,alphaTest:.01,depthWrite:false});
+ const add=(w,h,x,y,z,tex,rotation=0)=>{
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),material(tex));
+  m.position.set(x,y,z);m.rotation.y=rotation;m.userData.own=1;dugG.add(m);return m;
+ };
+ add(16.4,6.4,centerX,3.2,backZ+.15,texs[0]);
+ add(17.9,3.25,centerX,6.0,frontZ-.5,texs[1]);
+ add(15.5,1.5,centerX,6.45,frontZ+.05,texs[2]);
+ // Supports and wooden benches, all freshly textured.
+ const woodTex=t(canvas(64,64,q=>{
+  fill(q,0,0,64,64,wood);for(let y=0;y<64;y+=16){
+   fill(q,0,y,64,4,woodLight);fill(q,0,y+15,64,2,ink);
+   for(let x=0;x<64;x+=21)fill(q,x+(y%32?9:0),y+4,3,10,'#755346');
+  }
+ }));
+ texs.push(woodTex);
+ const pillar=(x)=>{
+  const m=new THREE.Mesh(new THREE.BoxGeometry(.38,6.15,.4),new THREE.MeshBasicMaterial({map:woodTex}));
+  m.position.set(x,3.1,frontZ-.45);m.userData.own=1;dugG.add(m);
+ };
+ pillar(centerX-8.2);pillar(centerX+8.2);
+ add(12.5,.75,centerX+1,1.18,backZ+1.7,woodTex);
+ add(12.5,1.1,centerX+1,.65,backZ+1.85,woodTex);
+ return texs;
+}
+
+global.PMD_CITY={build,buildBench};
 })(window);
