@@ -4774,7 +4774,7 @@ function mdIllustratedWorld(mode){
     if(i%3===0){
      box(q,x,130,15,74,p.ink);box(q,x+4,135,8,65,'#60956a');
      box(q,x-13,162,14,8,'#60956a');box(q,x-13,150,6,23,p.ink);
-    }else rock(x,164,90,42,'#bd916e');
+    }else poly(q,[[x-45,210],[x-38,183],[x-7,164],[x+20,183],[x+42,210]],'#bd916e',p.ink);
    }else if(mode==='arctic'){
     tree(q,x,205,.6,'pine');
    }else if(mode==='space'){
@@ -4814,13 +4814,24 @@ function mdIllustratedWorld(mode){
  // Add atmospheric NPCs already using PMD SpriteCollab's Walk-Anim where available.
 }
 
-const _bs=buildStadium;buildStadium=function(m){
- disposeCityV3();disposeWorldV31();disposeBeachV4();disposeScenicTextures();
-  mdPaintPitch(m);
- if(BIOMES[m]){buildBiome(m);buildEnds(m);if(m!=='beach'){livingLandscape(m);livingWorldV2(m);ambientStory(m);stadiumLightShow(m,BIOMES[m].glow);}syncBiomeWeather();envApply();envChipUpdate();return}
- if(m==='city'){stadiumMode='city';cityG.clear();BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=null;cityFloor.material.color.setHex(0x9fa69f);cityFloor.material.needsUpdate=true;buildEnds('city');buildCityV3();syncBiomeWeather();envApply();envChipUpdate();return}
- BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=cityFloorTex;cityFloor.material.needsUpdate=true;
- stadiumMode=m;cityG.clear();cityFloor.material.color.setHex(m==='sunset'?0xd6c6aa:m==='classic'?0xc0cfbd:0xffffff);buildEnds(m);if(m==='city')ordinaryCityStadium();livingLandscape(m);livingWorldV2(m);ambientStory(m);if(m!=='city')stadiumLightShow(m,m==='sunset'?0xff9d5c:0x9bd9ff);syncBiomeWeather();envApply();envChipUpdate()};
+// Modern illustrated stage router. All game rules, camera, controls and UI tabs unchanged.
+const _bs=buildStadium;
+buildStadium=function(m){
+ disposeCityV3();disposeWorldV31();disposeBeachV4();disposeMDWorld();disposeScenicTextures();
+ mdPaintPitch(m);
+ stadiumMode=m;BIO.anims.length=0;cityG.clear();
+ if(m==='city'){
+  cityFloor.visible=true;cityFloor.material.map=null;
+  cityFloor.material.color.setHex(0xb1a18f);cityFloor.material.needsUpdate=true;
+  buildEnds(m);buildCityV3();mdIllustratedWorld(m);
+ }else if(m==='beach'){
+  buildBiome(m);buildEnds(m);
+ }else{
+  cityFloor.visible=false;
+  buildEnds(m);buildWorldV31(m);mdIllustratedWorld(m);buildAmbientMoment(m);
+ }
+ syncBiomeWeather();envApply();envChipUpdate();
+};
 cityG.clear();
 // Fondo de los arcos: gradas escalonadas, muro con franjas de luz, techo, vallas y skyline.
 function buildEnds(mode){
