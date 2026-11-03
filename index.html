@@ -1040,12 +1040,30 @@ function goalJump(){
  goalCelebration.jumpT=0;
  goalCelebration.hasJumped=true;
  if(AU.ctx&&AU.ctx.state==='running')sfx('jump');
+ if(typeof NET!=='undefined'&&NET.role==='host'&&NET.open)NET.evq.push(['goaljump']);
+ else if(typeof NET!=='undefined'&&NET.role==='guest'&&NET.open)netSend({t:'e',a:'cj'});
+}
+// Durante el festejo solo el goleador se desplaza; el partido permanece congelado.
+// El joystick y el teclado conservan sus controles habituales.
+function celebrationWalk(){
+ const g=goalCelebration;if(!g||!g.player)return;
+ const p=g.player;
+ const local=typeof NET==='undefined'||NET.role==='off'||!NET.open;
+ const input=local||p.t===0?axes():[RH.mx||0,RH.mz||0];
+ const dx=Number(input[0])||0,dz=Number(input[1])||0,n=Math.hypot(dx,dz);
+ p.mv=n>.18;
+ if(!p.mv)return;
+ p.fx=dx/n;p.fz=dz/n;
+ // Movimiento controlado durante 3s; sin placajes, disparos ni posesión.
+ const speed=.14; // unidades por tick (es deliberadamente más suave que correr)
+ p.x=cl(p.x+p.fx*speed,-HX+2,HX-2);
+ p.z=cl(p.z+p.fz*speed,-HZ+2,HZ-2);
 }
 function beginGoalCelebration(team,scorer,remote=false){
  const candidate=scorer&&scorer.t===team?scorer:(lastGoalShooter&&lastGoalShooter.t===team?lastGoalShooter:null);
  const player=candidate||P.filter(p=>p.t===team&&!p.k).sort((a,b)=>Math.abs(a.x-B.x)-Math.abs(b.x-B.x))[0]||P.find(p=>p.t===team);
  if(!player)return;
- goalCelebration={player,jumpT:-1,hasJumped:false,elapsed:0};
+ goalCelebration={player,jumpT:-1,hasJumped:false,elapsed:0};player.mv=false;
  cameraCue={kind:'goal',t:0,player};
  const shootButton=document.querySelector('#touch button[data-a="shoot"]');
  if(shootButton){shootButton.textContent='↑ SALTAR';shootButton.classList.add('celebrateJump');shootButton.setAttribute('aria-label','Saltar durante la celebración');}
@@ -1054,6 +1072,7 @@ function beginGoalCelebration(team,scorer,remote=false){
 function finishGoalCelebration(){
  const shootButton=document.querySelector('#touch button[data-a="shoot"]');
  if(shootButton){shootButton.textContent='TIRO';shootButton.classList.remove('celebrateJump');shootButton.setAttribute('aria-label','Tiro');}
+ if(goalCelebration&&goalCelebration.player)goalCelebration.player.mv=false;
  goalCelebration=null;
  if(cameraCue&&cameraCue.kind==='goal')cameraCue=null;
 }
@@ -1403,7 +1422,7 @@ function postHit(cx,cz){
 }
 function update(){
  if(!ready||(paused&&!netOn())||NET.role==='guest'||(NET.role==='host'&&NET.open&&!NET.guestReady))return;if(cheer>0)cheer--;
- if(freeze>0){if(--freeze==0){$('msg').textContent='';finishGoalCelebration();kickoff();sfx('whistle')}return}
+ if(freeze>0){if(goalCelebration)celebrationWalk();if(--freeze==0){$('msg').textContent='';finishGoalCelebration();kickoff();sfx('whistle')}return}
  if(FK&&FK.hold>0){if(--FK.hold===0){$('msg').textContent='';sfx('whistle')}return}   // pausa de la falta
  if(FK&&B.o!==FK.p){FK=null;FKV=null}                                                 // el balón salió (pase)
  if(FKV&&FKV.phase==='fly'&&(tickN>FKV.endT||B.o))FKV=null
@@ -4475,6 +4494,7 @@ function netEvApply(e){
   case'sfx':_sfx(e[1],e[2]);break;case'toast':_toast(e[1]);break;case'burst':_burst(e[1]);break;
   case'dec':_addDecal(e[1],e[2],e[3],e[4],e[5]);break;case'drt':_dirtBurst(e[1],e[2],e[3]);break;
   case'goalcam':if(P[e[1]])beginGoalCelebration(e[2],P[e[1]],true);break;
+  case'goaljump':if(goalCelebration&&goalCelebration.jumpT<0)goalJump();break;
   case'sc':if(P[e[1]])_shotCue(P[e[1]]);break;case'ti':if(P[e[1]]&&P[e[2]])_ti(P[e[1]],P[e[2]]);break;case'wx':_setW(e[1]);break;case'sub':doSub(e[1],e[2],e[3]);renderSubs();break;
  }
 }
@@ -4542,7 +4562,7 @@ function netRecv(m){
  switch(m.t){
   case's':if(NET.role==='guest')netSnapApply(m);break;
   case'i':if(NET.role==='host'){RH.mx=cl(+m.mx||0,-1,1);RH.mz=cl(+m.mz||0,-1,1);RH.sp=!!m.sp;NET.lastInput=Date.now()}break;
-  case'e':if(m.a==='sub'){if(NET.role==='host'&&ready&&!over&&subAllowed(1,m.fi|0))if(doSub(1,m.fi|0,m.bi|0))NET.evq.push(['sub',1,m.fi|0,m.bi|0])}else if(NET.role==='host'&&ready&&!freeze&&!over&&NET.inq.length<20)NET.inq.push(m);break;
+  case'e':if(m.a==='cj'){if(NET.role==='host'&&goalCelebration&&goalCelebration.player.t===1)goalJump();}else if(m.a==='sub'){if(NET.role==='host'&&ready&&!over&&subAllowed(1,m.fi|0))if(doSub(1,m.fi|0,m.bi|0))NET.evq.push(['sub',1,m.fi|0,m.bi|0])}else if(NET.role==='host'&&ready&&!freeze&&!over&&NET.inq.length<20)NET.inq.push(m);break;
   case'team':netRegTeam(m);NET.peerTeam=teamOk(m.k)?m.k:null;netBarRender();break;
   case'ready':NET.peerReady=!!m.v;netBarRender();updateReadyUI();netCheckStart();break;
   case'start':if(NET.role==='guest')guestStart(m);break;
