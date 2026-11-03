@@ -2696,7 +2696,24 @@ function disposeCityV3(){
 function buildCityV3(){
  const cgroup=new THREE.Group();cgroup.name='CIUDAD_V3_BARRIO';cityG.add(cgroup);cityV3Root=cgroup;
  const surface=(color,roughness=1)=>new THREE.MeshStandardMaterial({color,roughness,metalness:0});
- const sidewalk=surface(0xe0c39f),curb=surface(0xffe3ac);
+ // Pavimento GBA ilustrado: losas, fisuras y sombras; no grandes manchas lisas.
+ const paving=document.createElement('canvas');paving.width=256;paving.height=256;
+ const pavQ=paving.getContext('2d');pavQ.imageSmoothingEnabled=false;
+ pavQ.fillStyle='#d9b991';pavQ.fillRect(0,0,256,256);
+ for(let y=0;y<256;y+=32)for(let x=0;x<256;x+=32){
+  const xx=x+(y/32%2?16:0);
+  pavQ.fillStyle='#5f5046';pavQ.fillRect(xx,y,32,2);pavQ.fillRect(xx,y,2,32);
+  pavQ.fillStyle=['#e5caa1','#f2d6a7','#d9b995','#d5ae82'][(x/32+y/32)%4];
+  pavQ.fillRect(xx+2,y+2,29,29);
+  pavQ.fillStyle='#ffebc1';pavQ.fillRect(xx+4,y+4,23,2);
+  if((x*3+y)%7===0){pavQ.fillStyle='#92785e';pavQ.fillRect(xx+21,y+19,6,2);}
+ }
+ const paveTex=new THREE.CanvasTexture(paving);paveTex.encoding=THREE.sRGBEncoding;
+ paveTex.wrapS=paveTex.wrapT=THREE.RepeatWrapping;paveTex.repeat.set(18,8);
+ paveTex.magFilter=THREE.NearestFilter;paveTex.minFilter=THREE.LinearFilter;
+ SCENIC_TEXTURES.push(paveTex);
+ const sidewalk=new THREE.MeshStandardMaterial({map:paveTex,roughness:1});
+ const curb=surface(0xffe3ac);
  // Asfalto dibujado en 2D: grava, juntas y reparaciones visibles.
  const roadCanvas=document.createElement('canvas');roadCanvas.width=512;roadCanvas.height=256;
  const aq=roadCanvas.getContext('2d');aq.imageSmoothingEnabled=false;
