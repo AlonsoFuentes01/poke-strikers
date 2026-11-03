@@ -2611,6 +2611,211 @@ function ordinaryCityStadium(){
 // Los panoramas se liberan cuando cambia el estadio para no acumular texturas.
 const SCENIC_TEXTURES=[];
 function disposeScenicTextures(){for(const t of SCENIC_TEXTURES)t.dispose();SCENIC_TEXTURES.length=0;}
+// ================= CIUDAD REHECHA V3 · BARRIO CONTINUO 2.5D =================
+// Planta urbana legible: calle y veredas continuas, intersecciones, bloques
+// cohesionados de edificios de volumen real y fachadas dibujadas pixel a pixel.
+// Este es el estándar de calidad para los siguientes escenarios.
+function buildCityV3(){
+ const cgroup=new THREE.Group();cgroup.name='CIUDAD_V3_BARRIO';cityG.add(cgroup);
+ const surface=(color,roughness=1)=>new THREE.MeshStandardMaterial({color,roughness,metalness:0});
+ const sidewalk=surface(0xb9b2a3),curb=surface(0xe2d8c6);
+ const asphalt=surface(0x46505b),mark=new THREE.MeshBasicMaterial({color:0xe6d7a8});
+ const brick=surface(0x94705e),dark=surface(0x5f6867);
+ const greens=surface(0x537d62);
+ const add=(geo,mat,x,y,z)=>{const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);cgroup.add(o);return o};
+ const block=(w,h,d,mat,x,y,z)=>add(new THREE.BoxGeometry(w,h,d),mat,x,y,z);
+ const groundY=-1.55;
+ // Suelo urbano continuo, sin fisuras entre edificios, calle y veredas.
+ block(350,.08,160,sidewalk,0,groundY-.09,-88);
+ block(346,.07,21,asphalt,0,groundY+.02,-55);
+ block(346,.12,3.5,curb,0,groundY+.06,-66.8);
+ block(346,.12,4.2,curb,0,groundY+.06,-42.7);
+ block(346,.06,2.4,sidewalk,0,groundY+.12,-69);
+ block(346,.06,2.9,sidewalk,0,groundY+.12,-40.5);
+ // Dos calles perpendiculares crean intersecciones reales en las manzanas.
+ for(const crossX of [-55,67]){
+  block(13,.08,91,asphalt,crossX,groundY+.06,-104);
+  for(const dz of [-95,-82,-70])block(1,.025,3,mark,crossX,groundY+.115,dz);
+  for(let z=-63;z<=-46;z+=2.5)block(1.55,.023,1.2,curb,crossX-8,groundY+.12,z);
+ }
+ for(let x=-164;x<165;x+=13.4){
+  if(Math.abs(x+55)<10||Math.abs(x-67)<10)continue;
+  block(5.5,.018,.24,mark,x,groundY+.13,-55);
+ }
+ for(const crossX of [-55,67])for(let dx=-5;dx<=5;dx+=2.5)
+  block(1.25,.022,11,curb,crossX+dx,groundY+.13,-54);
+ // Losetas y canaletas en veredas; sin cubrir el campo.
+ const joint=new THREE.MeshBasicMaterial({color:0x968f84});
+ for(let x=-172;x<=171;x+=7){
+  block(.10,.014,3.2,joint,x,groundY+.145,-69);
+  block(.10,.014,3.8,joint,x,groundY+.145,-40.2);
+ }
+ for(const z of [-71.3,-40.6])for(let x=-142;x<=143;x+=30)
+  block(2,.014,.3,dark,x,groundY+.15,z);
+ // Cielo lejano con skyline pintado (solo capa 2D, sin pared opaca).
+ const sky=document.createElement('canvas');sky.width=1536;sky.height=384;
+ const sc=sky.getContext('2d');sc.clearRect(0,0,1536,384);
+ let randomSeed=871;const rnd=()=>{randomSeed=randomSeed*16807%2147483647;return(randomSeed-1)/2147483646};
+ for(let i=0;i<60;i++){
+  const x=i*26+(rnd()-.5)*6,w=24+rnd()*16,h=65+rnd()*100,y=384-h;
+  sc.fillStyle=['#aac4b6','#99b6b1','#b9c8b7','#96b0aa'][i%4];sc.fillRect(x,y,w,h);
+  sc.fillStyle='#7e9e9d';
+  for(let u=x+6;u<x+w-5;u+=11)for(let v=y+13;v<370;v+=20)sc.fillRect(u,v,5,8);
+ }
+ const skyTex=new THREE.CanvasTexture(sky);skyTex.encoding=THREE.sRGBEncoding;
+ skyTex.magFilter=THREE.NearestFilter;skyTex.minFilter=THREE.LinearFilter;
+ SCENIC_TEXTURES.push(skyTex);
+ const distant=add(new THREE.PlaneGeometry(450,105),new THREE.MeshBasicMaterial({map:skyTex,transparent:true,depthWrite:false,fog:false,side:THREE.DoubleSide}),0,54,-175);
+ distant.renderOrder=-3;
+ // Texturas de fachada dibujadas para cada manzana. Volumen 3D en paredes y techos.
+ const wallCols=[0xc6ac93,0xb7b5a6,0xd2b8a1,0xb5bdac,0xd3bda5,0xbcb2a3,0xd1ad9a];
+ const roofCols=[0x975e50,0x6e7770,0xa57259,0x777f74,0x917b65];
+ const shopNames=['POKÉ CAFÉ','LIBRERÍA','PANADERÍA','FLORERÍA','BICICLETAS','MERCADO','TALLER','KANTO MART'];
+ const makeFacade=(index,floors,shop)=>{
+  const c=document.createElement('canvas');c.width=192;c.height=320;const q=c.getContext('2d');
+  const fill=(x,y,w,h,col)=>{q.fillStyle=col;q.fillRect(x,y,w,h)};
+  const walls=['#d2b69c','#b6c4ad','#ddc6ac','#c3b5a6','#ce9e84','#b5bfbb'];
+  fill(0,0,192,320,walls[index%walls.length]);
+  fill(0,0,192,16,index%2?'#7f806f':'#9c6958');fill(0,16,192,4,'#f4e1c6');
+  // Ladrillos, esquinas, cornisas y desgaste de fachada.
+  for(let y=28;y<253;y+=28)for(let x=(y%56?0:14);x<192;x+=28){
+   fill(x,y,19,2,'#815d5055');
+  }
+  fill(0,251,192,8,'#94725c');
+  for(let row=0;row<Math.min(3,floors);row++)for(let col=0;col<3;col++){
+   const x=15+col*57,y=34+row*70;
+   fill(x-5,y-5,44,54,'#e9d5bc');fill(x,y,34,42,'#5a6667');
+   fill(x+3,y+3,13,29,'#a7c9c6');fill(x+19,y+3,12,29,'#8cafb9');
+   fill(x+16,y+2,3,38,'#e6d4bd');fill(x+2,y+33,31,3,'#d8c5ac');
+   fill(x-5,y+43,44,6,'#815d47');
+   if(row===1&&col===1&&index%3===0){
+    fill(x-8,y+51,50,4,'#765746');
+    for(let p=0;p<6;p++)fill(x-6+p*9,y+52,2,17,'#684a3e');
+    fill(x+1,y+68,32,3,'#624b40');
+   }
+  }
+  fill(0,260,192,60,shop?'#a6a8a0':'#b6a28e');
+  if(shop){
+   fill(2,263,188,25,['#6b957b','#a57367','#6e8b9b','#897b63'][index%4]);
+   fill(7,267,178,17,'#ffffff22');
+   q.textAlign='center';q.textBaseline='middle';q.font='bold 15px monospace';
+   q.fillStyle='#fff5d9';q.fillText(shopNames[index%shopNames.length],96,276);
+   fill(14,293,66,27,'#617985');fill(86,291,42,29,'#495a54');
+   fill(137,290,41,30,'#708a92');fill(18,296,23,15,'#bcd2c8');
+   fill(80,288,7,32,'#e8d9c1');fill(132,288,6,32,'#e8d9c1');
+   for(let k=0;k<8;k++)fill(2+k*24,286,24,5,k%2?'#eed7b9':'#a66d59');
+  }else{
+   fill(20,272,50,46,'#6c6c61');fill(23,276,44,34,'#b4bdad');
+   fill(110,266,53,54,'#b98e72');fill(118,278,34,41,'#566e74');
+  }
+  for(let k=0;k<200;k++)fill(rnd()*192,rnd()*250,1+rnd()*2,1+rnd()*2,rnd()<.5?'#32271915':'#ffffff1d');
+  const tex=new THREE.CanvasTexture(c);tex.encoding=THREE.sRGBEncoding;
+  tex.magFilter=THREE.NearestFilter;tex.minFilter=THREE.LinearFilter;
+  SCENIC_TEXTURES.push(tex);return tex;
+ };
+ const frontMats=[],sideMats=[],roofMats=[];
+ for(let i=0;i<wallCols.length;i++){
+  frontMats.push(new THREE.MeshBasicMaterial({map:makeFacade(i,3,true),side:THREE.DoubleSide}));
+  sideMats.push(surface(wallCols[i]));roofMats.push(surface(roofCols[i%roofCols.length]));
+ }
+ const buildings=[];
+ const cityRow=(back=false)=>{
+  let x=-163,i=0;
+  while(x<164){
+   const w=back?14+rnd()*8:13+rnd()*5;
+   const cx=x+w/2;
+   x+=w+.75;
+   // Las bocacalles quedan libres, se conectan visualmente a las intersecciones.
+   if((Math.abs(cx+55)<11||Math.abs(cx-67)<11)&&!back)continue;
+   const h=back?17+rnd()*17:17+rnd()*13,depth=back?9+rnd()*4:10+rnd()*5;
+   const z=back?-113:-83;
+   const matId=i%wallCols.length,body=block(w,h,depth,sideMats[matId],cx,h*.5+groundY,z);
+   const frontZ=z+depth/2+.045;
+   const facade=add(new THREE.PlaneGeometry(w,h),frontMats[matId],cx,h*.5+groundY,frontZ);
+   const cap=block(w+.7,.42,depth+.7,roofMats[matId],cx,h+groundY+.22,z);
+   const parapet=block(w+.8,.62,.4,roofMats[matId],cx,h+groundY+.4,frontZ-.1);
+   if(!back){
+    const awning=block(w*.84,.24,2.0,roofMats[matId],cx,4.75,frontZ+1.0);
+    const storeStep=block(w*.72,.16,1.35,curb,cx,groundY+.2,frontZ+.5);
+    if(i%3===0){
+     const by=h*.53+groundY;
+     block(w*.62,.26,2.15,brick,cx,by,frontZ+1.05);
+     for(const off of [-w*.29,0,w*.29])block(.16,1.4,.14,dark,cx+off,by+.8,frontZ+2);
+     block(w*.62,.18,.18,dark,cx,by+1.5,frontZ+2);
+    }
+   }
+   buildings.push({x:cx,y:h,z,frontZ,w,back,facade});
+   i++;
+  }
+ };
+ cityRow(true);cityRow(false);
+ // Farolas, jardineras y árboles alineados con la calle, no colocados al azar.
+ const metal=surface(0x5f6765,.82),lamp=new THREE.MeshBasicMaterial({color:0xffecc3});
+ const trees=[];
+ for(let x=-146;x<=145;x+=28){
+  if(Math.abs(x+55)<14||Math.abs(x-67)<14)continue;
+  const z=-68.7;
+  block(2.8,.36,2.8,brick,x,groundY+.2,z);
+  block(2.1,.38,2.1,greens,x,groundY+.42,z);
+  trees.push({x,y:groundY+.35,z,w:7,h:11});
+ }
+ pixelBiomeInstances('city',trees);
+ for(const x of [-142,-96,-24,28,112,148]){
+  add(new THREE.CylinderGeometry(.11,.14,9,6),metal,x,3.3,-42.6);
+  block(2.7,.21,.42,metal,x+1.1,7.75,-42.6);
+  block(1.3,.24,.8,lamp,x+2.05,7.5,-42.6);
+ }
+ // Señales, contenedores y paradas, todos anclados a la vereda.
+ const poster=document.createElement('canvas');poster.width=128;poster.height=64;
+ const pq=poster.getContext('2d');pq.fillStyle='#3d6c6b';pq.fillRect(0,0,128,64);
+ pq.fillStyle='#e4d8a5';pq.fillRect(5,5,118,54);
+ pq.fillStyle='#3e655b';pq.fillRect(9,9,110,46);pq.fillStyle='#fdf0ce';
+ pq.font='bold 17px monospace';pq.textAlign='center';pq.fillText('BARRIO POKÉ',64,37);
+ const pt=new THREE.CanvasTexture(poster);pt.encoding=THREE.sRGBEncoding;pt.magFilter=THREE.NearestFilter;
+ SCENIC_TEXTURES.push(pt);
+ const sign=add(new THREE.PlaneGeometry(9,4.5),new THREE.MeshBasicMaterial({map:pt,side:THREE.DoubleSide}),-101,12,-72);
+ for(const x of [-30,103]){
+  block(3.6,2.3,2.3,dark,x,groundY+1.15,-41.1);
+  block(3.8,.18,2.5,brick,x,groundY+2.4,-41.1);
+ }
+ // Evento: Meowth realmente posa en un balcón de la calle.
+ let anchor=buildings.find(b=>!b.back&&b.x<-70&&b.x>-121);
+ if(!anchor)anchor=buildings.find(b=>!b.back);
+ const meowthT=loader.load(spr(52),t=>{
+  t.encoding=THREE.sRGBEncoding;t.magFilter=THREE.NearestFilter;t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;
+ });
+ const meowth=new THREE.Sprite(new THREE.SpriteMaterial({map:meowthT,transparent:true,depthWrite:false,fog:false,opacity:0}));
+ const balconyY=anchor?anchor.y*.53+1.2:11;
+ meowth.position.set(anchor?anchor.x:-95,balconyY,anchor?anchor.frontZ+2.3:-73);
+ meowth.scale.set(4.5,4.5,1);meowth.visible=false;cgroup.add(meowth);
+ // Evento: auto sobre la CALLE, no flotando sobre un fondo plano.
+ const carGroup=new THREE.Group();carGroup.visible=false;cgroup.add(carGroup);
+ const carBody=surface(0x9e4b43,.7),carGlass=surface(0x8ba3a5,.48),tire=surface(0x37383a);
+ const cb=new THREE.Mesh(new THREE.BoxGeometry(4.2,1.25,1.9),carBody);cb.position.y=.87;carGroup.add(cb);
+ const cabin=new THREE.Mesh(new THREE.BoxGeometry(2.25,.72,1.66),carGlass);cabin.position.set(-.2,1.78,0);carGroup.add(cabin);
+ for(const dx of [-1.32,1.32])for(const dz of [-1.01,1.01]){
+  const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.38,.38,.21,8),tire);
+  wheel.rotation.x=Math.PI/2;wheel.position.set(dx,.48,dz);carGroup.add(wheel);
+ }
+ let stage='idle',wait=11,active=0;
+ BIO.anims.push((dt,T)=>{
+  wait-=dt;
+  if(stage==='idle'&&wait<=0){
+   stage=Math.random()<.45?'meowth':'car';active=0;
+   if(stage==='meowth')meowth.visible=true;
+   else {carGroup.visible=true;carGroup.position.set(-158,groundY+.06,-55.7)}
+  }
+  if(stage==='meowth'){
+   active+=dt;meowth.material.opacity=Math.min(1,active*1.4,Math.max(0,(7-active)*1.5));
+   meowth.position.y=balconyY+Math.sin(T*2.2)*.12;
+   if(active>7){meowth.visible=false;stage='idle';wait=12+Math.random()*17}
+  }else if(stage==='car'){
+   active+=dt;carGroup.position.x+=dt*9.5;
+   if(carGroup.position.x>160){carGroup.visible=false;stage='idle';wait=12+Math.random()*20}
+  }
+ });
+}
+
 // ================= 2.5D: VOLUMEN REAL + FACHADAS ILUSTRADAS =================
 // Los cuerpos dan perspectiva al mover la cámara. Sus fachadas son texturas Canvas 2D
 // y están fuera de la cancha: nada de mega-gradas que tapen el paisaje.
@@ -3139,11 +3344,21 @@ void main(){
 const _bs=buildStadium;buildStadium=function(m){
  disposeScenicTextures();
  if(BIOMES[m]){buildBiome(m);buildEnds(m);livingLandscape(m);livingWorldV2(m);ambientStory(m);stadiumLightShow(m,BIOMES[m].glow);syncBiomeWeather();envApply();envChipUpdate();return}
+ if(m==='city'){stadiumMode='city';cityG.clear();BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.color.setHex(0xffffff);buildEnds('city');buildCityV3();syncBiomeWeather();envApply();envChipUpdate();return}
  BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=cityFloorTex;cityFloor.material.needsUpdate=true;
  stadiumMode=m;cityG.clear();cityFloor.material.color.setHex(m==='sunset'?0xd6c6aa:m==='classic'?0xc0cfbd:0xffffff);buildEnds(m);if(m==='city')ordinaryCityStadium();livingLandscape(m);livingWorldV2(m);ambientStory(m);if(m!=='city')stadiumLightShow(m,m==='sunset'?0xff9d5c:0x9bd9ff);syncBiomeWeather();envApply();envChipUpdate()};
 cityG.clear();
 // Fondo de los arcos: gradas escalonadas, muro con franjas de luz, techo, vallas y skyline.
 function buildEnds(mode){
+ if(mode==='city'){
+  // Público y bancos existentes; solo vallas bajas, sin murallas ni tejados.
+  for(const side of [-1,1]){
+   const ad=new THREE.Mesh(new THREE.PlaneGeometry(HZ*2+8,1.2),new THREE.MeshBasicMaterial({map:adT,side:THREE.DoubleSide}));
+   ad.position.set(side*(HX+2.45),.75,0);ad.rotation.y=side>0?-Math.PI/2:Math.PI/2;cityG.add(ad);
+  }
+  return;
+ }
+
  const sunset=mode==='sunset',tw=HZ*2+16,TH=BIOMES[mode],wallCol=TH?TH.wall:(mode==='city'?0x8b9988:sunset?0x3a2748:0x1a2a58),glow=TH?TH.glow:(mode==='city'?0xb7c38a:sunset?0xff9d5c:0x2fd0ff),
   bases=sunset?['#5a3252','#6b3b57','#7a4560']:['#263d67','#2d527a','#35476e','#28334f'],wins=sunset?['#ffb86b','#ffe29a','#ff8a69']:['#61eaff','#ffd75a','#ff75d8','#9bffbd'];
  const facade=()=>{const c=document.createElement('canvas');c.width=64;c.height=128;const q=c.getContext('2d');q.fillStyle=bases[Math.random()*bases.length|0];q.fillRect(0,0,64,128);
@@ -3174,7 +3389,7 @@ function buildEnds(mode){
   }
  }
 }
-buildEnds(stadiumMode);ordinaryCityStadium();livingLandscape(stadiumMode);livingWorldV2(stadiumMode);ambientStory(stadiumMode);syncBiomeWeather();
+buildEnds(stadiumMode);buildCityV3();syncBiomeWeather();
 
 const DMW=1024,DMH=614,dmC=document.createElement('canvas');dmC.width=DMW;dmC.height=DMH;const dmq=dmC.getContext('2d');
 const dmT=srgb(new THREE.CanvasTexture(dmC));
