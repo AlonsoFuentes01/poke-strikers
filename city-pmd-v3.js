@@ -39,9 +39,9 @@ function build(o){
   addPlane('tree_big',8,37,7.2,-31,-16);
   addPlane('tree_small',6,-43,5.5,-29,-15);
   addPlane('tree_small',6,43,5.5,-29,-15);
-  addPlane('stairs_left',11,-25,7.8,-29.5,-13);
-  addPlane('stairs_right',11,25,7.8,-29.5,-13);
-  addPlane('pokemon_center',25.5,0,9.7,-29,-12);
+  addPlane('stairs_left',11,-25,6.1,-29.5,-13);
+  addPlane('stairs_right',11,25,6.1,-29.5,-13);
+  addPlane('pokemon_center',25.5,0,6.1,-29,-12);
   // Market stalls on either side of the central doors. No lamps on top of shops.
   addPlane('stall_red',10,-16.7,5.0,-25.6,-9);
   addPlane('stall_yellow',10,16.7,5.0,-25.6,-9);
