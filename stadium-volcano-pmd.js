@@ -183,23 +183,59 @@ function build(o){
  apron.visible=true;
  // Skyline: three true layers (sky, town, architectural foreground).
  const sky=canvas(1536,600,q=>{
-  for(let y=0;y<600;y+=25)r(q,0,y,1536,25,y<260?C.sky:y<420?C.sky2:'#c5e2d9');
-  for(let i=0;i<15;i++)cloud(q,35+i*111+(rand()-.5)*42,35+rand()*148,.42+rand()*.65);
+  // Misma escala y composición que Ciudad; el paisaje sí es volcánico.
+  for(let y=0;y<600;y+=16)
+   r(q,0,y,1536,16,y<180?C.sky:y<365?C.sky2:'#cf9185');
+  for(let i=0;i<16;i++)
+   cloud(q,35+i*109+(rand()-.5)*42,35+rand()*140,.42+rand()*.62);
   for(let i=0;i<9;i++){
-   let x=i*204-70,peak=286+rand()*74;
-   poly(q,[[x-140,600],[x-80,peak+72],[x,peak-76],[x+83,peak+76],[x+160,600]],C.mountainShade);
-   poly(q,[[x-80,peak+72],[x,peak-76],[x+35,peak+27],[x+9,peak+130]],C.mountain);
-   poly(q,[[x-55,peak+55],[x,peak-76],[x+15,peak-36],[x-7,peak+62]],C.mountainLight);
+   const x=i*204-65,peak=289+rand()*68;
+   poly(q,[[x-140,600],[x-80,peak+71],[x,peak-76],
+    [x+83,peak+73],[x+160,600]],C.mountainShade);
+   poly(q,[[x-72,peak+78],[x,peak-76],[x+35,peak+29],
+    [x+7,peak+131]],C.mountain);
+   poly(q,[[x-50,peak+48],[x,peak-76],[x+11,peak-36],
+    [x-9,peak+70]],C.mountainLight);
+  }
+  // Volcán detrás de la entrada, al estilo de las montañas PMD.
+  poly(q,[[420,600],[603,384],[715,235],[758,201],[806,233],
+    [915,389],[1115,600]],'#352b42');
+  poly(q,[[520,600],[663,343],[730,229],[760,221],
+    [815,294],[970,600]],'#705063');
+  poly(q,[[694,269],[721,238],[760,224],[799,254],
+    [774,269],[730,268]],C.ink);
+  poly(q,[[720,246],[742,234],[762,235],[780,247],
+    [759,255],[740,253]],C.flower2);
+  poly(q,[[748,256],[736,345],[728,411],[694,518],[678,600],
+    [702,600],[742,454],[769,338],[767,260]],C.flower);
+  poly(q,[[757,262],[751,339],[740,408],[717,486],
+    [705,520]],C.waterLight);
+  for(let i=0;i<11;i++){
+   const x=698+rand()*105,y=159-rand()*131;
+   r(q,x,y,13+rand()*29,6+rand()*9,C.cloudShadow);
   }
  });
  const town=canvas(1536,540,q=>{
-  // Each facade has distinct roof, window depth and staggered silhouette.
+  // Pueblo fortificado: la arquitectura usa las mismas funciones que Ciudad.
   for(let i=0;i<16;i++){
    const x=i*102-25,h=174+(i*37)%105;
-   building(q,x,530,94,h,{roof:i%3===0?'#ad5a64':i%2?C.roof:C.roof2,shop:i%4===2});
+   building(q,x,530,94,h,{roof:i%3===0?'#a04b53':i%2?C.roof:C.roofDark,shop:i%4===2});
   }
   clockTower(q,1183,529);
   for(let i=0;i<17;i++)tree(q,43+i*99,540,.5+(i%3)*.06);
+  for(const x of [87,316,493,1050,1272,1465]){
+   for(let yy=422;yy<508;yy+=35){
+    r(q,x-14,yy,29,30,C.ink);r(q,x-9,yy+3,19,24,C.water);
+    r(q,x-5,yy+6,9,18,C.waterLight);
+   }
+  }
+  // Dos cascadas lejanas dentro del mismo fondo, no planos enormes sueltos.
+  for(const x of [195,1362]){
+   r(q,x-27,362,55,174,C.ink);
+   r(q,x-18,366,38,163,C.water);
+   for(let i=0;i<5;i++)
+    r(q,x-13+i*7,371,5,152-i*4,i%2?C.flower:C.waterLight);
+  }
  });
  // New spectator architecture, intentionally EMPTY of hand-drawn creatures;
  // all visible Pokémon spectators are actual SpriteCollab assets.
