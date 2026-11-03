@@ -606,7 +606,7 @@ button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
 <div class="pickLbl" id="modeLbl">MODO LOCAL</div><div id="modePick"><button type="button" data-mode="1" class="on">🎮 1 jugador</button><button type="button" data-mode="4">👥 2 vs 2 · 4 jugadores</button></div>
 <div id="l4Cfg"><div class="l4row"><b style="color:#ffd23f">P1 · Eq.1</b><select id="l4s0"></select></div><div class="l4row"><b style="color:#7dff8a">P2 · Eq.1</b><select id="l4s1"></select></div><div class="l4row"><b style="color:#66e0ff">P3 · Eq.2</b><select id="l4s2"></select></div><div class="l4row"><b style="color:#ff7ad9">P4 · Eq.2</b><select id="l4s3"></select></div>
 <small id="l4Warn"></small><small><b>Teclado A:</b> WASD mover · Shift correr · F tiro (mantén) · G pase · T pase aéreo · R placaje · Q poder<br><b>Teclado B:</b> Flechas mover · Shift der. correr · / tiro (mantén) · . pase · , pase aéreo · ; placaje · P poder<br><b>Mando:</b> stick mover · LB correr · RT tiro (mantén) · A pase · RB pase aéreo · B placaje · Y poder<br>Cada jugador maneja a su Pokémon fijo; un puesto en «CPU» (o con el mando desconectado) lo juega la IA. Con un solo teclado, para 4 humanos conviene usar mandos: algunos teclados no registran tantas teclas a la vez. No funciona en online.</small></div>
-<div class="pickLbl">ESTADIO ÚNICO · 2D</div><div id="stadiumPick" aria-label="Estadio Ciudad"><button type="button" data-stadium="city" class="on">🏙️ Ciudad PMD</button></div>
+<div class="pickLbl">ESTADIO ÚNICO · 2D</div><div id="stadiumPick" aria-label="Selecciona estadio"><button type="button" data-stadium="city" class="on">🏙️ Ciudad PMD</button><button type="button" data-stadium="volcano">🌋 Volcán</button></div>
 <div id="weatherPick" aria-label="Seleccionar clima"><button type="button" data-weather="clear" class="on">☀️ Despejado</button><button type="button" data-weather="cloudy">☁️ Nublado</button><button type="button" data-weather="rain">🌧️ Lluvia</button><button type="button" data-weather="storm">⛈️ Tormenta</button><button type="button" data-weather="fog">🌫️ Niebla</button><button type="button" data-weather="snow">❄️ Nieve</button><button type="button" data-weather="auto">🎲 Cambiante</button></div>
 <div id="cols"><section><h3>Tu equipo</h3><div class="grid" id="g0"></div></section><section><h3>Rival</h3><div class="grid" id="g1"></div></section></div>
 <div id="spriteCredit" style="font:11px Nunito,sans-serif;color:#e6efff;opacity:.82;max-width:620px">Sprites estilo Pokémon Mystery Dungeon: PMD Sprite Repository / colaboradores (CC BY-NC 4.0). Créditos de artistas en el repositorio.</div><div id="netBar"></div><button id="go">¡Jugar!</button><button id="readyBtn" type="button">✅ ¡Estoy listo!</button><button id="bdOpen" type="button">🛠️ Armar equipo (6 Pokémon)</button><button id="onlineBtn" type="button">🌐 Jugar online (código de sala)</button></div>
@@ -619,6 +619,7 @@ button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="./city-pmd-atlas.js?v=atlas-4d3e293"></script>
 <script src="./stadium-city-pmd.js"></script>
+<script src="./stadium-volcano-pmd.js?v=volcano-p1"></script>
 <script src="./city-pmd-v3.js?v=goal-bench-intro-2"></script>
 <script>
 const L={
@@ -823,9 +824,13 @@ function finishPlayersEntrance(){
 const stadiumIntro=document.createElement('div');
 stadiumIntro.setAttribute('aria-hidden','true');
 stadiumIntro.style.cssText='position:fixed;left:50%;top:24%;transform:translate(-50%,0) scale(1.05);z-index:9;pointer-events:none;display:none;opacity:0;text-align:center;white-space:nowrap;filter:drop-shadow(0 3px 3px #1119);';
-stadiumIntro.innerHTML='<div style="display:inline-block;padding:10px 24px;background:#243651dc;border:3px solid #eed49b;border-radius:10px;box-shadow:0 5px 0 #131f37a0;color:#ffe8af;font:bold clamp(17px,3.3vw,38px) system-ui,sans-serif;letter-spacing:2px">🏟️ ESTADIO CIUDAD</div><div style="color:#fff5d9;font:700 clamp(11px,1.7vw,18px) system-ui,sans-serif;margin-top:10px;letter-spacing:3px">POKÉ STRIKERS</div>';
+stadiumIntro.innerHTML='<div id="introStageTitle" style="display:inline-block;padding:10px 24px;background:#243651dc;border:3px solid #eed49b;border-radius:10px;box-shadow:0 5px 0 #131f37a0;color:#ffe8af;font:bold clamp(17px,3.3vw,38px) system-ui,sans-serif;letter-spacing:2px">🏟️ ESTADIO CIUDAD</div><div style="color:#fff5d9;font:700 clamp(11px,1.7vw,18px) system-ui,sans-serif;margin-top:10px;letter-spacing:3px">POKÉ STRIKERS</div>';
 document.body.appendChild(stadiumIntro);
 function showStadiumIntro(){
+ const title=$('introStageTitle');
+ if(title){title.textContent=stadiumMode==='volcano'?'🌋 ESTADIO VOLCÁN':'🏟️ ESTADIO CIUDAD';
+ title.style.background=stadiumMode==='volcano'?'#472c3be8':'#243651dc';
+ title.style.borderColor=stadiumMode==='volcano'?'#ffb05b':'#eed49b';}
  cameraTopMix=0;camIntroLeft=CAM_INTRO_SECONDS;cam.zoom=CAM_ZOOM_INTRO;
  targetZoom2D=CAM_ZOOM_INTRO;cam.updateProjectionMatrix();
  stadiumIntro.style.display='block';stadiumIntro.style.opacity='0';
@@ -850,7 +855,10 @@ S.add(new THREE.HemisphereLight(0xf7fdff,0x78916e,.95));const fillLight=new THRE
 
 // Reutiliza la ilustración integrada del inicio para vestir también la selección de equipos/estadio.
 try{$('menu').style.backgroundImage='linear-gradient(90deg,rgba(5,14,39,.62) 0%,rgba(5,14,39,.34) 45%,rgba(5,14,39,.06) 100%)';$('menu').style.backgroundSize='cover';$('menu').style.backgroundPosition='center';}catch(e){}
-document.querySelectorAll('#stadiumPick button').forEach(b=>b.addEventListener('click',()=>{b.classList.add('on');buildStadium('city')}));
+document.querySelectorAll('#stadiumPick button').forEach(b=>b.addEventListener('click',()=>{
+ document.querySelectorAll('#stadiumPick button').forEach(other=>other.classList.toggle('on',other===b));
+ buildStadium(b.dataset.stadium==='volcano'?'volcano':'city');
+}));
 const loader=new THREE.TextureLoader();loader.setCrossOrigin('anonymous');const texC={},pmdC={};
 function tex(id,col){
  if(texC[id])return texC[id];
@@ -1833,7 +1841,7 @@ function refTick(){}
 renderBinds();keysHint();
 // ================= ENTORNO VISUAL: cielo, clima, daño de césped, minimapa =================
 const mixn=(a,b,k)=>a+(b-a)*k;
-const STN={city:'Ciudad PMD'};
+const STN={city:'Ciudad PMD',volcano:'Volcán'};
 const WXN={clear:['☀️','Despejado'],cloudy:['☁️','Nublado'],rain:['🌧️','Lluvia'],storm:['⛈️','Tormenta'],fog:['🌫️','Niebla'],snow:['❄️','Nieve']};
 const WXP={
  clear:{cloud:.12,rain:0,snow:0,fog:0,dark:0,wet:0,thunder:0},
@@ -1880,7 +1888,7 @@ function stadiumWeatherTitle(mode,k){
  if(mode==='desert'&&k==='cloudy')return ['💨','Viento de arena'];
  return WXN[k]||WXN.clear;
 }
-const STADIUM_WEATHER={city:['clear','cloudy','rain','storm','fog']};
+const STADIUM_WEATHER={city:['clear','cloudy','rain','storm','fog'],volcano:['clear','cloudy','fog']};
 function allowedWeather(mode){return STADIUM_WEATHER[mode]||STADIUM_WEATHER.city;}
 function pickBiomeWeather(mode,except){
  const list=allowedWeather(mode).filter(k=>k!==except);
@@ -2135,11 +2143,15 @@ function mdStadiumCards(){
 
 // Descartado el generador antiguo: Ciudad emplea solo stadium-city-pmd.js.
 // Modern illustrated stage router. All game rules, camera, controls and UI tabs unchanged.
-function buildStadium(){
+function buildStadium(mode='city'){
+ const selected=mode==='volcano'?'volcano':'city';
  disposeScenicTextures();BIO.anims.length=0;cityG.clear();
- cityFloor.visible=false;stadiumMode='city';skyM.visible=false;
- window.PMD_CITY.activeScene=window.PMD_CITY.build({THREE,cityG,HX,HZ,GW,apron,pitchMat,SCENIC_TEXTURES});
- S.background.setHex(0x75bafa);S.fog.color.setHex(0x75bafa);
+ cityFloor.visible=false;stadiumMode=selected;skyM.visible=false;
+ const opts={THREE,cityG,HX,HZ,GW,apron,pitchMat,SCENIC_TEXTURES};
+ const stage=selected==='volcano'?window.PMD_VOLCANO.build(opts):window.PMD_CITY.build(opts);
+ window.PMD_CITY.activeScene=stage;
+ const sky=selected==='volcano'?0x563443:0x75bafa;
+ S.background.setHex(sky);S.fog.color.setHex(sky);
  S.fog.near=190;S.fog.far=490;
  syncBiomeWeather();envApply();envChipUpdate();
 }
