@@ -1010,7 +1010,7 @@ function mdPaintPitch(mode){
  }
  const t=new THREE.CanvasTexture(c);
  t.encoding=THREE.sRGBEncoding;t.magFilter=THREE.NearestFilter;
- t.minFilter=THREE.LinearFilter;t.anisotropy=4;t.generateMipmaps=false;
+ t.minFilter=THREE.NearestFilter;t.anisotropy=1;t.generateMipmaps=false;
  if(MD_PITCH_TEXTURE)MD_PITCH_TEXTURE.dispose();
  MD_PITCH_TEXTURE=t;pitchMat.map=t;pitchMat.needsUpdate=true;
  pitchMat.color.setHex(0xffffff);
@@ -4894,6 +4894,63 @@ function mdIllustratedWorld(mode){
  });
  const near=new THREE.Mesh(new THREE.PlaneGeometry(250,42),mat(nearCanvas));
  near.position.set(0,8,-95);root.add(near);
+ // Pixel-art tribunes: independent 2.5D overlay behind the playing surface.
+ // Existing field, goals, physics, benches and online state are never changed.
+ const mdStandTheme={
+  city:['#e8c6a3','#ba6351','#4685b0','#526a7a'],
+  sunset:['#dfb08d','#aa6358','#e8ac6b','#87618c'],
+  classic:['#d9c49d','#5d8b73','#e1c57b','#4e8075'],
+  beach:['#e8cb94','#53afa8','#f1dcad','#3c9fbc'],
+  volcano:['#a17a67','#55394a','#ec9954','#c85a39'],
+  desert:['#e9be80','#c27b4d','#f8dd9a','#99745e'],
+  arctic:['#d3e8e6','#719fb9','#f8ffff','#8dcbe0'],
+  space:['#808cb5','#4b4f83','#c2d8ff','#9989ce']
+ }[mode];
+ if(mdStandTheme){
+  const [stone,roof,highlight,accent]=mdStandTheme;
+  const standCanvas=canvas(1024,256,(q)=>{
+   const b=(x,y,w,h,c)=>box(q,x,y,w,h,c);
+   // Roof, two spectator levels and podium.
+   b(26,238,972,15,p.ink);b(31,228,961,11,highlight);
+   b(46,153,934,75,p.ink);b(51,157,924,64,stone);
+   b(87,92,850,65,p.ink);b(92,97,840,52,stone);
+   b(47,72,933,16,p.ink);b(52,75,923,10,roof);
+   for(let row=0;row<2;row++){
+    const y=row?163:104,left=row?59:99,slots=row?38:33;
+    const width=row?906:826,step=width/slots;
+    b(left,y, width,10,p.ink);b(left+2,y+3,width-4,4,highlight);
+    for(let i=0;i<slots;i++){
+     const x=Math.floor(left+4+i*step),c=['#f1d18b','#a2cbde','#e79f7d','#b5abdc','#8fbd91'][(i*7+row*3)%5];
+     b(x+1,y-23,15,15,p.ink);b(x+3,y-21,11,11,c);
+     b(x,y-9,17,11,i%3?roof:accent);
+     b(x+5,y-18,2,3,p.ink);b(x+11,y-18,2,3,p.ink);
+    }
+   }
+   for(let i=0;i<10;i++){let x=51+i*103;b(x,83,8,144,p.ink);b(x+2,84,4,140,roof);}
+   for(let i=0;i<3;i++){let x=140+i*366;b(x,13,6,59,p.ink);b(x+6,18,43,29,accent);b(x+10,22,32,5,highlight);b(x+12,33,28,4,'#fff6de');}
+   for(let i=0;i<33;i++){
+    let x=i*31;
+    if(['city','sunset','classic','beach'].includes(mode)){b(x+7,219,21,10,'#5b9874');b(x+12,213,6,7,i%2?'#efb6a5':'#ffe2a4');}
+    else{b(x+8,217,17,13,roof);b(x+11,211,11,6,highlight);}
+   }
+  });
+  const stand=new THREE.Mesh(new THREE.PlaneGeometry(86,21.5),mat(standCanvas));
+  stand.position.set(0,7.9,-HZ-23);root.add(stand);
+  // Animated flags are part of the stadium's existing BIO animation loop.
+  const flags=[];
+  for(const x of [-34,0,34]){
+   const c=canvas(64,80,q=>{
+    box(q,19,0,6,80,p.ink);box(q,25,11,32,44,accent);
+    box(q,30,16,22,7,highlight);box(q,30,34,22,5,'#fff4d7');
+    box(q,23,54,35,5,p.ink);
+   });
+   const flag=new THREE.Mesh(new THREE.PlaneGeometry(2.8,3.5),mat(c));
+   flag.position.set(x,18.4,-HZ-22.8);flag.userData.phase=x;root.add(flag);flags.push(flag);
+  }
+  BIO.anims.push((dt,T)=>{
+   for(const flag of flags){flag.rotation.y=Math.sin(T*1.8+flag.userData.phase)*.1;flag.position.y=18.4+Math.sin(T*2+flag.userData.phase)*.07;}
+  });
+ }
  // Soft, slow shadows over the pitch; allowed even if sky is clear.
  if(mode!=='space'){
   const mask=canvas(256,128,q=>{
