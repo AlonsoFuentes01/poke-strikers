@@ -40,8 +40,17 @@ La **Ciudad V3** en `index.html` (`buildCityV3()`) es la **base de organización
 8. **Comprobar en juego** a 16:9 y móvil horizontal (~760×340): ver suelo, profundidad, calles/caminos, cielo, bancos, público, personajes y FPS.
 9. La validación de sintaxis JavaScript **no equivale** a probar renderizado, rendimiento ni composición.
 
-## Estado
+## Estado de implementación (noviembre de 2026)
 
-- Ciudad V3 reconstruida en `main` con `buildCityV3()`.
-- Los otros siete estadios **aún requieren** reconstrucción individual bajo esta dirección artística.
-- Ciudad requiere **validación visual en navegador y dispositivo móvil** antes de declarar aprobada la referencia.
+- Ciudad usa `buildCityV3()`: calles continuas, fachadas GBA, árboles unificados, automóviles dibujados, tiendas y Pokémon caminantes.
+- Los **otros siete estadios** usan `buildWorldV31(mode)`: cada bioma tiene suelo ilustrado y ruta propios, edificios/estructuras con volumen y texturas 2D, pequeños Pokémon caminando, carteles y monumentos diferenciados.
+- Clásico: taquillas, pórtico deportivo, explanada, pancartas.
+- Atardecer: barrio de tonos cálidos, faroles, macetas y pequeños puestos.
+- Playa: paseo de madera, muelle, pasamanos y tablas de surf.
+- Volcán: calzada de basalto, grietas de lava, columnas volcánicas.
+- Glaciar: senderos helados, campamento de investigación, pilares de hielo.
+- Espacio: corredor metálico, plataforma de aterrizaje, paneles solares y antenas.
+- Desierto: senderos de piedra, ruinas con arcos y toldos de caravaneros.
+- `disposeWorldV31()` limpia la geometría/materiales del diorama antes de cambiar de estadio; las texturas temporales pasan por `SCENIC_TEXTURES`.
+- Los partidos conservan controles, cámara y equipos. En un gol, solo el goleador puede caminar y saltar durante la celebración congelada de 3 segundos.
+- **Pendiente obligatorio:** inspección visual del renderizado y medición de FPS en PC y móvil. Haber subido el código y validado la sintaxis no constituye aprobación visual de los ocho mundos.
