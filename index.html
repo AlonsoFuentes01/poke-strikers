@@ -717,77 +717,8 @@ const cam=new THREE.PerspectiveCamera(43,1,.1,500);cam.position.set(0,7.4,13.5);
 const rs=()=>{R.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()};addEventListener('resize',rs);rs();
 S.add(new THREE.HemisphereLight(0xf7fdff,0x78916e,.95));const fillLight=new THREE.DirectionalLight(0xffffff,.5);fillLight.position.set(-12,18,8);S.add(fillLight);const sun=new THREE.DirectionalLight(0xfff7df,.65);sun.position.set(10,30,12);S.add(sun);
 // Skyline modular: edificios, ventanas luminosas y carteles que rodean la cancha.
-function buildStadium(mode){
- stadiumMode=mode;cityG.clear();
- const cfg=mode==='sunset'?{sky:0x5a3252,fog:0x5a3252,fogNear:125,fogFar:260,ground:0x3c6c48,light:0xffb36b}:{sky:mode==='classic'?0x45688a:0x3f6f9c,fog:mode==='classic'?0x45688a:0x3f6f9c,fogNear:130,fogFar:280,ground:0x39754b,light:mode==='classic'?0xd9e9ff:0x75dfff};
- S.background.setHex(cfg.sky);S.fog.color.setHex(cfg.fog);S.fog.near=mode==='sunset'?210:190;S.fog.far=mode==='sunset'?430:450;sun.color.setHex(cfg.light);sun.intensity=mode==='sunset'?.8:.7;
- // Cambia el pavimento urbano según el estadio seleccionado.
- cityFloor.material.color.setHex(mode==='sunset'?0xe0b8a0:(mode==='classic'?0xb8c9df:0xffffff));
- if(mode==='classic'){cityFloor.material.map=cityFloorTex;cityFloor.material.needsUpdate=true;return;}
- const mats=[0x233b65,0x294b78,0x31557d,0x26334f,0x3b4770].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:.9}));
- const winCols=mode==='sunset'?[0xffb35c,0xffdc88,0xff8a69]:[0x65eaff,0xffd94f,0xff6ce5,0xb2ff91];
- const wm=winCols.map(c=>new THREE.MeshBasicMaterial({color:c}));
- function building(x,z,w,h,dep){const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,dep),mats[Math.random()*mats.length|0]);b.position.set(x,h/2-1,z);cityG.add(b);
-  const cols=Math.max(2,Math.floor(w/2.8)),rows=Math.max(2,Math.floor(h/2.8));for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){if(Math.random()<.25)continue;const win=new THREE.Mesh(new THREE.PlaneGeometry(.55,.75),wm[Math.random()*wm.length|0]);win.position.set(x-w/2+(c+.5)*w/cols,-1+(r+.6)*h/rows,z+(z>0?-1:1)*(dep/2+.012));if(z<0)win.rotation.y=Math.PI;cityG.add(win)} }
- // Ciudad SOLO detrás de la tribuna del fondo. Nada de rascacielos en primer plano:
- // deben quedar fuera del campo de visión jugable.
- const facadeCanvas=document.createElement('canvas');facadeCanvas.width=256;facadeCanvas.height=512;
- const fg=facadeCanvas.getContext('2d');
- const facTex=new THREE.CanvasTexture(facadeCanvas);facTex.wrapS=facTex.wrapT=THREE.RepeatWrapping;facTex.repeat.set(1,1);facTex.encoding=THREE.sRGBEncoding;
- function paintFacade(base,accent){
-  fg.fillStyle=base;fg.fillRect(0,0,256,512);
-  fg.fillStyle='rgba(5,12,32,.38)';for(let x=0;x<256;x+=32)fg.fillRect(x,0,5,512);
-  for(let y=18;y<500;y+= thirtySix()) for(let x=12;x<250;x+=32){
-   fg.fillStyle=Math.random()>.22?accent:'#26314e';fg.fillRect(x,y,15,21);
-   fg.fillStyle='rgba(255,255,255,.22)';fg.fillRect(x,y,15,2);
-  }
-  fg.fillStyle='rgba(10,18,40,.7)';fg.fillRect(0,0,256,12);facTex.needsUpdate=true;
- }
- function thirtySix(){return 36;}
- function building(x,z,w,h,dep){
-  const base=['#263d67','#2d527a','#35476e','#28334f'][Math.random()*4|0];
-  const accent=mode==='sunset'?['#ffb86b','#ff7b6b','#ffe29a'][Math.random()*3|0]:['#61eaff','#ffd75a','#ff75d8','#9bffbd'][Math.random()*4|0];
-  paintFacade(base,accent);
-  const material=new THREE.MeshStandardMaterial({map:facTex.clone(),color:0xffffff,roughness:.86});material.map.needsUpdate=true;
-  const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,dep),material);b.position.set(x,h/2-1,z);cityG.add(b);
-  const roof=new THREE.Mesh(new THREE.BoxGeometry(w+.25,.22,dep+.25),new THREE.MeshStandardMaterial({color:accent,emissive:accent,emissiveIntensity:.22,roughness:.55}));roof.position.set(x,h-0.85,z);cityG.add(roof);
- }
- // Silueta urbana baja y escalonada detrás de la grada opuesta.
- for(let i=0;i<23;i++){
-  const x=-76+i*6.8,z=-39-Math.random()*5,w=4.5+Math.random()*2.2,h=8+Math.random()*15;
-  building(x,z,w,h,3+Math.random()*2);
- }
- // Dos torres decorativas muy exteriores, por detrás de las esquinas y fuera del encuadre cercano.
- for(const side of [-1,1]) for(let i=0;i<3;i++){
-  const x=side*(39+i*5),z=-27-i*4,w=3.5+Math.random()*1.5,h=10+Math.random()*10;
-  building(x,z,w,h,3.5);
- }
- // Cordillera al fondo: siluetas superpuestas detrás de los edificios para cerrar el horizonte.
- const mountainMats=[0x547b91,0x426b83,0x36576f,0x66889a].map((c,i)=>new THREE.MeshStandardMaterial({color:c,roughness:1,flatShading:true}));
- for(let layer=0;layer<3;layer++){
-  const pts=[];const count=34;
-  for(let i=0;i<=count;i++){
-   const x=-112+i*(224/count);
-   const peak=5+Math.abs(Math.sin(i*1.71+layer*1.8))* (7+layer*3)+Math.abs(Math.cos(i*.63+layer))*4;
-   pts.push([x,peak]);
-  }
-  const verts=[];for(let i=0;i<count;i++){
-   const x1=pts[i][0],y1=pts[i][1],x2=pts[i+1][0],y2=pts[i+1][1];
-   verts.push(x1,-1.3,-57-layer*9,x2,-1.3,-57-layer*9,x2,y2,-57-layer*9,x1,-1.3,-57-layer*9,x2,y2,-57-layer*9,x1,y1,-57-layer*9);
-  }
-  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geo.computeVertexNormals();
-  cityG.add(new THREE.Mesh(geo,mountainMats[layer]));
- }
- // Nieve/luz suave en las cumbres de la cordillera lejana.
- const snowMat=new THREE.MeshBasicMaterial({color:0xc8e2e8,transparent:true,opacity:.62,side:THREE.DoubleSide});
- for(let i=0;i<13;i++){
-  const x=-90+i*15.0,y=12+Math.abs(Math.sin(i*1.71))*9;
-  const cap=new THREE.Mesh(new THREE.ConeGeometry(2.4,3.8,4),snowMat);cap.position.set(x,y,-58-(i%3)*8);cap.rotation.y=Math.PI/4;cityG.add(cap);
- }
- // Grandes paneles luminosos de ciudad
- for(const [x,z,rot] of [[-27,-39,0],[27,-39,0],[-48,0,Math.PI/2],[48,0,-Math.PI/2]]){const board=new THREE.Mesh(new THREE.BoxGeometry(9,3.2,.35),new THREE.MeshBasicMaterial({color:mode==='sunset'?0xff7d53:0x26c9ff}));board.position.set(x,8,z);board.rotation.y=rot;cityG.add(board);const inner=new THREE.Mesh(new THREE.BoxGeometry(8.3,2.5,.38),new THREE.MeshBasicMaterial({color:mode==='sunset'?0x42234f:0x142f65}));inner.position.copy(board.position);inner.rotation.copy(board.rotation);inner.position.y+=.05;cityG.add(inner);}
-}
-buildStadium('city');
+// Legacy stadium builder removed. New PMD renderer defined below.
+
 // Reutiliza la ilustración integrada del inicio para vestir también la selección de equipos/estadio.
 try{$('menu').style.backgroundImage='linear-gradient(90deg,rgba(5,14,39,.62) 0%,rgba(5,14,39,.34) 45%,rgba(5,14,39,.06) 100%)';$('menu').style.backgroundSize='cover';$('menu').style.backgroundPosition='center';}catch(e){}
 document.querySelectorAll('#stadiumPick button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#stadiumPick button').forEach(x=>x.classList.toggle('on',x===b));buildStadium(b.dataset.stadium)}));
@@ -5238,8 +5169,7 @@ function pmdNewStadium(mode){
 }
 
 // Modern illustrated stage router. All game rules, camera, controls and UI tabs unchanged.
-const _bs=buildStadium;
-buildStadium=function(m){
+function buildStadium(m){
  disposeCityV3();disposeWorldV31();disposeBeachV4();disposeMDWorld();disposeScenicTextures();
  mdPaintPitch(m);
  mdPaintApron(m);
@@ -5248,55 +5178,9 @@ buildStadium=function(m){
  cityFloor.visible=false;
  pmdNewStadium(m);
  syncBiomeWeather();envApply();envChipUpdate();
-};
+}
 cityG.clear();
 // Fondo de los arcos: gradas escalonadas, muro con franjas de luz, techo, vallas y skyline.
-function buildEnds(mode){
- if(mode==='city'){
-  // Siete escalones laterales reales bajo el público. Sin pantallas/muros gigantes.
-  const stone=new THREE.MeshStandardMaterial({color:0x526a76,roughness:1});
-  const edge=new THREE.MeshBasicMaterial({color:0x192d3b}),accent=new THREE.MeshBasicMaterial({color:0xdcb67b});
-  for(const side of [-1,1]){
-   for(let r=0;r<7;r++){
-    const h=.55*(Math.min(r,3)+1)+Math.max(0,r-3)*.5,x=side*(HX+2.6+r*1.15);
-    const slab=new THREE.Mesh(new THREE.BoxGeometry(1.12,h,HZ*2+DZ+11),stone);
-    slab.position.set(x,h/2,-DZ/2);cityG.add(slab);
-    const seat=new THREE.Mesh(new THREE.BoxGeometry(.99,.12,HZ*2+DZ+11),seatMat(1,20));
-    seat.position.set(x,h+.05,-DZ/2);cityG.add(seat);
-    const line=new THREE.Mesh(new THREE.BoxGeometry(.16,.22,HZ*2+DZ+11),edge);
-    line.position.set(x-side*.54,h+.05,-DZ/2);cityG.add(line);
-    const lip=new THREE.Mesh(new THREE.BoxGeometry(.10,.08,HZ*2+DZ+11),accent);
-    lip.position.set(x-side*.56,h+.16,-DZ/2);cityG.add(lip);
-   }
-   const ad=new THREE.Mesh(new THREE.PlaneGeometry(HZ*2+8,1.2),new THREE.MeshBasicMaterial({map:adT,side:THREE.DoubleSide}));
-   ad.position.set(side*(HX+2.45),.75,0);ad.rotation.y=side>0?-Math.PI/2:Math.PI/2;cityG.add(ad);
-  }
-  return;
- }
-
- const sunset=mode==='sunset',tw=HZ*2+16,TH=BIOMES[mode],wallCol=TH?TH.wall:(mode==='city'?0x8b9988:sunset?0x3a2748:0x1a2a58),glow=TH?TH.glow:(mode==='city'?0xb7c38a:sunset?0xff9d5c:0x2fd0ff);
-
- for(const s of [-1,1]){
-  for(let r=0;r<7;r++){
-   const by=.55*(Math.min(r,3)+1)+Math.max(0,r-3)*.5,x=s*(HX+2.6+r*1.15);
-   const b=new THREE.Mesh(new THREE.BoxGeometry(1.15,by,tw),seatMat(tw/2.2,by/1.1));b.position.set(x,by/2,0);cityG.add(b);
-  }
-  // Vallado bajo y discontinuo: nunca una muralla que tape el fondo.
-  const wx=s*(HX+17.4),wh=TH?2.5:2.8;
-  const barrierMat=new THREE.MeshStandardMaterial({color:wallCol,roughness:1,transparent:true,opacity:.88});
-  for(let z=-tw/2;z<tw/2;z+=7.8){
-   const bar=new THREE.Mesh(new THREE.BoxGeometry(.5,wh,6.3),barrierMat);
-   bar.position.set(wx,wh/2,z+3.15);cityG.add(bar);
-  }
-  const rail=new THREE.Mesh(new THREE.BoxGeometry(.38,.21,tw+6),new THREE.MeshStandardMaterial({color:0x7b8580,roughness:.7}));
-  rail.position.set(wx,wh+.08,0);cityG.add(rail);
-  // No reinstalar líneas LED verticales sobre la antigua muralla.
-  // Sin cubierta alta que tape las casas, montañas ni paisajes ilustrados.
-  const ad=new THREE.Mesh(new THREE.PlaneGeometry(tw-6,1.3),new THREE.MeshBasicMaterial({map:adT}));ad.position.set(s*(HX+2.45),.75,0);ad.rotation.y=s>0?-Math.PI/2:Math.PI/2;cityG.add(ad);
-  // Cada bioma conserva únicamente sus propias estructuras del diorama.
-
- }
-}
 cityFloor.visible=false;
 // Start strictly with the new renderer; never re-inject the old city/ends/MD layers.
 buildStadium(stadiumMode);
