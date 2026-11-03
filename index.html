@@ -758,7 +758,8 @@ function finishPlayersEntrance(){
   p.mv=false;p.introBob=0;p.g.position.set(p.x,0,p.z);
  }
  stadiumEntrance=null;
- if(ready&&!netOn())sfx('whistle');
+ // Silbato una sola vez al terminar la entrada, también en modo online.
+ if(ready&&(!netOn()||NET.role==='guest'||NET.role==='host'&&NET.guestReady))sfx('whistle');
 }
 const stadiumIntro=document.createElement('div');
 stadiumIntro.setAttribute('aria-hidden','true');
