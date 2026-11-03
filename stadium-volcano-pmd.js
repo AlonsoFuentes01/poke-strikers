@@ -31,11 +31,6 @@ function build(o){
   for(const [dx,dy,w,h] of [[-58,10,87,25],[-33,-7,79,34],[18,-23,83,50],[54,-2,64,27]])
    r(q,x+dx*scale,y+dy*scale,w*scale,h*scale,C.cloud);
  }
- function pine(q,x,y,s=1){
-  r(q,x-6*s,y-20*s,12*s,25*s,C.wood);
-  for(let i=0;i<3;i++)poly(q,[[x-28*s,y-(20+i*18)*s],[x,y-(67+i*14)*s],[x+28*s,y-(20+i*18)*s]],i%2?C.tree:C.treeDark);
-  poly(q,[[x-17*s,y-76*s],[x,y-111*s],[x+17*s,y-76*s]],C.treeLight);
- }
  function tree(q,x,y,s=1){
   // Basalto y obsidiana en la misma escala y posiciones que los árboles PMD.
   r(q,x-40*s,y-12*s,80*s,12*s,C.ink);
@@ -61,59 +56,6 @@ function build(o){
      [xx+3,base-h*.45],[xx+3,base-1]],i%2?C.flower2:C.flower);
    r(q,xx-1,base-h+5,2,Math.max(2,h*.35),C.waterLight);
   }
- }
- function window(q,x,y,w=20,h=27){
-  r(q,x-3,y-3,w+6,h+6,C.ink);r(q,x,y,w,h,C.water);
-  r(q,x+3,y+3,6,h*.36,C.waterLight);r(q,x+w-4,y,4,h,C.ink);
-  r(q,x,y+h-5,w,5,C.stoneLight);
-  // Vidrios divididos, marcos en madera y brillo diagonal discreto.
-  r(q,x+w/2-1,y,3,h,C.ink);
-  r(q,x,y+h*.52,w,3,C.ink);
-  for(let k=0;k<3;k++)r(q,x+3+k*3,y+3+k*4,6,2,'rgba(235,250,255,.6)');
-  r(q,x-3,y+h+3,w+6,3,C.stoneDark);
-
- }
- function building(q,x,base,w,h,opt={}){
-  const y=base-h;const roof=opt.roof||C.roof;
-  r(q,x-5,y+6,w+10,h+3,C.ink);r(q,x,y,w,h,opt.wall||C.stone);
-  poly(q,[[x-11,y+11],[x+12,y-16],[x+w-14,y-16],[x+w+12,y+11]],C.roofDark);
-  poly(q,[[x-8,y+8],[x+15,y-15],[x+w-17,y-15],[x+w+8,y+8]],roof);
-  r(q,x,y+10,w,5,C.roofLight);r(q,x-3,base-7,w+6,8,C.stoneLight);
-  // Tejas vistas, imposta, piedra imperfecta y reflejos: pixel art a escala nativa.
-  for(let ry=y-12;ry<y+8;ry+=6)for(let rx=x+4+(ry%12?8:0);rx<x+w-5;rx+=17){
-   r(q,rx,ry,13,2,ry%12?C.roofLight:C.roofDark);
-   r(q,rx+2,ry+3,10,1,'rgba(255,218,174,.38)');
-  }
-  for(let by=y+16;by<base-9;by+=13){
-   r(q,x+2,by,w-4,1,'rgba(117,81,92,.26)');
-   for(let bx=x+3+((by/13|0)%2)*14;bx<x+w-6;bx+=29)
-    r(q,bx,by+2,1,9,'rgba(116,83,83,.18)');
-  }
-  r(q,x+4,base-14,w-8,2,'rgba(255,236,193,.75)');
-  for(let k=0;k<5;k++){
-   const px=x+7+rand()*(w-14),py=y+22+rand()*Math.max(1,h-48);
-   r(q,px,py,3+rand()*6,2,'rgba(247,229,199,.32)');
-  }
-
-  const cols=Math.max(1,Math.floor((w-15)/29)),rows=Math.max(1,Math.floor((h-25)/43));
-  for(let iy=0;iy<rows;iy++)for(let ix=0;ix<cols;ix++){
-   const xx=x+12+ix*(w-24)/cols,yy=y+28+iy*38;
-   if(yy+29<base)window(q,xx,yy,17,23);
-  }
-  if(opt.shop){
-   r(q,x+8,base-37,w-16,32,C.ink);r(q,x+11,base-34,w-22,27,C.water);
-   r(q,x+17,base-30,12,13,C.waterLight);r(q,x+5,base-48,w-10,17,C.roofDark);
-   for(let i=0;i<Math.floor((w-10)/17);i++)r(q,x+6+i*17,base-47,16,15,i%2?C.stoneLight:roof);
-  }
- }
- function clockTower(q,x,base){
-  r(q,x-31,base-214,62,214,C.ink);r(q,x-26,base-210,52,205,C.stone);
-  r(q,x-38,base-227,76,19,C.roofDark);r(q,x-33,base-231,66,17,C.roof);
-  r(q,x-24,base-257,48,26,C.ink);r(q,x-18,base-252,36,21,C.stoneLight);
-  r(q,x-5,base-268,10,13,C.roof);
-  circle(q,x,base-176,28,C.ink);circle(q,x,base-176,23,C.stoneLight);
-  r(q,x-2,base-195,4,22,C.ink);r(q,x,base-177,13,4,C.ink);
-  window(q,x-12,base-123,24,33);window(q,x-12,base-60,24,36);
  }
  // Pixel tiles based on the actual visual reference, not a retextured old model.
  const pavement=canvas(1024,614,(q)=>{
@@ -368,7 +310,13 @@ function build(o){
     const sx=xx-34+k*21;
     r(q,sx,263,16,20,C.ink);r(q,sx+3,266,10,13,C.stone);
    }
-   window(q,xx-11,326,22,40);window(q,xx-11,417,22,39);
+   // Hornacinas ardientes en las torres, sin vidrio.
+   for(const yy of [326,417]){
+    r(q,xx-14,yy-3,28,45,C.ink);
+    r(q,xx-10,yy+1,20,37,C.water);
+    r(q,xx-5,yy+5,9,27,C.waterLight);
+    r(q,xx-16,yy+39,32,5,C.stoneLight);
+   }
   }
   // Portal incandescente con un arco tallado a mano (misma escala PMD).
   r(q,682,397,169,106,C.ink);
@@ -544,48 +492,61 @@ function build(o){
   return mesh;
  }
  const plantTex=canvas(128,104,q=>{
-  // Piedra y cerámica con vegetación en capas.
-  r(q,8,83,113,9,'rgba(52,62,77,.28)');
-  r(q,14,57,101,27,C.ink);r(q,19,59,91,21,C.stone);
-  r(q,16,54,96,9,C.stoneLight);r(q,24,77,84,5,C.stoneDark);
-  for(let j=0;j<13;j++){
-   const x=21+j*7;
-   r(q,x,45-(j%4)*4,11,14,j%3===0?C.treeDark:j%2?C.tree:C.treeLight);
-   r(q,x+3,41-(j%3)*7,7,8,j%4===0?C.flower2:j%3===0?C.flower:'#f6a5c4');
-   r(q,x+5,38-(j%3)*7,3,3,C.stoneLight);
+  // Peanas con cristales, no arbustos ni plantas.
+  r(q,7,85,115,10,C.ink);r(q,14,68,99,22,C.stoneDark);
+  r(q,16,65,95,7,C.stoneLight);
+  for(let k=0;k<6;k++){
+   const x=20+k*16,h=21+(k%3)*13,w=8+(k%2)*3;
+   poly(q,[[x-w,69],[x-w,69-h*.6],[x,69-h],
+     [x+w,69-h*.6],[x+w+1,69]],C.ink);
+   poly(q,[[x-w+3,66],[x-w+3,69-h*.56],[x,72-h],
+     [x+w-3,69-h*.55],[x+w-3,66]],k%3===0?C.waterLight:k%2?C.flower2:C.flower);
+   r(q,x-1,74-h,2,9,C.waterLight);
   }
-  r(q,38,64,9,2,'rgba(255,249,219,.42)');r(q,76,69,13,2,'rgba(255,249,219,.35)');
+  for(let i=0;i<11;i++)r(q,17+i*9,86+(i%2)*3,6,3,C.ink);
  });
  const bushTex=canvas(96,82,q=>{
-  r(q,9,72,77,6,'rgba(52,62,77,.20)');
-  for(let i=0;i<11;i++){
-   const x=15+i*6,y=39+(i%3)*5;
-   r(q,x,y,17,32,i%3===0?C.treeDark:i%2?C.tree:C.treeLight);
-   r(q,x+3,y-6,12,12,i%2?'#a6d477':'#67b687');
-   if(i%2===0)r(q,x+7,y-10,5,6,i%4?C.flower:C.flower2);
+  // Rocas apiladas con vetas de magma, como las del horizonte.
+  r(q,5,74,88,8,C.ink);
+  for(const [x,y,w,h] of [[11,65,39,38],[38,68,41,52],[58,69,31,33]]){
+   poly(q,[[x-w*.5,y],[x-w*.38,y-h*.53],[x-4,y-h],
+     [x+w*.43,y-h*.63],[x+w*.55,y]],C.ink);
+   poly(q,[[x-w*.33,y-2],[x-w*.28,y-h*.5],
+     [x-4,y-h+5],[x+w*.18,y-h*.59],[x+w*.3,y-2]],C.stoneDark);
+   r(q,x-7,y-h*.61,8,3,C.stoneLight);
+  }
+  for(const x of [27,66]){
+   r(q,x,53,4,14,C.water);r(q,x+1,56,2,8,C.waterLight);
   }
  });
  const lampTex=canvas(72,148,q=>{
-  r(q,29,135,21,7,'rgba(52,62,77,.23)');
-  r(q,32,45,9,93,C.ink);r(q,35,48,4,86,C.wood);
-  r(q,20,28,34,28,C.ink);r(q,24,33,26,20,'#f4ce85');
-  r(q,29,35,15,16,'#fff0b4');r(q,18,27,38,6,C.stoneLight);
-  r(q,27,19,22,9,C.ink);r(q,32,14,12,7,C.roofDark);
-  r(q,26,54,24,4,C.stoneDark);
+  // Brasero sobre pedestal de obsidiana, no farola urbana.
+  r(q,27,135,20,9,C.ink);r(q,30,68,14,68,C.stoneDark);
+  r(q,19,57,36,14,C.ink);r(q,22,60,30,7,C.stoneLight);
+  r(q,12,46,48,12,C.ink);r(q,17,48,38,7,C.stoneLight);
+  poly(q,[[22,46],[18,35],[25,22],[30,11],[37,27],
+    [43,7],[53,25],[57,46]],C.water);
+  poly(q,[[30,46],[28,29],[37,18],[42,45]],C.waterLight);
+  r(q,17,131,40,6,C.ink);
  });
  const pennantTex=canvas(92,128,q=>{
-  r(q,20,12,6,110,C.ink);r(q,22,13,3,107,C.wood);
-  poly(q,[[26,20],[80,25],[73,78],[55,95],[29,78]],C.ink);
-  poly(q,[[29,24],[76,29],[70,75],[55,89],[32,74]],C.banner);
-  r(q,38,34,27,5,C.waterLight);r(q,41,48,20,4,C.stoneLight);
-  circle(q,52,64,8,C.stoneLight);circle(q,52,64,4,C.roofDark);
+  r(q,19,12,9,111,C.ink);r(q,23,15,3,103,C.stone);
+  poly(q,[[28,20],[82,25],[78,76],[55,96],[30,78]],C.ink);
+  poly(q,[[32,24],[77,29],[73,72],[55,88],[34,73]],C.banner);
+  r(q,41,38,25,5,C.stoneLight);
+  circle(q,54,58,12,C.stoneLight);circle(q,54,58,8,C.roofDark);
+  r(q,46,56,16,4,C.stoneLight);circle(q,54,58,3,C.stoneLight);
  });
  const benchTex=canvas(112,75,q=>{
-  r(q,9,65,94,5,'rgba(52,62,77,.24)');
-  r(q,18,14,78,29,C.ink);r(q,23,17,68,21,C.wood);
-  for(let i=0;i<3;i++)r(q,26,20+i*6,62,3,i===1?C.woodLight:C.stoneDark);
-  r(q,12,44,88,12,C.ink);r(q,18,46,76,7,C.woodLight);
-  r(q,23,53,8,14,C.ink);r(q,82,53,8,14,C.ink);
+  // Altar volcánico de piedra y fisuras: no banco de madera.
+  r(q,8,68,98,7,C.ink);
+  r(q,15,21,84,48,C.ink);r(q,22,25,70,39,C.stoneDark);
+  r(q,12,17,89,12,C.stoneLight);
+  for(let i=0;i<7;i++){
+   const x=22+i*10;r(q,x,34,4,22,C.ink);
+   if(i%2===0)r(q,x+2,39,2,14,C.water);
+  }
+  r(q,20,59,72,5,C.stoneLight);r(q,12,64,90,6,C.ink);
  });
  const decorShadowMat=new THREE.MeshBasicMaterial({color:0x59455e,transparent:true,opacity:.15,depthWrite:false});
  function sideObject(tex,w,h,x,z,yOff=0,animate=false){
@@ -606,12 +567,12 @@ function build(o){
   life.push({mesh:lamp,phase:rand()*6.28,lamp:true});
   sideObject(pennantTex,3.2,4.4,side*(HX+7.2),-5.7,0,true);
  }
- // El borde cercano funciona como una plaza transitada, sin cruzar la línea lateral.
+ // Los bordes son senderos de obsidiana, fuera del terreno de juego.
  for(const x of [-23,-13,13,23]){
   sideObject(plantTex,4.4,3.1,x,HZ+3.8);
  }
  for(const x of [-28,28])sideObject(pennantTex,2.8,3.9,x,HZ+4.5,0,true);
- // Luciérnagas de la plaza al atardecer: parpadeo mínimo, sin partículas sobre el campo.
+ // Brasas ligeras del volcán, sin partículas sobre el campo.
  const glows=[];
  const glowTexture=mkTex(canvas(32,32,q=>{
   for(let k=5;k>=1;k--)circle(q,16,16,k*3,k>3?'rgba(255,220,125,.06)':k>1?'rgba(255,234,145,.15)':'rgba(255,252,217,.6)');
