@@ -2626,15 +2626,15 @@ function buildCityV3(){
  const block=(w,h,d,mat,x,y,z)=>add(new THREE.BoxGeometry(w,h,d),mat,x,y,z);
  const groundY=-1.55;
  // Suelo urbano continuo, sin fisuras entre edificios, calle y veredas.
- block(350,.08,160,sidewalk,0,groundY-.09,-88);
- block(346,.07,21,asphalt,0,groundY+.02,-55);
+ block(350,.08,160,sidewalk,0,groundY+.052,-88);
+ block(346,.07,21,asphalt,0,groundY+.07,-55);
  block(346,.12,3.5,curb,0,groundY+.06,-66.8);
  block(346,.12,4.2,curb,0,groundY+.06,-42.7);
  block(346,.06,2.4,sidewalk,0,groundY+.12,-69);
  block(346,.06,2.9,sidewalk,0,groundY+.12,-40.5);
  // Dos calles perpendiculares crean intersecciones reales en las manzanas.
  for(const crossX of [-55,67]){
-  block(13,.08,91,asphalt,crossX,groundY+.06,-104);
+  block(13,.08,91,asphalt,crossX,groundY+.072,-104);
   for(const dz of [-95,-82,-70])block(1,.025,3,mark,crossX,groundY+.115,dz);
   for(let z=-63;z<=-46;z+=2.5)block(1.55,.023,1.2,curb,crossX-8,groundY+.12,z);
  }
@@ -2726,8 +2726,8 @@ function buildCityV3(){
    const cx=x+w/2;
    x+=w+.75;
    // Las bocacalles quedan libres, se conectan visualmente a las intersecciones.
-   if((Math.abs(cx+55)<11||Math.abs(cx-67)<11)&&!back)continue;
-   const h=back?17+rnd()*17:17+rnd()*13,depth=back?9+rnd()*4:10+rnd()*5;
+   if(Math.abs(cx+55)<11||Math.abs(cx-67)<11)continue;
+   const h=back?14+rnd()*11:12+rnd()*12,depth=back?9+rnd()*4:10+rnd()*5;
    const z=back?-113:-83;
    const matId=i%wallCols.length,body=block(w,h,depth,sideMats[matId],cx,h*.5+groundY,z);
    const frontZ=z+depth/2+.045;
@@ -2765,6 +2765,15 @@ function buildCityV3(){
   block(2.7,.21,.42,metal,x+1.1,7.75,-42.6);
   block(1.3,.24,.8,lamp,x+2.05,7.5,-42.6);
  }
+ // Charcos de lluvia temporales en el pavimento, vinculados al clima de Ciudad.
+ const wetShine=new THREE.MeshBasicMaterial({color:0x98b9bf,transparent:true,opacity:0,depthWrite:false});
+ for(let i=0;i<13;i++){
+  const x=-135+i*22+(rnd()-.5)*6;
+  const pool=new THREE.Mesh(new THREE.CircleGeometry(1.0+rnd()*1.4,12),wetShine);
+  pool.rotation.x=-Math.PI/2;pool.scale.y=.28+rnd()*.3;
+  pool.position.set(x,groundY+.116,-53+(rnd()-.5)*11);cgroup.add(pool);
+ }
+ BIO.anims.push(()=>{wetShine.opacity=Math.min(.24,WXc.rain*.14+wetAcc*.08);});
  // Señales, contenedores y paradas, todos anclados a la vereda.
  const poster=document.createElement('canvas');poster.width=128;poster.height=64;
  const pq=poster.getContext('2d');pq.fillStyle='#3d6c6b';pq.fillRect(0,0,128,64);
@@ -2781,6 +2790,18 @@ function buildCityV3(){
  // Evento: Meowth realmente posa en un balcón de la calle.
  let anchor=buildings.find(b=>!b.back&&b.x<-70&&b.x>-121);
  if(!anchor)anchor=buildings.find(b=>!b.back);
+ // Balcón 3D de evento, conectado a la fachada seleccionada.
+ if(anchor){
+  const by=anchor.y*.53+groundY;
+  block(anchor.w*.65,.24,1.8,brick,anchor.x,by,anchor.frontZ+.83);
+  for(const dx of [-anchor.w*.3,0,anchor.w*.3])
+   block(.15,1.6,.14,dark,anchor.x+dx,by+.83,anchor.frontZ+1.7);
+  block(anchor.w*.65,.16,.16,dark,anchor.x,by+1.65,anchor.frontZ+1.7);
+  for(const dx of [-2.2,2.2]){
+   block(.75,.6,.65,brick,anchor.x+dx,by+.56,anchor.frontZ+1.45);
+   block(.6,.25,.5,greens,anchor.x+dx,by+.94,anchor.frontZ+1.45);
+  }
+ }
  const meowthT=loader.load(spr(52),t=>{
   t.encoding=THREE.sRGBEncoding;t.magFilter=THREE.NearestFilter;t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;
  });
@@ -3344,7 +3365,7 @@ void main(){
 const _bs=buildStadium;buildStadium=function(m){
  disposeScenicTextures();
  if(BIOMES[m]){buildBiome(m);buildEnds(m);livingLandscape(m);livingWorldV2(m);ambientStory(m);stadiumLightShow(m,BIOMES[m].glow);syncBiomeWeather();envApply();envChipUpdate();return}
- if(m==='city'){stadiumMode='city';cityG.clear();BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.color.setHex(0xffffff);buildEnds('city');buildCityV3();syncBiomeWeather();envApply();envChipUpdate();return}
+ if(m==='city'){stadiumMode='city';cityG.clear();BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=null;cityFloor.material.color.setHex(0x9fa69f);cityFloor.material.needsUpdate=true;buildEnds('city');buildCityV3();syncBiomeWeather();envApply();envChipUpdate();return}
  BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=cityFloorTex;cityFloor.material.needsUpdate=true;
  stadiumMode=m;cityG.clear();cityFloor.material.color.setHex(m==='sunset'?0xd6c6aa:m==='classic'?0xc0cfbd:0xffffff);buildEnds(m);if(m==='city')ordinaryCityStadium();livingLandscape(m);livingWorldV2(m);ambientStory(m);if(m!=='city')stadiumLightShow(m,m==='sunset'?0xff9d5c:0x9bd9ff);syncBiomeWeather();envApply();envChipUpdate()};
 cityG.clear();
