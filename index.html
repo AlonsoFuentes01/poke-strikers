@@ -1933,6 +1933,18 @@ function bBeach(){
  // palmeras (instanciadas)
  const palmTex=bcan(64,64,(q,w,h)=>{q.fillStyle='#7a5a38';q.fillRect(0,0,w,h);for(let x=0;x<w;x+=8){q.fillStyle='rgba(40,24,10,.45)';q.fillRect(x,0,3,h)}for(let i=0;i<260;i++){q.fillStyle='rgba(255,230,180,.1)';q.fillRect(brnd()*w,brnd()*h,2,1)}});palmTex.repeat.set(16,1);
  const trunkM=new THREE.MeshStandardMaterial({map:palmTex,roughness:.9}),frondM=new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,roughness:.7});
+ // Hojas de palmera: ráfagas y ondulación real por vértice, sin animación CPU.
+ frondM.onBeforeCompile=sh=>{
+  sh.uniforms.uPalmTime=BIO.T;
+  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uPalmTime;')
+   .replace('#include <begin_vertex>',`#include <begin_vertex>
+    float windPhase=uPalmTime*2.25+instanceMatrix[3].x*.08+instanceMatrix[3].z*.07;
+    float gust=sin(windPhase+uv.y*8.)*.7+sin(windPhase*.43+uv.y*4.)*.3;
+    transformed.x+=gust*pow(uv.y,1.8)*1.35;
+    transformed.z+=cos(windPhase*.85+uv.y*6.)*pow(uv.y,1.6)*.7;
+   `);
+ };
+ frondM.customProgramCacheKey=()=> 'palm-fronds-wind-v2';
  const nP=Math.round(34*bQ()),lists=[[],[],[]];
  for(let i=0;i<nP;i++){
   let x,z;const r=brnd();
@@ -2482,6 +2494,17 @@ function livingWorldV2(mode){
   const isRock=mode==='space';
   const trunkMat=new THREE.MeshStandardMaterial({color:mode==='arctic'?0x594f52:mode==='volcano'?0x211a19:mode==='desert'?0x65834c:0x35406f,roughness:.95});
   const crownMat=new THREE.MeshStandardMaterial({color:mode==='arctic'?0xc4e1dc:mode==='volcano'?0x40352b:mode==='desert'?0x548b4a:0x9c8cee,roughness:.82,metalness:mode==='space'?.24:0,flatShading:true});
+  // Las copas de la tundra y los árboles secos se doblan con el viento.
+  crownMat.onBeforeCompile=sh=>{
+   sh.uniforms.uWorldWind=BIO.T;
+   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uWorldWind;')
+    .replace('#include <begin_vertex>',`#include <begin_vertex>
+    float gust=sin(uWorldWind*1.45+instanceMatrix[3].x*.12+instanceMatrix[3].z*.08);
+    transformed.x+=gust*max(0.,position.y)*.27;
+    transformed.z+=sin(uWorldWind*.85+instanceMatrix[3].z*.15)*max(0.,position.y)*.16;
+    `);
+  };
+  crownMat.customProgramCacheKey=()=> 'biome-crown-wind-v2';
   const tGeo=new THREE.CylinderGeometry(mode==='desert'?.34:.22,.46,1,5);
   const cGeo=mode==='space'?new THREE.OctahedronGeometry(1,0):mode==='desert'?new THREE.SphereGeometry(1,6,5):new THREE.ConeGeometry(1,2,6);
   const trunks=new THREE.InstancedMesh(tGeo,trunkMat,N);
