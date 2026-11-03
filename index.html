@@ -715,14 +715,63 @@ const cam=new THREE.OrthographicCamera(-50,50,30,-30,.1,600);
 const CAMERA_2D_POS=new THREE.Vector3(0,110,220),CAMERA_2D_LOOK=new THREE.Vector3(0,4,-2);
 // Inicio con vista general. El encuadre del partido amplía los Pokémon.
 const CAM_ZOOM_GAME=1.19,CAM_ZOOM_INTRO=.64,CAM_INTRO_SECONDS=4.6;
-let targetZoom2D=CAM_ZOOM_GAME,camIntroLeft=0;
+let targetZoom2D=CAM_ZOOM_GAME,camIntroLeft=0,stadiumEntrance=null;
+// Entrada en formación: salen del edificio por el centro, bajan y toman sus puestos.
+// Su movimiento es puramente visual y no cambia la física del partido.
+function beginPlayersEntrance(){
+ stadiumEntrance=P.map((p,i)=>{
+  const lane=i%3,side=p.t?1:-1,delay=lane*.14+(p.t?.09:0);
+  const fromX=side*(1.15+lane*.85),fromZ=-25.4-lane*.75;
+  const entry={p,fromX,fromZ,toX:p.x,toZ:p.z,delay};
+  p.x=p.px=fromX;p.z=p.pz=fromZ;p.mv=true;p.fx=0;p.fz=1;
+  p.g.position.set(fromX,0,fromZ);
+  return entry;
+ });
+}
+function walkPlayersEntrance(t){
+ if(!stadiumEntrance||!ready)return;
+ const elapsed=CAM_INTRO_SECONDS-camIntroLeft;
+ for(const entry of stadiumEntrance){
+  const {p,fromX,fromZ,toX,toZ,delay}=entry;
+  const u=Math.max(0,Math.min(1,(elapsed-delay)/(CAM_INTRO_SECONDS-delay)));
+  let x,z;
+  if(u<.59){
+   const v=u/.59,soft=v*v*(3-2*v);
+   x=fromX*(1-.38*soft);
+   z=fromZ+(-11.5-fromZ)*soft;
+  }else{
+   const v=(u-.59)/.41,soft=v*v*(3-2*v);
+   x=fromX*.62+(toX-fromX*.62)*soft;
+   z=-11.5+(toZ+11.5)*soft;
+  }
+  p.fx=x>p.x+.02?1:x<p.x-.02?-1:0;
+  p.fz=z>p.z+.02?1:z<p.z-.02?-1:0;
+  p.x=p.px=x;p.z=p.pz=z;p.mv=u<.995;
+  p.introBob=p.mv?Math.abs(Math.sin(t*.011+delay*10))*.16:0;
+ }
+}
+function finishPlayersEntrance(){
+ if(!stadiumEntrance)return;
+ for(const entry of stadiumEntrance){
+  const p=entry.p;
+  p.x=p.px=entry.toX;p.z=p.pz=entry.toZ;
+  p.mv=false;p.introBob=0;p.g.position.set(p.x,0,p.z);
+ }
+ stadiumEntrance=null;
+ if(ready&&!netOn())sfx('whistle');
+}
 const stadiumIntro=document.createElement('div');
 stadiumIntro.setAttribute('aria-hidden','true');
 stadiumIntro.style.cssText='position:fixed;left:50%;top:24%;transform:translate(-50%,0) scale(1.05);z-index:9;pointer-events:none;display:none;opacity:0;text-align:center;white-space:nowrap;filter:drop-shadow(0 3px 3px #1119);';
 stadiumIntro.innerHTML='<div style="display:inline-block;padding:10px 24px;background:#243651dc;border:3px solid #eed49b;border-radius:10px;box-shadow:0 5px 0 #131f37a0;color:#ffe8af;font:bold clamp(17px,3.3vw,38px) system-ui,sans-serif;letter-spacing:2px">🏟️ ESTADIO CIUDAD</div><div style="color:#fff5d9;font:700 clamp(11px,1.7vw,18px) system-ui,sans-serif;margin-top:10px;letter-spacing:3px">POKÉ STRIKERS</div>';
 document.body.appendChild(stadiumIntro);
-function showStadiumIntro(){camIntroLeft=CAM_INTRO_SECONDS;cam.zoom=CAM_ZOOM_INTRO;targetZoom2D=CAM_ZOOM_INTRO;cam.updateProjectionMatrix();stadiumIntro.style.display='block';stadiumIntro.style.opacity='0';}
-function hideStadiumIntro(){camIntroLeft=0;stadiumIntro.style.display='none';}
+function showStadiumIntro(){
+ camIntroLeft=CAM_INTRO_SECONDS;cam.zoom=CAM_ZOOM_INTRO;
+ targetZoom2D=CAM_ZOOM_INTRO;cam.updateProjectionMatrix();
+ stadiumIntro.style.display='block';stadiumIntro.style.opacity='0';
+ beginPlayersEntrance();
+}
+function hideStadiumIntro(){camIntroLeft=0;stadiumIntro.style.display='none';stadiumEntrance=null;}
 function resetCamera2D(){
  cam.position.copy(CAMERA_2D_POS);cam.up.set(0,1,0);cam.lookAt(CAMERA_2D_LOOK);
  cam.zoom=CAM_ZOOM_GAME;targetZoom2D=CAM_ZOOM_GAME;camIntroLeft=0;
@@ -1343,6 +1392,7 @@ function doShoot(){const u=B&&B.o;if(!u||u!==user())return;const[dx,dz]=aimDir(u
 function doPass(u,air){const q=passTarget(u);if(!q)return;pass(u,q.x-u.x,q.z-u.z,q,air)}
 // Las acciones dependen del contexto: con balón → tiro/pase; sin balón → placaje/cambio. Clic izq. sin balón no hace nada.
 function actDown(a,has){
+ if(camIntroLeft>0)return;
  if(freeze&&goalCelebration){if(a==='shoot'&&!paused)goalJump();return}
   if(L4.on||!ready||freeze||over||paused)return;const u=user();
  if(a==='shoot'){if(has)shootArmed=true}
@@ -1354,7 +1404,7 @@ function actDown(a,has){
 }
 function actUp(a){
  if(L4.on||a!=='shoot')return;
- if(shootArmed&&ready&&!freeze&&!over&&!paused&&B&&B.o===user())doShoot();
+ if(shootArmed&&ready&&!camIntroLeft&&!freeze&&!over&&!paused&&B&&B.o===user())doShoot();
  shootArmed=false;charge=0;
 }
 function inputDown(code){if(L4.on)return;const has=!!(B&&B.o===user());actsOf(code).forEach(a=>actDown(a,has))}
@@ -1370,7 +1420,7 @@ function postHit(cx,cz){
  B.x=cx+nx*rr*1.002;B.z=cz+nz*rr*1.002;B.sup=false;B.tg=null;sfx('bounce',1);
 }
 function update(){
- if(!ready||(paused&&!netOn())||NET.role==='guest'||(NET.role==='host'&&NET.open&&!NET.guestReady))return;if(cheer>0)cheer--;
+ if(camIntroLeft>0||!ready||(paused&&!netOn())||NET.role==='guest'||(NET.role==='host'&&NET.open&&!NET.guestReady))return;if(cheer>0)cheer--;
  if(freeze>0){if(goalCelebration)celebrationWalk();if(--freeze==0){$('msg').textContent='';finishGoalCelebration();kickoff();sfx('whistle')}return}
  if(FK&&FK.hold>0){if(--FK.hold===0){$('msg').textContent='';sfx('whistle')}return}   // pausa de la falta
  if(FK&&B.o!==FK.p){FK=null;FKV=null}                                                 // el balón salió (pase)
@@ -1545,7 +1595,7 @@ async function start(){
  [0,1].forEach(t=>T[t].p.forEach((id,i)=>{if(i<3)P.push(mkPlayer(id,T[t].c,t,i==2,i));else{const b=mkPlayer(id,T[t].c,t,false,i-3);b.g.visible=false;BENCH[t].push(b)}}));
  await Promise.all([...P,...BENCH[0],...BENCH[1]].map(loadStats));buildCrowd(T);
  finishGoalCelebration();lastGoalShooter=null;score=[0,0];time=5400;beginStadiumAtmosphere();envChipUpdate();sta=1;charge=0;cameraCue=null;impactCue=0;power=0;powerBoost=0;possessionTicks=0;alt=false;l4Setup();netMatchInit();kickoff();resetCamera2D();showStadiumIntro();
- camLook.set(0,.8,0);lookT.set(0,.8,0);camBall.set(0,0,0);vb.x=vb.z=0;hud();$('msg').textContent=netOn()?'ESPERANDO AL RIVAL…':'';ready=true;if(!netOn())sfx('whistle');netReadyHook();
+ camLook.set(0,.8,0);lookT.set(0,.8,0);camBall.set(0,0,0);vb.x=vb.z=0;hud();$('msg').textContent=netOn()?'ESPERANDO AL RIVAL…':'';ready=true;netReadyHook();
 }
 // Online: la partida (y la revancha) solo empieza cuando AMBOS jugadores confirman "Listo".
 $('go').onclick=()=>{if(netOn())setReady(!NET.myReady);else start()};$('re').onclick=()=>{if(netOn())setReady(!NET.myReady);else start()};
@@ -2105,7 +2155,7 @@ function render(t){pollSplashPad();aimTick(t);ctlTick(t);const dt=Math.min(.1,cl
     if(goalCelebration.elapsed>.6&&!goalCelebration.hasJumped)goalJump();
    }
    const u=user();
-  P.forEach(p=>{const _ix=p.px==null?p.x:p.px+(p.x-p.px)*alpha,_iz=p.pz==null?p.z:p.pz+(p.z-p.pz)*alpha;p.g.position.set(_ix,0,_iz);
+  P.forEach(p=>{const _ix=p.px==null?p.x:p.px+(p.x-p.px)*alpha,_iz=p.pz==null?p.z:p.pz+(p.z-p.pz)*alpha;p.g.position.set(_ix,p.introBob||0,_iz);
    if(goalCelebration&&goalCelebration.player===p){
     const j=goalCelebration.jumpT;
     p.g.position.y=j>=0&&j<.66?Math.sin(Math.PI*j/.66)*1.6:0;
@@ -2141,6 +2191,7 @@ function render(t){pollSplashPad();aimTick(t);ctlTick(t);const dt=Math.min(.1,cl
   let nextZoom=CAM_ZOOM_GAME;
   if(camIntroLeft>0){
    camIntroLeft=Math.max(0,camIntroLeft-dt);
+   walkPlayersEntrance(t);
    const p=1-camIntroLeft/CAM_INTRO_SECONDS;
    // 0–1.0 s: plano panorámico, 1.0–4.6 s: acercamiento progresivo.
    const k=Math.max(0,Math.min(1,(p-.20)/.80)),ease=k*k*(3-2*k);
@@ -2148,7 +2199,7 @@ function render(t){pollSplashPad();aimTick(t);ctlTick(t);const dt=Math.min(.1,cl
    const alpha=Math.max(0,Math.min(1,p/.10,(.86-p)/.15));
    stadiumIntro.style.opacity=String(alpha);
    stadiumIntro.style.transform='translate(-50%,0) scale('+(1.06-.06*ease).toFixed(3)+')';
-   if(camIntroLeft===0)stadiumIntro.style.display='none';
+   if(camIntroLeft===0){stadiumIntro.style.display='none';finishPlayersEntrance();}
   }else if(fkCam)nextZoom=1.24;
   else if(goalCelebration||(cameraCue&&cameraCue.kind==='goal'))nextZoom=1.29;
   else if(cameraCue&&cameraCue.kind==='shot')nextZoom=1.24;
@@ -2692,7 +2743,7 @@ function netSnapApply(m){
  (m.ev||[]).forEach(netEvApply);
 }
 function guestFrame(dt){
- if(NET.role!=='guest'||!ready)return;
+ if(NET.role!=='guest'||!ready||camIntroLeft>0)return;
  const[ax,az]=axes();NETG.mx=ax;NETG.mz=az;
  const u=user();
  if(u&&B&&B.o===u&&shootArmed&&held('shoot'))charge=Math.min(1.2,charge+dt*.98*(u.chg||1));else if(B&&B.o!==u){shootArmed=false;charge=0}
@@ -2716,7 +2767,7 @@ function netRecv(m){
   case'team':netRegTeam(m);NET.peerTeam=teamOk(m.k)?m.k:null;netBarRender();break;
   case'ready':NET.peerReady=!!m.v;netBarRender();updateReadyUI();netCheckStart();break;
   case'start':if(NET.role==='guest')guestStart(m);break;
-  case'rdy':if(NET.role==='host'){NET.guestReady=true;if(ready&&$('msg').textContent==='ESPERANDO AL RIVAL…'){$('msg').textContent='';sfx('whistle')}}break;
+  case'rdy':if(NET.role==='host'){NET.guestReady=true;if(ready&&$('msg').textContent==='ESPERANDO AL RIVAL…'){$('msg').textContent='';if(camIntroLeft<=0)sfx('whistle')}}break;
   case'menu':if(NET.role==='guest'){restoreMyTeam();toMenu(true)}break;
   case'pg':netSend({t:'pn',ts:m.ts});break;
   case'pn':NET.ping=Date.now()-m.ts;updNetChip();break;
@@ -2808,7 +2859,7 @@ function netMatchInit(){
 function netReadyHook(){
  if(!netOn())return;
  if(NET.role==='guest'){netSend({t:'rdy'});if(NETG.pending){const p0=NETG.pending;NETG.pending=null;netSnapApply(p0)}}
- else if(NET.guestReady){$('msg').textContent='';sfx('whistle')}
+ else if(NET.guestReady){$('msg').textContent='';if(camIntroLeft<=0)sfx('whistle')}
 }
 function netMenu(fromNet){
  NET.myReady=NET.peerReady=false;
