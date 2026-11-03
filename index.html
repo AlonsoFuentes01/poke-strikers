@@ -2182,7 +2182,45 @@ function updateDirt(dt){let any=false;
 const STORM_RADIUS=3.15,STORM_WARNING_TICKS=100,STORM_STUN_TICKS=78;
 let stormNext=760,stormTarget=null,stormBoltAge=0,stormBolt=null;
 const stormMarks=[],stormLayer=new THREE.Group();S.add(stormLayer);
-const stormMarkGeometry=new THREE.CircleGeometry(1,32);
+// Marca quemada dibujada en pixel art: centro carbonizado, grietas doradas y ceniza.
+const stormScorchTex=(()=>{
+ const cv=document.createElement('canvas');cv.width=cv.height=128;
+ const q=cv.getContext('2d');q.imageSmoothingEnabled=false;
+ const rand=n=>{const r=Math.sin(n*71.3+19.4)*43758.54;return r-Math.floor(r);};
+ const cx=64,cy=64;
+ // Bordes irregulares y centro oscuro bien contrastado incluso en pavimento violeta.
+ for(let i=0;i<8;i++){
+  const r=54-i*5,alpha=i<3?.09:.16;
+  q.fillStyle='rgba(14,15,25,'+alpha+')';
+  q.beginPath();
+  for(let k=0;k<=32;k++){
+   const a=k*Math.PI/16,rad=r*(.89+.12*rand(k+i*47));
+   const x=cx+Math.cos(a)*rad,y=cy+Math.sin(a)*rad;
+   if(!k)q.moveTo(x,y);else q.lineTo(x,y);
+  }
+  q.closePath();q.fill();
+ }
+ q.fillStyle='rgba(24,21,32,.79)';q.beginPath();q.arc(cx,cy,28,0,Math.PI*2);q.fill();
+ // Grietas radiales con pequeños bordes incandescentes.
+ for(let k=0;k<11;k++){
+  const a=k*Math.PI*2/11+rand(k)*.21;
+  const r0=16+rand(k+20)*8,r1=39+rand(k+50)*15;
+  const bx=cx+Math.cos(a)*r0,by=cy+Math.sin(a)*r0;
+  const mx=cx+Math.cos(a+.16)*((r0+r1)*.5),my=cy+Math.sin(a+.16)*((r0+r1)*.5);
+  const ex=cx+Math.cos(a)*r1,ey=cy+Math.sin(a)*r1;
+  q.strokeStyle=k%3===0?'rgba(255,169,45,.89)':'rgba(15,15,23,.95)';
+  q.lineWidth=k%3===0?2:4;
+  q.beginPath();q.moveTo(bx,by);q.lineTo(mx,my);q.lineTo(ex,ey);q.stroke();
+ }
+ for(let k=0;k<42;k++){
+  const x=12+rand(k+100)*104,y=12+rand(k+200)*104;
+  const d=Math.hypot(x-cx,y-cy);if(d>57)continue;
+  q.fillStyle=k%4===0?'rgba(255,189,73,.55)':'rgba(31,27,39,.79)';
+  q.fillRect(x,y,2+Math.floor(rand(k+300)*5),2+Math.floor(rand(k+400)*4));
+ }
+ const t=new THREE.CanvasTexture(cv);t.encoding=THREE.sRGBEncoding;
+ t.magFilter=THREE.NearestFilter;t.minFilter=THREE.LinearFilter;t.generateMipmaps=false;return t;
+})();
 const stormMat=(color,opacity)=>new THREE.MeshBasicMaterial({
  color,opacity,transparent:true,depthTest:false,depthWrite:false,side:THREE.DoubleSide
 });
@@ -2287,11 +2325,24 @@ function stormWarn(x,z,send=true){
 }
 function stormImpact(x,z,damage=true){
  stormTarget=null;stormWarnMesh.visible=false;
- const mark=new THREE.Mesh(stormMarkGeometry,stormMat(0x272332,.46));
- mark.rotation.x=-Math.PI/2;mark.position.set(x,.08,z);mark.scale.set(STORM_RADIUS*.82,STORM_RADIUS*.82,1);
- mark.renderOrder=38;stormLayer.add(mark);stormMarks.push({mesh:mark,age:0});
+ const mark=new THREE.Mesh(
+  new THREE.PlaneGeometry(STORM_RADIUS*2.15,STORM_RADIUS*2.15),
+  new THREE.MeshBasicMaterial({map:stormScorchTex,transparent:true,opacity:1,depthTest:false,depthWrite:false,side:THREE.DoubleSide})
+ );
+ mark.rotation.x=-Math.PI/2;mark.position.set(x,.19,z);
+ mark.renderOrder=56;stormLayer.add(mark);stormMarks.push({mesh:mark,age:0});
  if(stormMarks.length>8){const old=stormMarks.shift();stormLayer.remove(old.mesh);old.mesh.material.dispose();}
- stormBoltAge=.72;stormBoltSprite.visible=true;stormBoltSprite.position.set(x,6.15,z);
+ stormBoltAge=.72;stormBoltSprite.visible=true;
+ // El punto de impacto está en el fotograma (55,137), no en su centro (56,80).
+ // Desplazar la lámina hacia arriba en pantalla para que la descarga caiga
+ // exactamente en el centro de la retícula, también con cámara cenital.
+ const screenOffset=((137-80)/160)*stormBoltSprite.scale.y;
+ const horizontalOffset=((55-56)/112)*stormBoltSprite.scale.x;
+ const cameraRight=new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld,0).normalize();
+ stormBoltSprite.position.set(x,.20,z)
+  .addScaledVector(cam.up,screenOffset)
+  .addScaledVector(cameraRight,-horizontalOffset);
+
  stormBoltMat.map=stormBoltTextures[0];
  thFlash=Math.max(thFlash,.9);
  if(damage){
@@ -2327,8 +2378,8 @@ function stormVisualTick(dt){
   if(stormBoltAge<=0)stormBoltSprite.visible=false;
  }
  for(let i=stormMarks.length-1;i>=0;i--){
-  const m=stormMarks[i];m.age+=dt;m.mesh.material.opacity=.46*Math.max(0,1-m.age/9);
-  if(m.age>=9){stormLayer.remove(m.mesh);m.mesh.material.dispose();stormMarks.splice(i,1);}
+  const m=stormMarks[i];m.age+=dt;m.mesh.material.opacity=m.age<13?1:Math.max(0,1-(m.age-13)/8);
+  if(m.age>=21){stormLayer.remove(m.mesh);m.mesh.material.dispose();stormMarks.splice(i,1);}
  }
 }
 function envTick(dt,t){
