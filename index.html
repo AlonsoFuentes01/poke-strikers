@@ -619,7 +619,7 @@ button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="./city-pmd-atlas.js?v=atlas-4d3e293"></script>
 <script src="./stadium-city-pmd.js"></script>
-<script src="./stadium-volcano-pmd.js?v=volcano-pmd-rebuild-1"></script>
+<script src="./stadium-volcano-pmd.js?v=volcano-stands-plaza-p2"></script>
 <script src="./city-pmd-v3.js?v=goal-bench-intro-2"></script>
 <script>
 const L={
@@ -1073,25 +1073,34 @@ function crowdAnimFor(id){
  }).catch(()=>{});
  return entry;
 }
-function buildCrowd(T){
- // Publico permanente e independiente de los equipos; cada especie usa sprites PMD animados.
- if(crowdBuilt)return;
- crowdBuilt=true;crowdG.clear();crowd=[];
- // Público auténtico PMD: colocado SOBRE los escalones, no suspendido
- // delante de las ventanas del Centro Pokémon ni sobre el tejado.
- const ids=[25,4,7,133,52,39,1,54,58,37,27,63,74,175,215,393];
- const xSeats=[-40.5,-37,-33.5,-30,30,33.5,37,40.5];
- let mdIdx=0;
- for(let row=0;row<2;row++)for(let i=0;i<xSeats.length;i++){
-  const id=ids[(i*7+row*3)%ids.length],anim=crowdAnimFor(id);
-  const sp=new THREE.Sprite(anim.mat),sz=2.8;
-  sp.scale.set(sz,sz,1);
-  const seatY=row?3.2:1.85,seatZ=row?-25.4:-24.6;
-  sp.position.set(xSeats[i],seatY,seatZ);
-  sp.renderOrder=2;crowdG.add(sp);
-  crowd.push({s:sp,by:seatY,baseY:seatY-sz*.49,ph:mdIdx*.7,
-   sp:.75+(i%3)*.07,anim,sz,hc:2.2});mdIdx++;
+function arrangeStadiumCrowd(){
+ // Sprites PMD reales en dos filas de asientos sobre cada gradería.
+ if(!crowd.length)return;
+ const volcano=stadiumMode==='volcano';
+ const xSeats=volcano?[-54,-47,-40,-33,33,40,47,54]:[-40.5,-37,-33.5,-30,30,33.5,37,40.5];
+ for(let i=0;i<crowd.length;i++){
+  const c=crowd[i],row=Math.floor(i/8),idx=i%8;
+  const y=volcano?(row?9.15:5.85):(row?3.2:1.85);
+  const z=volcano?(row?-29.2:-27.0):(row?-25.4:-24.6);
+  c.fit=false;c.hc=volcano?1.85:2.2;
+  c.s.scale.set(volcano?2.45:2.8,volcano?2.45:2.8,1);
+  c.s.position.set(xSeats[idx],y,z);c.by=y;
+  c.baseY=y-(volcano?2.45:2.8)*.49;
  }
+}
+function buildCrowd(T){
+ if(crowdBuilt){arrangeStadiumCrowd();return;}
+ crowdBuilt=true;crowdG.clear();crowd=[];
+ const ids=[25,4,7,133,52,39,1,54,58,37,27,63,74,175,215,393];
+ let mdIdx=0;
+ for(let row=0;row<2;row++)for(let i=0;i<8;i++){
+  const id=ids[(i*7+row*3)%ids.length],anim=crowdAnimFor(id);
+  const sp=new THREE.Sprite(anim.mat);
+  sp.scale.set(2.8,2.8,1);sp.renderOrder=2;crowdG.add(sp);
+  crowd.push({s:sp,by:0,baseY:0,ph:mdIdx*.7,
+   sp:.75+(i%3)*.07,anim,sz:2.8,hc:2.2,fit:false});mdIdx++;
+ }
+ arrangeStadiumCrowd();
 }
 // Ejecutar la vista previa solo después de inicializar crowdBuilt/crowdAnim.
 showMenuPreview(true);
@@ -2150,6 +2159,7 @@ function buildStadium(mode='city'){
  const opts={THREE,cityG,HX,HZ,GW,apron,pitchMat,SCENIC_TEXTURES};
  const stage=selected==='volcano'?window.PMD_VOLCANO.build(opts):window.PMD_CITY.build(opts);
  window.PMD_CITY.activeScene=stage;
+ arrangeStadiumCrowd();
  const sky=selected==='volcano'?0x563443:0x75bafa;
  S.background.setHex(sky);S.fog.color.setHex(sky);
  S.fog.near=190;S.fog.far=490;
