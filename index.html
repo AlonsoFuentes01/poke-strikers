@@ -4513,6 +4513,7 @@ function netSnapshot(){
 function netSnapApply(m){
  if(!ready){NETG.pending=m;return}
  NETG.snap=m;NETG.fv=m.fv?{kt:m.fv[0],bx:m.fv[1],bz:m.fv[2],fx:m.fv[3],fz:m.fv[4],az:m.fv[5],shot:!!m.fv[6],phase:m.fv[7]?'fly':'aim'}:null;time=m.T;cheer=m.C;freeze=m.F;NETG.ctl=m.ctl;
+ if(m.F===0&&goalCelebration)finishGoalCelebration(); // invitado online vuelve a la cámara de partido
  if(m.S[0]!==score[0]||m.S[1]!==score[1]){score=m.S.slice();hud()}
  if(m.M!==NETG.msg||m.MC!==NETG.mc){NETG.msg=m.M;NETG.mc=m.MC;$('msg').textContent=m.M;$('msg').style.color=m.MC||'#fff'}
  if(m.me){sta=m.me[0];power=m.me[1]}
