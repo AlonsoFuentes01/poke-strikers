@@ -1662,7 +1662,7 @@ async function start(){
 }
 // Online: la partida (y la revancha) solo empieza cuando AMBOS jugadores confirman "Listo".
 $('go').onclick=()=>{if(netOn())setReady(!NET.myReady);else start()};$('re').onclick=()=>{if(netOn())setReady(!NET.myReady);else start()};
-const toMenu=(fromNet)=>{hideStadiumIntro();finishGoalCelebration();document.body.classList.remove('l4');L4.on=false;netMenu(fromNet===true);ready=false;document.body.classList.remove('playing');splashActive=false;$('splash').style.display='none';$('end').style.display='none';$('msg').textContent='';$('menu').style.display='flex';showMenuPreview();if(window.wizGo)wizGo(2)};
+const toMenu=(fromNet)=>{stormReset();hideStadiumIntro();finishGoalCelebration();document.body.classList.remove('l4');L4.on=false;netMenu(fromNet===true);ready=false;document.body.classList.remove('playing');splashActive=false;$('splash').style.display='none';$('end').style.display='none';$('msg').textContent='';$('menu').style.display='flex';showMenuPreview();if(window.wizGo)wizGo(2)};
 $('chg').onclick=toMenu;$('ch2').onclick=toMenu;
 
 // ---------- render ----------
@@ -2200,8 +2200,9 @@ function stormImpact(x,z,damage=true){
   new THREE.Vector3(x+.7,7,z-.3),new THREE.Vector3(x-.35,3,z+.35),new THREE.Vector3(x,.18,z)];
  stormBolt=new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color:0xedfaff,transparent:true,opacity:1,depthTest:false,depthWrite:false}));
  stormBolt.renderOrder=60;stormLayer.add(stormBolt);stormBoltAge=.36;
- thFlash=Math.max(thFlash,.9);sfx('thunder');addDecal(x,z,2.5,9,20);dirtBurst(x,z,24);
+ thFlash=Math.max(thFlash,.9);
  if(damage){
+  sfx('thunder');addDecal(x,z,2.5,9,20);dirtBurst(x,z,24);
   for(const p of P){
    if(!p.g.visible||Math.hypot(p.x-x,p.z-z)>STORM_RADIUS)continue;
    p.stun=Math.max(p.stun,Math.round(STORM_STUN_TICKS*(p.stunMul||1)));p.mv=false;
@@ -2236,6 +2237,7 @@ function stormVisualTick(dt){
 }
 
 function envTick(dt,t){
+ if(WXk!=='storm'&&stormTarget)stormReset();
  bioTick(dt);stormVisualTick(dt);
  const k=1-Math.exp(-dt*.8),T=WXP[WXk];for(const key in T)WXc[key]+=(T[key]-WXc[key])*k;
  if(WXc.thunder>.5){thTimer-=dt;if(thTimer<=0){thTimer=7+Math.random()*9;thFlash=1;setTimeout(()=>sfx('thunder'),600+Math.random()*900)}}
