@@ -5303,8 +5303,9 @@ function buildEnds(mode){
 
  }
 }
-cityFloor.material.map=null;cityFloor.material.color.setHex(0x9fa69f);cityFloor.material.needsUpdate=true;
-buildEnds(stadiumMode);buildCityV3();mdPaintPitch(stadiumMode);mdIllustratedWorld(stadiumMode);syncBiomeWeather();
+cityFloor.visible=false;
+// Start strictly with the new renderer; never re-inject the old city/ends/MD layers.
+buildStadium(stadiumMode);
 mdStadiumCards();
 
 const DMW=1024,DMH=614,dmC=document.createElement('canvas');dmC.width=DMW;dmC.height=DMH;const dmq=dmC.getContext('2d');
