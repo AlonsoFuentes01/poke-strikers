@@ -1738,15 +1738,14 @@ function pickBiomeWeather(mode,except){
 }
 function syncBiomeWeather(){
  const modes=allowedWeather(stadiumMode);
+ if(WXmode==='auto'&&modes.length<2)WXmode='fixed';
+ if(!modes.includes(WXk))setWeather(modes[0],true);
  document.querySelectorAll('#weatherPick button').forEach(b=>{
   const weather=b.dataset.weather,enabled=weather==='auto'?modes.length>1:modes.includes(weather);
   b.disabled=!enabled;b.hidden=!enabled;
+  b.classList.toggle('on',weather===(WXmode==='auto'?'auto':WXk));
   b.title=enabled?'':'No disponible en este bioma';
  });
- if(!modes.includes(WXk)){
-  setWeather(modes[0],true);
-  document.querySelectorAll('#weatherPick button').forEach(b=>b.classList.toggle('on',b.dataset.weather===(WXmode==='auto'&&modes.length>1?'auto':WXk)));
- }
  if(!modes.includes('snow'))snowAcc=0;
  if(!modes.some(k=>WXP[k].rain>0))wetAcc=0;
 }
