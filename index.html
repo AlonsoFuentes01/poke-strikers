@@ -2292,7 +2292,7 @@ function stormImpact(x,z,damage=true){
  mark.renderOrder=38;stormLayer.add(mark);stormMarks.push({mesh:mark,age:0});
  if(stormMarks.length>8){const old=stormMarks.shift();stormLayer.remove(old.mesh);old.mesh.material.dispose();}
  stormBoltAge=.72;stormBoltSprite.visible=true;stormBoltSprite.position.set(x,6.15,z);
- stormBoltMat.map=stormBoltTextures[0];stormBoltMat.needsUpdate=true;
+ stormBoltMat.map=stormBoltTextures[0];
  thFlash=Math.max(thFlash,.9);
  if(damage){
   sfx('thunder');addDecal(x,z,2.5,9,20);dirtBurst(x,z,24);
@@ -2317,13 +2317,13 @@ function stormVisualTick(dt){
  if(stormTarget){
   const elapsed=1-stormTarget.left/STORM_WARNING_TICKS;
   const frame=Math.floor(performance.now()*.013)%6;
-  stormWarnMesh.material.map=stormTargetTextures[frame];stormWarnMesh.material.needsUpdate=true;
+  if(stormWarnMesh.material.map!==stormTargetTextures[frame])stormWarnMesh.material.map=stormTargetTextures[frame];
   stormWarnMesh.scale.setScalar(1+.035*Math.sin(elapsed*40));
  }else stormWarnMesh.visible=false;
  if(stormBoltSprite.visible){
   stormBoltAge-=dt;
   const frame=Math.max(0,Math.min(7,Math.floor((1-stormBoltAge/.72)*8)));
-  if(stormBoltMat.map!==stormBoltTextures[frame]){stormBoltMat.map=stormBoltTextures[frame];stormBoltMat.needsUpdate=true;}
+  if(stormBoltMat.map!==stormBoltTextures[frame])stormBoltMat.map=stormBoltTextures[frame];
   if(stormBoltAge<=0)stormBoltSprite.visible=false;
  }
  for(let i=stormMarks.length-1;i>=0;i--){
