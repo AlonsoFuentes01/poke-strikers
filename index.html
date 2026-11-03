@@ -2697,7 +2697,28 @@ function buildCityV3(){
  const cgroup=new THREE.Group();cgroup.name='CIUDAD_V3_BARRIO';cityG.add(cgroup);cityV3Root=cgroup;
  const surface=(color,roughness=1)=>new THREE.MeshStandardMaterial({color,roughness,metalness:0});
  const sidewalk=surface(0xe0c39f),curb=surface(0xffe3ac);
- const asphalt=surface(0x344354),mark=new THREE.MeshBasicMaterial({color:0xfff0b3});
+ // Asfalto dibujado en 2D: grava, juntas y reparaciones visibles.
+ const roadCanvas=document.createElement('canvas');roadCanvas.width=512;roadCanvas.height=256;
+ const aq=roadCanvas.getContext('2d');aq.imageSmoothingEnabled=false;
+ aq.fillStyle='#3b4c5c';aq.fillRect(0,0,512,256);
+ let asSeed=293;const asphaltRand=()=>{asSeed=(asSeed*16807)%2147483647;return(asSeed-1)/2147483646};
+ for(let i=0;i<3700;i++){
+  aq.fillStyle=i%3===0?'#526272':i%3===1?'#2b4050':'#53616b';
+  const x=asphaltRand()*512,y=asphaltRand()*256;
+  aq.fillRect(x,y,1+asphaltRand()*4,1+asphaltRand()*3);
+ }
+ aq.strokeStyle='#263844';aq.lineWidth=2;
+ for(let i=0;i<9;i++){
+  let x=asphaltRand()*512,y=asphaltRand()*256;aq.beginPath();aq.moveTo(x,y);
+  for(let k=0;k<5;k++){x+=asphaltRand()*19-9;y+=asphaltRand()*10-5;aq.lineTo(x,y)}
+  aq.stroke();
+ }
+ const roadTex=new THREE.CanvasTexture(roadCanvas);roadTex.encoding=THREE.sRGBEncoding;
+ roadTex.wrapS=roadTex.wrapT=THREE.RepeatWrapping;roadTex.repeat.set(22,2.0);
+ roadTex.magFilter=THREE.NearestFilter;roadTex.minFilter=THREE.LinearFilter;
+ SCENIC_TEXTURES.push(roadTex);
+ const asphalt=new THREE.MeshStandardMaterial({map:roadTex,roughness:1});
+ const mark=new THREE.MeshBasicMaterial({color:0xfff0b3});
  const brick=surface(0xa86546),dark=surface(0x273846);
  const greens=surface(0x42aa65),ink=new THREE.MeshBasicMaterial({color:0x1e2b3b,side:THREE.DoubleSide});
  const add=(geo,mat,x,y,z)=>{const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);cgroup.add(o);return o};
@@ -3004,14 +3025,59 @@ function buildCityV3(){
   block(3.6,2.3,2.3,dark,x,groundY+1.15,-41.1);
   block(3.8,.18,2.5,brick,x,groundY+2.4,-41.1);
  }
+ // Vida de barrio: puestos, carteles, quioscos y cajas junto a la vereda.
+ // Estructuras pequeñas 3D, paneles pixel art 2D; nunca cubren la fachada entera.
+ const stallArt=(label,color)=>{
+  const canvas=document.createElement('canvas');canvas.width=256;canvas.height=80;
+  const q=canvas.getContext('2d');q.imageSmoothingEnabled=false;
+  q.fillStyle='#192d3b';q.fillRect(0,0,256,80);q.fillStyle=color;q.fillRect(6,6,244,68);
+  q.fillStyle='#fff4cd';q.fillRect(10,10,236,5);q.fillRect(10,65,236,4);
+  q.textBaseline='middle';q.textAlign='center';q.fillStyle='#fff4db';q.font='bold 25px monospace';
+  q.strokeStyle='#1b2c3b';q.lineWidth=4;q.strokeText(label,128,42);q.fillText(label,128,42);
+  const t=new THREE.CanvasTexture(canvas);t.encoding=THREE.sRGBEncoding;
+  t.magFilter=THREE.NearestFilter;t.minFilter=THREE.LinearFilter;SCENIC_TEXTURES.push(t);return t;
+ };
+ const stalls=[
+  {x:-139,z:-70.5,label:'BAYAS',color:'#d65f63'},
+  {x:-84,z:-70.5,label:'HELADOS',color:'#4fa89d'},
+  {x:13,z:-70.5,label:'REVISTAS',color:'#cd954f'},
+  {x:97,z:-70.5,label:'POKE MART',color:'#5284c2'}
+ ];
+ const shadeColors=[0xd26261,0x48a39e,0xe2a449,0x5d93c7];
+ stalls.forEach((st,i)=>{
+  const pole=surface(0x6b665c),wood=surface(0x986a4d),cloth=surface(shadeColors[i]);
+  block(5.9,.3,2.65,ink,st.x,groundY+2.85,st.z);
+  block(5.5,.25,2.45,cloth,st.x,groundY+3.08,st.z);
+  for(const dx of [-2.3,2.3])for(const dz of [-.8,.8])
+   block(.17,2.5,.17,pole,st.x+dx,groundY+1.55,st.z+dz);
+  block(5.1,.9,1.65,wood,st.x,groundY+.8,st.z);
+  block(5.25,.1,1.9,ink,st.x,groundY+1.35,st.z);
+  const board=new THREE.Mesh(new THREE.PlaneGeometry(4.9,1.52),
+   new THREE.MeshBasicMaterial({map:stallArt(st.label,st.color),transparent:true,side:THREE.DoubleSide}));
+  board.position.set(st.x,groundY+2.17,st.z+1.4);cgroup.add(board);
+  for(let j=0;j<5;j++){
+   const fruit=surface([0xe16b4f,0xe8c05d,0x5fb17b,0xa16bbb,0xef9f54][(j+i)%5]);
+   block(.55,.52,.5,fruit,st.x-1.8+j*.9,groundY+1.65,st.z+.55);
+  }
+ });
+ // Autobús de parada, paso de taxis y bicicletas para conectar el mundo.
+ // Los sprites animados de Pokémon permanecen sobre las veredas, no en el campo.
+ for(const x of [-120,-4,122]){
+  block(2.5,.15,1.5,ink,x,groundY+2.65,-39.8);
+  const news=surface(0xffb85e);
+  block(2.25,2.2,1.05,news,x,groundY+1.5,-39.8);
+  block(2.6,.18,1.5,ink,x,groundY+2.72,-39.8);
+  block(1.5,.7,.08,ink,x,groundY+1.8,-39.2);
+  block(1.28,.48,.09,new THREE.MeshBasicMaterial({color:0x6dc7d9}),x,groundY+1.8,-39.1);
+ }
  // Pokémon del barrio: caminantes pequeños, independientes del partido.
  // Reutilizan Walk-Anim.png de SpriteCollab cargado por crowdAnimFor (con fallback
  // a sprites oficiales de PokeAPI). Los pasos son sólo decorativos en la vereda.
- const streetSpecies=[25,52,133,16,43,58,7,54,19,37,1,39,74,27,63,100,43,133];
- const walkerCount=innerWidth<850?12:streetSpecies.length;
+ const streetSpecies=[25,52,133,16,43,58,7,54,19,37,1,39,74,27,63,100,43,133,152,175,183,155,255,258,252,393,396,37,25,133];
+ const walkerCount=innerWidth<850?18:streetSpecies.length;
  const pedestrians=[];
  for(let i=0;i<walkerCount;i++){
-  const id=streetSpecies[i],entry=crowdAnimFor(id),height=1.9+(i%4)*.23;
+  const id=streetSpecies[i],entry=crowdAnimFor(id),height=2.25+(i%4)*.17;
   const fallback=loader.load(spr(id),t=>{
    t.encoding=THREE.sRGBEncoding;t.magFilter=THREE.NearestFilter;
    t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;
@@ -3021,7 +3087,7 @@ function buildCityV3(){
   const sprite=new THREE.Sprite(material);
   const cross=(i===2||i===9),direction=i%3===0?-1:1;
   const baseZ=i%2===0?-68.1:-40.7;
-  const startX=cross?(i===2?-55:67):-146+i*(292/(walkerCount-1));
+  const startX=cross?(i===2?-55:67):-105+i*(210/(walkerCount-1));
   sprite.position.set(startX,groundY+height*.62,baseZ);
   sprite.scale.set(height*1.24,height*1.28,1);
   sprite.renderOrder=1;cgroup.add(sprite);
@@ -3037,7 +3103,7 @@ function buildCityV3(){
      const b=p.entry.box,visibleHeight=Math.max(8,b.y1-b.y0+1);
      const k=p.height/visibleHeight;
      p.sprite.scale.set(Math.min(3.8,p.entry.fw*k),p.entry.fh*k,1);
-     p.baseY=groundY+(b.y1+1-p.entry.fh/2)*k+.05;
+     p.baseY=groundY+p.height*.6;
      p.fitted=true;
     }
     p.step+=dt;
