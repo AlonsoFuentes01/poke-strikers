@@ -737,7 +737,7 @@ function paintGrass(q,W,H){
  const scx=W/1200,scy=H/720;
  q.save();
  const wearPatch=(x,y,rx,ry,strength)=>{
-  const gr=q.createRadialGradient(x,y,0,x,y,Math.max(rx,ry));
+  const gr=q.createRadialGradient(0,0,0,0,0,Math.max(rx,ry));
   gr.addColorStop(0,'rgba(112,75,36,'+(strength*.67)+')');gr.addColorStop(.45,'rgba(127,92,48,'+(strength*.42)+')');gr.addColorStop(1,'rgba(78,62,30,0)');
   q.save();q.translate(x,y);q.scale(rx/Math.max(rx,ry),ry/Math.max(rx,ry));
   q.fillStyle=gr;q.beginPath();q.arc(0,0,Math.max(rx,ry),0,Math.PI*2);q.fill();q.restore();
@@ -2387,6 +2387,114 @@ function livingCity(){
  cityG.add(houses,roofs,windowsFront);
 }
 
+// ================= 2.0 · VIDA AMBIENTAL DE LOS OCHO BIOMAS =================
+function livingWorldV2(mode){
+ const palettes={
+  city:[0xe4d68b,0x6c964d],classic:[0xffeab4,0x9fce72],sunset:[0xf5ad71,0xaf6e3f],
+  beach:[0xe1f7ee,0x56bda5],volcano:[0xffa341,0x552e29],arctic:[0xe5faff,0x8cb4d8],
+  space:[0xc9b7ff,0x70b2e8],desert:[0xf5d8a6,0xb9a26a]};
+ const cp=palettes[mode]||palettes.city;
+ let seed=1259+mode.length*238+mode.charCodeAt(0)*11;
+ const rnd=()=>{seed=seed*16807%2147483647;return(seed-1)/2147483646};
+ // Polvo, hojas, espuma, ceniza, cristales y motas de luz con viento tridimensional.
+ // El movimiento es 100% GPU: no se recorren cientos de partículas cada frame.
+ const count=mode==='volcano'?340:mode==='arctic'?300:mode==='desert'?370:200;
+ const pos=[],seedV=[];
+ for(let i=0;i<count;i++){
+  const side=rnd()<.54?1:-1;
+  const x=side*(HX+3+rnd()*68),y=1+rnd()*42,z=-60+rnd()*110;
+  pos.push(x,y,z);seedV.push(rnd(),rnd(),rnd());
+ }
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+ geo.setAttribute('aLife',new THREE.Float32BufferAttribute(seedV,3));
+ const mat=new THREE.ShaderMaterial({
+  uniforms:{uT:BIO.T,uWind:{value:1.2},uColor:{value:new THREE.Color(cp[0])}},
+  vertexShader:`attribute vec3 aLife;uniform float uT,uWind;varying float vAlpha;
+   void main(){
+    vec3 p=position;float speed=1.2+aLife.x*5.2;
+    float drift=uT*speed*uWind;
+    p.x+=mod(drift+90.,180.)-90.;
+    p.x=mod(p.x+130.,260.)-130.;
+    p.y+=sin(uT*.7+aLife.y*15.+position.z*.1)*(.6+aLife.z*1.4);
+    p.z+=sin(uT*.3+aLife.x*20.)*2.3;
+    vec4 mv=modelViewMatrix*vec4(p,1.);
+    gl_Position=projectionMatrix*mv;
+    gl_PointSize=clamp((2.5+aLife.z*3.5)*85./max(9.,-mv.z),1.2,8.);
+    vAlpha=.32+.5*aLife.y;
+   }`,
+  fragmentShader:`uniform vec3 uColor;varying float vAlpha;
+   void main(){float r=length(gl_PointCoord-.5);float a=(1.-smoothstep(.14,.5,r))*vAlpha;
+    gl_FragColor=vec4(uColor,a);}`,
+  transparent:true,depthWrite:false,blending:mode==='volcano'||mode==='space'?THREE.AdditiveBlending:THREE.NormalBlending
+ });
+ const air=new THREE.Points(geo,mat);air.frustumCulled=false;cityG.add(air);
+ // Bandas de tela flexibles: el viento es legible incluso con clima despejado.
+ const fa=new THREE.Color(cp[0]),fb=new THREE.Color(cp[1]);
+ const clothMat=new THREE.ShaderMaterial({uniforms:{uT:BIO.T,uA:{value:fa},uB:{value:fb}},
+  vertexShader:`uniform float uT;varying vec2 vUv;
+   void main(){vUv=uv;vec3 p=position;
+    float wind=sin(uT*2.8+uv.x*11.+uv.y*3.)+sin(uT*1.1+uv.x*6.)*.5;
+    p.z+=pow(uv.x,1.5)*wind*.95;
+    p.y+=pow(uv.x,1.3)*sin(uT*2.+uv.x*8.)*.26;
+    gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
+  fragmentShader:`uniform vec3 uA,uB;varying vec2 vUv;
+   void main(){float stripe=step(.5,fract(vUv.y*3.));
+    float seam=smoothstep(0.,.04,vUv.y)*smoothstep(0.,.04,1.-vUv.y);
+    vec3 c=mix(uA,uB,stripe)*(.83+.17*sin(vUv.x*20.));
+    gl_FragColor=vec4(c,seam);}`,
+  side:THREE.DoubleSide,transparent:true,depthWrite:false});
+ const poleMat=new THREE.MeshStandardMaterial({color:0x706e64,metalness:.35,roughness:.7});
+ const poleGeo=new THREE.CylinderGeometry(.13,.19,13,6);
+ const fabricGeo=new THREE.PlaneGeometry(8,3,16,4);
+ for(const side of [-1,1])for(const z of [-HZ-15,HZ+16]){
+  const x=side*(HX+23);
+  const pole=new THREE.Mesh(poleGeo,poleMat);pole.position.set(x,6.5,z);cityG.add(pole);
+  const banner=new THREE.Mesh(fabricGeo,clothMat);
+  banner.position.set(x+side*4,11.2,z);banner.rotation.y=side<0?Math.PI:0;cityG.add(banner);
+ }
+ // Vegetación y geología: cada zona se siente distinta, nunca sobre la cancha.
+ if(['arctic','volcano','desert','space'].includes(mode)){
+  const N=mode==='space'?110:mode==='desert'?140:100;
+  const isRock=mode==='space';
+  const trunkMat=new THREE.MeshStandardMaterial({color:mode==='arctic'?0x594f52:mode==='volcano'?0x211a19:mode==='desert'?0x65834c:0x35406f,roughness:.95});
+  const crownMat=new THREE.MeshStandardMaterial({color:mode==='arctic'?0xc4e1dc:mode==='volcano'?0x40352b:mode==='desert'?0x548b4a:0x9c8cee,roughness:.82,metalness:mode==='space'?.24:0,flatShading:true});
+  const tGeo=new THREE.CylinderGeometry(mode==='desert'?.34:.22,.46,1,5);
+  const cGeo=mode==='space'?new THREE.OctahedronGeometry(1,0):mode==='desert'?new THREE.SphereGeometry(1,6,5):new THREE.ConeGeometry(1,2,6);
+  const trunks=new THREE.InstancedMesh(tGeo,trunkMat,N);
+  const crowns=new THREE.InstancedMesh(cGeo,crownMat,N);
+  const dummy=new THREE.Object3D();
+  for(let i=0;i<N;i++){
+   const side=rnd()<.5?-1:1;
+   const x=side*(HX+24+rnd()*84),z=-HZ-22-rnd()*125;
+   const h=mode==='arctic'?4+rnd()*9:mode==='volcano'?2+rnd()*6:mode==='desert'?2+rnd()*4:3+rnd()*8;
+   dummy.rotation.set(0,rnd()*Math.PI*2,0);
+   dummy.position.set(x,h*.5-1.2,z);dummy.scale.set(1,h,1);dummy.updateMatrix();trunks.setMatrixAt(i,dummy.matrix);
+   dummy.position.set(x,h+1.1-1.2,z);
+   dummy.scale.set(isRock?2:1.5+rnd()*1.3,isRock?2:mode==='desert'?.8:2.4+rnd()*2, isRock?2:1.5+rnd()*1.3);
+   dummy.updateMatrix();crowns.setMatrixAt(i,dummy.matrix);
+  }
+  crowns.frustumCulled=false;trunks.frustumCulled=false;cityG.add(trunks,crowns);
+ }
+ // Ciudad reconocible: autos circulando por el paseo exterior, fuera de las gradas.
+ if(mode==='city'){
+  const group=new THREE.Group();cityG.add(group);
+  const cars=[];const bodyGeo=new THREE.BoxGeometry(3.6,1.25,1.7);
+  const roofGeo=new THREE.BoxGeometry(1.9,.8,1.55);
+  const shades=[0xa83937,0x386a9c,0xe6d7bb,0x536c48,0xd2a149];
+  for(let i=0;i<9;i++){
+   const o=new THREE.Group(),mat=new THREE.MeshStandardMaterial({color:shades[i%shades.length],roughness:.58});
+   const body=new THREE.Mesh(bodyGeo,mat);body.position.y=.7;o.add(body);
+   const top=new THREE.Mesh(roofGeo,mat);top.position.set(-.3,1.65,0);o.add(top);
+   o.position.set(-110+i*26,-1.5,-53-(i%2)*5);o.scale.setScalar(.9);cityG.add(o);
+   cars.push({o,s:2+i%4,base:o.position.z,phase:i});
+  }
+  BIO.anims.push((dt,T)=>{for(const c of cars){
+   c.o.position.x+=dt*c.s;if(c.o.position.x>116)c.o.position.x=-116;
+   c.o.position.z=c.base+Math.sin(T*.12+c.phase)*.3;}});
+ }
+}
+
 // Shaders de arquitectura para los ocho estadios: juntas minerales y luz animada.
 function stadiumWallMaterial(base,accent){
  const mat=new THREE.MeshStandardMaterial({color:base,roughness:.82,metalness:.12,emissive:accent,emissiveIntensity:.12});
@@ -2494,9 +2602,9 @@ void main(){
  });
 }
 const _bs=buildStadium;buildStadium=function(m){
- if(BIOMES[m]){buildBiome(m);buildEnds(m);livingLandscape(m);stadiumLightShow(m,BIOMES[m].glow);envApply();envChipUpdate();return}
+ if(BIOMES[m]){buildBiome(m);buildEnds(m);livingLandscape(m);livingWorldV2(m);stadiumLightShow(m,BIOMES[m].glow);envApply();envChipUpdate();return}
  BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=cityFloorTex;cityFloor.material.needsUpdate=true;
- if(m==='city'){stadiumMode=m;cityG.clear();livingCity();}else{_bs(m);cityLife(m);}buildEnds(m);livingLandscape(m);if(m!=='city')stadiumLightShow(m,m==='sunset'?0xff9d5c:0x9bd9ff);envApply();envChipUpdate()};
+ if(m==='city'){stadiumMode=m;cityG.clear();livingCity();}else{_bs(m);cityLife(m);}buildEnds(m);livingLandscape(m);livingWorldV2(m);if(m!=='city')stadiumLightShow(m,m==='sunset'?0xff9d5c:0x9bd9ff);envApply();envChipUpdate()};
 cityG.clear();livingCity();
 // Fondo de los arcos: gradas escalonadas, muro con franjas de luz, techo, vallas y skyline.
 function buildEnds(mode){
@@ -2522,7 +2630,7 @@ function buildEnds(mode){
   }
  }
 }
-buildEnds(stadiumMode);livingLandscape(stadiumMode);
+buildEnds(stadiumMode);livingLandscape(stadiumMode);livingWorldV2(stadiumMode);
 
 const DMW=1024,DMH=614,dmC=document.createElement('canvas');dmC.width=DMW;dmC.height=DMH;const dmq=dmC.getContext('2d');
 const dmT=srgb(new THREE.CanvasTexture(dmC));
