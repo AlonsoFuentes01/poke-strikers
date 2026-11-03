@@ -4542,6 +4542,278 @@ void main(){
   blink.forEach((s,i)=>{s.material.opacity=Math.sin(T*3+i*1.7)>0?1:.15});
  });
 }
+// ===== MYSTERY DUNGEON SCENERY · illustrated 2D + grounded 3D =====
+// Each scene has its OWN visual geography. Painted layers are never giant stands.
+let MD_WORLD_ROOT=null;
+function disposeMDWorld(){
+ if(!MD_WORLD_ROOT)return;
+ MD_WORLD_ROOT.traverse(o=>{
+  if(o.geometry)o.geometry.dispose();
+  if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());
+ });
+ MD_WORLD_ROOT=null;
+}
+function mdIllustratedWorld(mode){
+ if(mode==='beach')return; // Playa V4 already has its own coastal pixel panorama.
+ const themes={
+  city:{sky:['#4f9fe7','#81c9ec','#c4eaf3'],far:'#7eadab',hill:'#4c9d84',lit:'#ffe4a6',ink:'#273e54',detail:'#b77e69'},
+  classic:{sky:['#5eaff1','#a8d9ee','#ddf2ed'],far:'#74aa99',hill:'#427a69',lit:'#ffe0a0',ink:'#263e54',detail:'#d6ad76'},
+  sunset:{sky:['#6759a5','#e48b90','#f8c18c'],far:'#a1768e',hill:'#775b71',lit:'#ffe5a4',ink:'#473d5a',detail:'#d98567'},
+  volcano:{sky:['#625d99','#b07a91','#f4ac77'],far:'#7c596e',hill:'#524254',lit:'#ffcf76',ink:'#302d48',detail:'#f77e49'},
+  arctic:{sky:['#3e86be','#81c0df','#cde8f0'],far:'#91bed1',hill:'#5c99b0',lit:'#f1ffff',ink:'#355a7a',detail:'#8ad4e7'},
+  space:{sky:['#182448','#37437c','#604d9a'],far:'#7465a7',hill:'#3f477d',lit:'#a8ecff',ink:'#182947',detail:'#8e83d9'},
+  desert:{sky:['#3c9cda','#82c5ed','#ffdfaf'],far:'#f1c17a',hill:'#c78a61',lit:'#fff0be',ink:'#805748',detail:'#da8855'}
+ };
+ const p=themes[mode];if(!p)return;
+ const root=new THREE.Group();root.name='MD_WORLD_'+mode;MD_WORLD_ROOT=root;cityG.add(root);
+ let seed=4738+mode.charCodeAt(0)*37;const rand=()=>{seed=seed*16807%2147483647;return(seed-1)/2147483646};
+ const canvas=(w,h,fn)=>{const c=document.createElement('canvas');c.width=w;c.height=h;const q=c.getContext('2d');q.imageSmoothingEnabled=false;fn(q,w,h);return c;};
+ const box=(q,x,y,w,h,c)=>{q.fillStyle=c;q.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h))};
+ const poly=(q,pts,color,stroke=p.ink)=>{
+  q.beginPath();q.moveTo(pts[0][0],pts[0][1]);
+  for(let i=1;i<pts.length;i++)q.lineTo(pts[i][0],pts[i][1]);
+  q.closePath();q.fillStyle=color;q.fill();
+  if(stroke){q.lineWidth=4;q.lineJoin='miter';q.strokeStyle=stroke;q.stroke();}
+ };
+ const mountain=(q,x,y,w,h,body,light,ink=p.ink)=>{
+  poly(q,[[x-w*.5,600],[x-w*.39,y+h*.42],[x-w*.27,y+h*.11],[x-w*.12,y],
+   [x+w*.02,y-h*.14],[x+w*.16,y+h*.09],[x+w*.31,y+h*.27],[x+w*.5,600]],body,ink);
+  poly(q,[[x-w*.39,y+h*.42],[x-w*.12,y],[x+w*.02,y-h*.14],
+   [x+w*.09,y+h*.1],[x-w*.1,y+h*.5],[x-w*.24,y+h*.73]],light,null);
+  for(let i=0;i<18;i++)box(q,x-w*.35+rand()*w*.67,y+rand()*h*.9,10+rand()*25,3,
+   rand()<.5?light:ink+'44');
+ };
+ const cloud=(q,x,y,sc)=>{
+  const parts=[[-50,8,78,28],[-28,-12,76,31],[12,-24,75,45],[49,-4,58,29]];
+  for(const [dx,dy,w,h] of parts)box(q,x+dx*sc+4,y+dy*sc+6,w*sc,h*sc,'#8abfe4');
+  for(const [dx,dy,w,h] of parts)box(q,x+dx*sc,y+dy*sc,w*sc,h*sc,'#f8fded');
+  box(q,x-44*sc,y+28*sc,129*sc,5*sc,'#b4dcf1');
+ };
+ const tree=(q,x,y,scale=1,type='round')=>{
+  const a=(x0,y0,w,h,c)=>box(q,x+x0*scale,y+y0*scale,w*scale,h*scale,c);
+  a(-6,-51,13,55,p.ink);a(-3,-50,7,52,'#916a44');
+  if(type==='pine'){
+   for(const [yy,w] of [[-96,23],[-80,32],[-63,41]]){
+    poly(q,[[x,y+yy*scale],[x-w*scale,y+(yy+41)*scale],[x+w*scale,y+(yy+41)*scale]],
+     '#418872',p.ink);
+    a(-w*.48,yy+14,w*.55,4,'#a0d39e');
+   }
+  }else if(type==='palm'){
+   for(let k=0;k<7;k++){
+    const ang=k*6.283/7;
+    poly(q,[[x-2*scale,y-54*scale],
+     [x+Math.cos(ang)*31*scale,y-94*scale+Math.sin(ang)*10*scale],
+     [x+Math.cos(ang)*57*scale,y-48*scale+Math.sin(ang)*15*scale]],
+    '#3a9b68',p.ink);
+   }
+  }else{
+   [[-29,-92,62,24],[-42,-77,83,28],[-48,-57,94,26],[-32,-39,65,15]].forEach(([xx,yy,w,h])=>{
+    a(xx-3,yy-3,w+6,h+6,p.ink);a(xx,yy,w,h,'#3f995d');
+    a(xx+9,yy+3,w*.43,5,'#99d77c');
+   });
+  }
+ };
+ // Distant painting. Layers have real Z separation, not camera-locked wallpaper.
+ const farCanvas=canvas(1536,600,(q,w,h)=>{
+  p.sky.forEach((c,i)=>box(q,0,i*75,w,91,c));
+  box(q,0,225,w,375,p.sky[2]);
+  if(mode==='space'){
+   box(q,0,0,w,h,'#19294c');
+   for(let i=0;i<190;i++)box(q,rand()*w,rand()*440,1+rand()*4,1+rand()*4,i%4?'#cbd4fb':'#fff9dc');
+   for(const [x,y,r,c] of [[250,116,66,'#e0b28b'],[1150,192,105,'#7abfd1'],[832,98,38,'#ab86d5']]){
+    q.beginPath();q.arc(x,y,r,0,7);q.fillStyle=c;q.fill();
+    q.strokeStyle='#e5daef';q.lineWidth=6;q.beginPath();q.ellipse(x,y,r*1.65,r*.26,-.2,0,7);q.stroke();
+   }
+   mountain(q,740,340,600,155,'#343967','#6874a5');
+   mountain(q,180,392,350,122,'#495685','#7d8db4');
+  }else{
+   for(let n=0;n<9;n++)cloud(q,(n*193+rand()*42-140),38+rand()*140,.52+rand()*.52);
+   if(mode==='volcano'){
+    mountain(q,765,100,760,360,'#59445f','#96768d');
+    poly(q,[[665,148],[719,77],[774,67],[827,91],[885,166],[845,184],[756,151]],'#ef975b',null);
+    poly(q,[[750,116],[765,100],[781,117],[771,143]],'#ffd06e',null);
+    for(const n of [0,1,2,3]){
+     const x=714+n*48;poly(q,[[x,155],[x+22,210],[x+11,260],[x+38,360],
+      [x+55,445],[x+38,475],[x+4,384],[x-8,276]],n%2?'#f07845':'#ffc06c',null);
+    }
+    for(let i=0;i<10;i++){
+     const x=708+rand()*170,y=38+rand()*80;
+     box(q,x,y,12+rand()*42,8+rand()*18,'#55435e');
+    }
+    mountain(q,168,360,420,174,'#65516b','#9d7985');
+    mountain(q,1354,395,500,160,'#644f65','#9b7b82');
+   }else if(mode==='arctic'){
+    for(let i=0;i<11;i++){
+     const x=i*171+rand()*44;
+     mountain(q,x,180+rand()*140,230,260,'#91b9d2','#e8f8ef');
+    }
+    for(let i=0;i<7;i++){
+     const x=i*250+rand()*50,y=150+rand()*140;
+     poly(q,[[x-70,470],[x, y],[x+80,470]],'#e3f7f5','#729cb4');
+    }
+   }else if(mode==='desert'){
+    for(let k=0;k<8;k++){
+     const x=k*224+rand()*86;
+     mountain(q,x,300+rand()*110,255,90,'#d49a6e','#f3c88f');
+    }
+    for(const [x,y,w,h] of [[270,292,83,90],[1110,282,100,115],[1320,334,68,75]]){
+     box(q,x,y,w,h,p.ink);box(q,x+5,y+5,w-10,h-5,'#bf8b63');box(q,x-7,y-10,w+14,13,'#8e6654');
+    }
+    mountain(q,725,330,460,115,'#f0bd81','#ffe1a1');
+   }else{
+    for(let k=0;k<9;k++){const x=k*203+rand()*61;
+     mountain(q,x,305+rand()*95,260,120,p.far,p.hill);}
+    if(mode==='sunset')for(let k=0;k<6;k++)tree(q,k*310+90,458,.84,'round');
+    if(mode==='city'||mode==='classic'){
+     for(let i=0;i<36;i++){
+      const x=i*46+rand()*15,y=325+rand()*56,ww=30+rand()*20;
+      box(q,x-3,y-4,ww+6,180,p.ink);
+      box(q,x,y,ww,170,['#dabaa3','#b3c7b0','#c9d9b9','#e4c1a1'][i%4]);
+      box(q,x-4,y-6,ww+8,11,p.detail);
+      for(let wx=x+7;wx<x+ww-4;wx+=14)for(let wy=y+20;wy<486;wy+=26){
+       box(q,wx-2,wy-2,9,14,p.ink);box(q,wx,wy,5,10,'#7eb7cd');
+      }
+     }
+    }
+   }
+  }
+  // A coherent base fills every pixel; no gaps or low-poly wall.
+  box(q,0,520,w,80,mode==='space'?'#2c365e':mode==='volcano'?'#493d52':p.hill);
+  for(let i=0;i<420;i++){
+   const x=rand()*w,y=470+rand()*125;
+   box(q,x,y,4+rand()*10,1+rand()*3,i%2?p.detail:p.ink+'66');
+  }
+ });
+ const mat=(c)=>{
+  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;
+  t.magFilter=THREE.NearestFilter;t.minFilter=THREE.LinearFilter;t.generateMipmaps=false;
+  SCENIC_TEXTURES.push(t);
+  return new THREE.MeshBasicMaterial({map:t,transparent:true,side:THREE.DoubleSide,depthWrite:false,fog:false,toneMapped:false});
+ };
+ const far=new THREE.Mesh(new THREE.PlaneGeometry(480,156),mat(farCanvas));
+ far.position.set(0,57,-215);root.add(far);
+ // Midground: architecture with pixel ink and the correct silhouettes per biome.
+ const midCanvas=canvas(1536,380,(q,w,h)=>{
+  // Transparent except for grounded landmarks; keep background visible through gaps.
+  const rock=(x,y,ww,hh,c)=>{
+   poly(q,[[x-ww*.5,380],[x-ww*.45,y+hh*.62],[x-ww*.27,y+hh*.15],
+     [x,y],[x+ww*.25,y+hh*.13],[x+ww*.47,y+hh*.61],[x+ww*.5,380]],c,p.ink);
+   poly(q,[[x-ww*.25,y+hh*.18],[x,y],[x+ww*.04,y+hh*.34],[x-ww*.18,y+hh*.67]],p.detail,null);
+   for(let k=0;k<16;k++)box(q,x-ww*.38+rand()*ww*.78,y+rand()*hh*.9,9+rand()*18,3,p.ink+'55');
+  };
+  if(mode==='volcano'){
+   for(let i=0;i<8;i++){const x=i*230-45;rock(x,195+rand()*80,230,140,'#6b5364');}
+   for(let n=0;n<14;n++){
+    const x=rand()*w;
+    box(q,x,310,4+rand()*10,70,'#e57646');
+    box(q,x+3,310,2+rand()*5,70,'#fbc56b');
+   }
+  }else if(mode==='arctic'){
+   for(let i=0;i<12;i++){const x=i*165;rock(x,145+rand()*75,200,195,'#81adbf');}
+   for(let i=0;i<18;i++)tree(q,i*99+rand()*26,362,.63+rand()*.5,'pine');
+  }else if(mode==='desert'){
+   for(let i=0;i<7;i++)rock(i*260+rand()*40,210+rand()*85,310,90,'#c99261');
+   for(const x of [115,432,865,1230]){
+    box(q,x-8,155,18,205,p.ink);box(q,x-3,162,11,195,'#cba06b');
+    box(q,x-23,147,51,17,p.ink);box(q,x-18,152,41,8,'#f0c289');
+   }
+   poly(q,[[990,310],[1030,193],[1130,159],[1220,194],[1280,310],
+    [1233,310],[1200,218],[1130,198],[1070,220],[1043,310]],'#c79768',p.ink);
+  }else if(mode==='space'){
+   for(let i=0;i<11;i++){
+    const x=i*160;
+    box(q,x,168,132,220,p.ink);box(q,x+6,175,120,210,'#6379a4');
+    box(q,x-5,152,142,18,'#a2b7d9');
+    for(let row=0;row<4;row++)for(let col=0;col<6;col++)
+     box(q,x+13+col*18,190+row*43,11,17,'#8cdeeb');
+   }
+  }else if(mode==='sunset'||mode==='city'||mode==='classic'){
+   for(let i=0;i<18;i++){
+    const x=i*98-12,ww=85+rand()*27,hh=150+rand()*100;
+    const y=380-hh;
+    box(q,x-4,y-5,ww+8,hh+5,p.ink);
+    box(q,x,y,ww,hh,['#eac391','#9dbea5','#edaa91','#b9d4c0'][i%4]);
+    box(q,x-9,y-15,ww+18,14,'#a66557');
+    for(let col=0;col<3;col++)for(let row=0;row<3;row++){
+     const wx=x+9+col*26,wy=y+19+row*43;
+     box(q,wx-3,wy-3,22,30,p.ink);box(q,wx,wy,16,24,'#8acbd0');
+     box(q,wx+3,wy+3,5,8,'#e5f7dc');box(q,wx-5,wy+28,26,5,'#72594a');
+    }
+    box(q,x+4,350,ww-8,24,'#426b69');
+    if(i%3===0)tree(q,x+ww*.5,372,.6,'round');
+   }
+   if(mode==='city'){
+    box(q,738,26,124,352,p.ink);box(q,747,35,106,343,'#e5c9a2');
+    box(q,729,19,142,21,'#a86452');
+    q.beginPath();q.arc(800,93,36,0,7);q.fillStyle='#fff3d0';q.fill();
+    q.strokeStyle=p.ink;q.lineWidth=7;q.stroke();
+    box(q,800,72,5,23,p.ink);box(q,800,92,22,5,p.ink);
+   }
+  }
+ });
+ const mid=new THREE.Mesh(new THREE.PlaneGeometry(300,78),mat(midCanvas));
+ mid.position.set(0,25,-117);root.add(mid);
+ // Moving cloud sheet in front of skyline but behind all real buildings.
+ const clouds=canvas(1536,300,(q)=>{
+  if(mode==='space'){
+   for(let n=0;n<45;n++)box(q,rand()*1536,rand()*300,2+rand()*5,2+rand()*5,'#d9e4f8');
+  }else{
+   for(let n=0;n<10;n++)cloud(q,n*177+rand()*60-30,35+rand()*90,.5+rand()*.6);
+  }
+ });
+ const weatherCloud=new THREE.Mesh(new THREE.PlaneGeometry(380,75),mat(clouds));
+ weatherCloud.position.set(0,77,-148);root.add(weatherCloud);
+ // Low foreground silhouette stitches the physical structures to the art.
+ const nearCanvas=canvas(1536,210,(q,w,h)=>{
+  for(let i=0;i<24;i++){
+   const x=i*75-10;
+   if(mode==='volcano'){
+    poly(q,[[x-30,210],[x-25,138],[x-12,123],[x+18,154],[x+35,210]],'#544355',p.ink);
+    box(q,x,145,6,36,'#ee8c4b');
+   }else if(mode==='desert'){
+    if(i%3===0){
+     box(q,x,130,15,74,p.ink);box(q,x+4,135,8,65,'#60956a');
+     box(q,x-13,162,14,8,'#60956a');box(q,x-13,150,6,23,p.ink);
+    }else rock(x,164,90,42,'#bd916e');
+   }else if(mode==='arctic'){
+    tree(q,x,205,.6,'pine');
+   }else if(mode==='space'){
+    box(q,x,132,45,79,p.ink);box(q,x+3,137,39,70,'#556c91');
+    box(q,x+8,144,28,10,'#92d1e4');
+   }else tree(q,x,205,.6,'round');
+  }
+ });
+ const near=new THREE.Mesh(new THREE.PlaneGeometry(250,42),mat(nearCanvas));
+ near.position.set(0,8,-95);root.add(near);
+ // Soft, slow shadows over the pitch; allowed even if sky is clear.
+ if(mode!=='space'){
+  const mask=canvas(256,128,q=>{
+   for(let i=0;i<24;i++){
+    const cx=rand()*256,cy=rand()*128;
+    for(let k=0;k<4;k++){
+     box(q,cx+(rand()-.5)*22,cy+(rand()-.5)*14,18+rand()*36,5+rand()*15,
+       mode==='volcano'?'rgba(48,31,51,.10)':'rgba(31,57,80,.14)');
+    }
+   }
+  });
+  const m=mat(mask);m.map.wrapS=m.map.wrapT=THREE.RepeatWrapping;
+  m.map.repeat.set(1.9,1.2);m.opacity=.6;m.depthWrite=false;
+  const shadow=new THREE.Mesh(new THREE.PlaneGeometry(HX*2,HZ*2),m);
+  shadow.rotation.x=-Math.PI/2;shadow.position.y=.041;root.add(shadow);
+  BIO.anims.push((dt,T)=>{
+   m.map.offset.x=(T*.0029)%1;m.map.offset.y=(T*.0011)%1;
+   m.opacity=.35+(WXc.cloud||0)*.35;
+  });
+ }
+ BIO.anims.push((dt,T)=>{
+  far.position.x=Math.sin(T*.03)*.65;
+  mid.position.x=Math.sin(T*.052+1)*.4;
+  near.position.x=Math.sin(T*.09+2)*.26;
+  weatherCloud.position.x=Math.sin(T*.028)*2.5;
+ });
+ // Add atmospheric NPCs already using PMD SpriteCollab's Walk-Anim where available.
+}
+
 const _bs=buildStadium;buildStadium=function(m){
  disposeCityV3();disposeWorldV31();disposeBeachV4();disposeScenicTextures();
   mdPaintPitch(m);
