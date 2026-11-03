@@ -267,8 +267,132 @@ function build(o){
   sparks.push({m,x:(rnd()-.5)*86,z:-27-rnd()*20,base:.8+rnd()*2,phase:rnd()*12,speed:.30+rnd()*.70});
  }
 
+
+ // Escenografía de profundidad: flancos en la distancia y cornisa de primer plano.
+ // La cornisa se retira durante el giro a cenital para no tapar la cancha.
+ const foregroundG=new THREE.Group();foregroundG.name='VOLCAN_FOREGROUND_CINEMATIC';group.add(foregroundG);
+ const foregroundParts=[],smokeParts=[],extraLava=[];
+ function propBlock(w,h,d,x,y,z,mat=stoneMain,target=group){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);target.add(m);return m;
+ }
+ function cluster(x,z,n,spread=5,size=1,target=group){
+  for(let i=0;i<n;i++){
+   const radius=(.65+rnd()*1.15)*size;
+   const m=new THREE.Mesh(new THREE.DodecahedronGeometry(radius,0),
+    i%3===0?stoneFace:i%3===1?stoneMain:stoneDark);
+   m.position.set(x+(rnd()-.5)*spread,radius*.52,z+(rnd()-.5)*spread*.7);
+   m.rotation.set(rnd()*2,rnd()*2,rnd());
+   m.scale.set(.9+rnd()*.7,.65+rnd()*.65,.8+rnd()*.5);target.add(m);
+  }
+ }
+ const fallTexture=tex(canvas(96,256,q=>{
+  fill(q,0,0,96,256,'#301b2d');fill(q,7,0,82,256,'#8d3032');
+  for(let i=0;i<11;i++){
+   const x=11+i*7;
+   fill(q,x,(i%4)*9,4,256-(i%4)*9,i%3===0?C.hot:C.lava);
+   if(i%2===0)fill(q,x+1,28,2,215,C.bright);
+  }
+  fill(q,0,0,96,9,C.edge);fill(q,0,247,96,9,'#d64738');
+ }));
+ function lavaFall(x,y,z,w,h,target=group){
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),
+   new THREE.MeshBasicMaterial({map:fallTexture,transparent:true,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+  m.position.set(x,y,z);target.add(m);
+  extraLava.push({m,phase:rnd()*6});
+  return m;
+ }
+ const smokeTexture=tex(canvas(96,96,q=>{
+  for(const [x,y,radius,color] of [[31,53,23,'rgba(111,90,107,.35)'],[54,39,26,'rgba(157,115,117,.24)'],[62,63,21,'rgba(79,67,88,.34)']]){
+   q.fillStyle=color;q.beginPath();q.arc(x,y,radius,0,7);q.fill();
+  }
+ }));
+ function smoke(x,y,z,s,target=group){
+  const m=new THREE.Sprite(new THREE.SpriteMaterial({
+   map:smokeTexture,transparent:true,opacity:.32,depthWrite:false,depthTest:true}));
+  m.position.set(x,y,z);m.scale.set(s,s,1);target.add(m);
+  smokeParts.push({m,x,y,s,phase:rnd()*7,speed:.35+rnd()*.55});
+ }
+ // Costados de obsidiana: grandes siluetas, torres fracturadas y caídas de lava.
+ for(const side of [-1,1]){
+  const sx=side*50;
+  propBlock(13,14,10,sx,7,-39,stoneDark);
+  propBlock(11,12.7,9,sx-side*.65,8,-38.2,stoneMain);
+  propBlock(13.5,1.05,10.5,sx,14.5,-38.1,stoneTop);
+  propBlock(9,10.5,7.5,sx-side*5.8,5.8,-46,stoneDark);
+  propBlock(7.8,9,7,sx-side*5.6,6.5,-45.8,stoneMain);
+  for(let i=0;i<5;i++){
+   const xx=sx-side*(5+i*2.6);
+   propBlock(3.6,.85,4.6,xx,2.3+i*.73,-31.9-i*.72,stoneFace);
+  }
+  propBlock(3.3,8.2,3.4,sx-side*8,4.1,-34,stoneDark);
+  propBlock(2.7,7.2,2.8,sx-side*8,4.6,-33.6,stoneFace);
+  const cap=new THREE.Mesh(new THREE.ConeGeometry(2.05,3.2,5),stoneDark);
+  cap.position.set(sx-side*8,9.5,-33.6);cap.rotation.z=side*.21;group.add(cap);
+  lavaFall(sx-side*1.9,7.3,-33.5,2.5,11.8);
+  lavaFall(sx-side*6.5,6.0,-43.8,1.65,8.8);
+  propBlock(.3,4.2,.16,sx-side*4.2,4.7,-32.9,emberMat);
+  propBlock(.17,2.5,.17,sx-side*3.9,4.1,-32.8,emberBright);
+  cluster(sx-side*3,-29.2,8,8,.95);
+  cluster(sx-side*6,-36.2,7,6,.8);
+  smoke(sx-side*2,12,-34,6.2);
+  smoke(sx-side*6,10,-44,5.6);
+ }
+ // Cornisa cercana: únicamente cinematográfica. Se aleja al girar la cámara.
+ propBlock(78,2.8,7,0,1.4,HZ+13,stoneDark,foregroundG);
+ propBlock(76,.65,7.2,0,3.0,HZ+12.5,stoneTop,foregroundG);
+ for(let i=0;i<9;i++){
+  const xx=-33+i*8.25;
+  propBlock(7.5,.75,4,xx,3.65,HZ+9.4+(i%2)*.55,stoneFace,foregroundG);
+  propBlock(7.25,.16,.6,xx,4.12,HZ+7.7+(i%2)*.55,stoneTop,foregroundG);
+ }
+ // Grietas brillantes trazadas sobre la cornisa.
+ for(const x of [-24,-13,0,13,24]){
+  propBlock(3.1,.12,.42,x,4.18,HZ+11,emberMat,foregroundG);
+  propBlock(1.3,.15,.19,x+.5,4.27,HZ+11.1,emberBright,foregroundG);
+ }
+ for(const side of [-1,1]){
+  const x=side*40;
+  propBlock(4.3,9.2,4.2,x,4.6,HZ+8,stoneDark,foregroundG);
+  propBlock(3.6,8.0,3.5,x,5.0,HZ+8.2,stoneMain,foregroundG);
+  propBlock(5.2,.88,5,x,9.6,HZ+8,stoneTop,foregroundG);
+  cluster(side*28,HZ+9.2,9,10,1.35,foregroundG);
+  smoke(side*25,8,HZ+9,5.4,foregroundG);
+ }
+ cluster(0,HZ+10.2,7,14,1.2,foregroundG);
+ // Braseros sobre la balaustrada, animados y con iluminación puntual moderada.
+ for(const x of [-26,-9,9,26]){
+  propBlock(2.1,2.6,2.1,x,5.0,HZ+7.0,stoneDark,foregroundG);
+  propBlock(3.2,.7,2.9,x,6.5,HZ+7.0,stoneTop,foregroundG);
+  const flameMesh=new THREE.Mesh(new THREE.PlaneGeometry(2.45,3.7),
+   new THREE.MeshBasicMaterial({map:tex(flame),transparent:true,side:THREE.DoubleSide,depthWrite:false}));
+  flameMesh.position.set(x,8.2,HZ+7);foregroundG.add(flameMesh);
+  const glow=new THREE.PointLight(0xff873b,.28,9);glow.position.set(x,7.1,HZ+7);
+  foregroundG.add(glow);foregroundParts.push({flameMesh,glow,phase:rnd()*6});
+ }
+ group.userData.pmdSetIntro=mix=>{
+  // Objetos bajos y cercanos desaparecen cuando la cámara termina de subir.
+  const k=Math.max(0,Math.min(1,(mix-.45)/.35));
+  foregroundG.visible=k<.95;
+  foregroundG.position.y=-k*17;
+ };
+
  group.userData.pmdTick=(dt,t)=>{
-  for(const item of animateParts)item.flag.rotation.y=Math.sin(t*.0015+item.phase)*.07;
+  for(const item of animateParts)if(item.flag)item.flag.rotation.y=Math.sin(t*.0015+item.phase)*.07;
+  for(const item of foregroundParts){
+   const w=Math.sin(t*.009+item.phase),h=Math.sin(t*.012+item.phase);
+   item.flameMesh.scale.set(1+w*.06,1+h*.10,1);
+   item.glow.intensity=.21+.13*(.5+.5*w);
+  }
+  for(const s of smokeParts){
+   const p=(t*.00025*s.speed+s.phase)%1;
+   s.m.position.set(s.x+Math.sin(t*.00045+s.phase)*.85,s.y+p*2.2,s.m.position.z);
+   s.m.material.opacity=.22*(1-p);
+   s.m.scale.set(s.s*(1+p*.27),s.s*(1+p*.25),1);
+  }
+  for(const l of extraLava){
+   const pulse=.86+.14*Math.sin(t*.003+l.phase);
+   l.m.material.color.setRGB(1,pulse,.88+.12*pulse);
+  }
   for(const s of sparks){
    const p=(t*.001*s.speed+s.phase)%5;
    s.m.position.set(s.x+Math.sin(t*.0018+s.phase)*.65,s.base+p*1.6,s.z);
