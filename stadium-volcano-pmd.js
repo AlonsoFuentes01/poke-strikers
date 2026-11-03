@@ -592,6 +592,43 @@ function build(o){
   for(const x of [183,1353])crystal(q,x,273,.85);
  });
  plane(foregroundArt,112,12,0,3.5,HZ+8,foreground);
+
+ // Pórticos laterales y linternas de piedra del mismo set modular PMD.
+ const porch=canvas(448,480,q=>{
+  poly(q,[[0,480],[0,242],[49,184],[92,214],[148,155],[201,203],
+          [246,178],[311,223],[362,173],[448,238],[448,480]],C.ink);
+  poly(q,[[8,469],[8,256],[58,201],[108,232],[154,175],[207,219],
+          [259,194],[317,245],[372,195],[441,257],[441,469]],C.stone);
+  for(let i=0;i<75;i++){
+   const x=rand()*448,y=215+rand()*236;
+   rect(q,x,y,8+rand()*18,2,i%4===0?C.light:C.ash);
+  }
+  cutArch(q,121,206,156,182,false);
+  bricks(q,19,391,409,74,.55);
+  rect(q,10,384,428,22,C.ink);rect(q,16,389,416,9,C.shine);
+  for(const x of [46,402]){
+   rect(q,x-21,317,43,113,C.ink);rect(q,x-16,327,33,93,C.stone2);
+   rect(q,x-29,304,58,18,C.light);torch(q,x,298,.91);
+  }
+  for(const [x,y,s] of [[48,434,.8],[370,437,.9],[292,451,.5]])rock(q,x,y,s);
+  crystal(q,69,447,.72);crystal(q,377,446,.87);
+  banner(q,350,184,.75);crest(q,222,321,.6);
+  rect(q,0,467,448,13,C.ink);
+ });
+ for(const side of [-1,1]){
+  const item=plane(porch,17,16,side*53,7,HZ+12,foreground);item.renderOrder=3;
+ }
+ const lantern=canvas(128,240,q=>{
+  rect(q,50,84,27,155,C.ink);rect(q,54,89,19,142,C.stone2);
+  rect(q,32,63,64,54,C.ink);rect(q,38,70,52,42,C.lava);
+  rect(q,44,75,40,29,C.hot);rect(q,57,81,18,21,C.core);
+  rect(q,28,58,72,13,C.shine);
+  poly(q,[[28,59],[48,29],[64,10],[79,29],[100,59]],C.ink);
+  poly(q,[[40,53],[54,33],[64,21],[76,36],[88,53]],C.stone2);
+  rect(q,27,230,74,10,C.ink);
+ });
+ for(const x of [-40,-19,19,40])plane(lantern,2.7,5.2,x,3.1,HZ+7.4,foreground);
+
  const embers=[];
  const emberTex=mkTex(canvas(32,32,q=>{
   rect(q,10,8,11,14,C.lava);rect(q,13,9,5,12,C.core);
@@ -626,8 +663,13 @@ function build(o){
   mark(side*(HX+.35),0,.14,GW*2-.15,accent,.145);
  }
  scene.userData.pmdSetIntro=mix=>{
-  // La cornisa frontal es un recurso de la intro, jamás tapa la cancha cenital.
-  foreground.visible=mix<.64;
+  // La decoración frontal se aleja y desvanece suavemente durante el giro.
+  const k=Math.max(0,Math.min(1,(mix-.40)/.36));
+  foreground.visible=k<.995;
+  foreground.position.y=-k*13;
+  foreground.traverse(o=>{
+   if(o.material&&o.material.opacity!==undefined)o.material.opacity=1-k;
+  });
  };
  scene.userData.pmdTick=(dt,t)=>{
   for(const e of embers){
