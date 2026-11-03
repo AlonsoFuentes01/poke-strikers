@@ -482,7 +482,7 @@ button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
 <div id="l4hud"></div>
 <div id="end"><button id="re">Revancha</button><button id="ch2">Cambiar equipos</button></div>
 <div id="splash" role="button" tabindex="0" aria-label="Pulsa una tecla para jugar"><div id="splashLogo"><b>POKÉ STRIKERS</b><small>FÚTBOL ARCADE POKÉMON</small></div><div id="splashContent"><div id="pressStart">PULSA UNA TECLA PARA JUGAR</div></div></div>
-<div id="menu"><div id="menuMonsters" aria-hidden="true"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/130.png"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/94.png"></div><h1>Poké Strikers</h1><div>⚽ ELIGE TU LIGA · ARMA TU ONCE · DOMINA LA CANCHA</div><div id="tabs"></div>
+<div id="menu"><div id="menuMonsters" aria-hidden="true"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/6.png"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/130.png"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/94.png"></div><h1>Poké Strikers</h1><div>⚽ ELIGE TU LIGA · ARMA TU ONCE · DOMINA LA CANCHA</div><div id="tabs"></div>
 <div class="pickLbl" id="modeLbl">MODO LOCAL</div><div id="modePick"><button type="button" data-mode="1" class="on">🎮 1 jugador</button><button type="button" data-mode="4">👥 2 vs 2 · 4 jugadores</button></div>
 <div id="l4Cfg"><div class="l4row"><b style="color:#ffd23f">P1 · Eq.1</b><select id="l4s0"></select></div><div class="l4row"><b style="color:#7dff8a">P2 · Eq.1</b><select id="l4s1"></select></div><div class="l4row"><b style="color:#66e0ff">P3 · Eq.2</b><select id="l4s2"></select></div><div class="l4row"><b style="color:#ff7ad9">P4 · Eq.2</b><select id="l4s3"></select></div>
 <small id="l4Warn"></small><small><b>Teclado A:</b> WASD mover · Shift correr · F tiro (mantén) · G pase · T pase aéreo · R placaje · Q poder<br><b>Teclado B:</b> Flechas mover · Shift der. correr · / tiro (mantén) · . pase · , pase aéreo · ; placaje · P poder<br><b>Mando:</b> stick mover · LB correr · RT tiro (mantén) · A pase · RB pase aéreo · B placaje · Y poder<br>Cada jugador maneja a su Pokémon fijo; un puesto en «CPU» (o con el mando desconectado) lo juega la IA. Con un solo teclado, para 4 humanos conviene usar mandos: algunos teclados no registran tantas teclas a la vez. No funciona en online.</small></div>
@@ -2013,9 +2013,9 @@ function syncBiomeWeather(){
  if(!modes.some(k=>WXP[k].rain>0))wetAcc=0;
 }
 const ENVPAL={
- city:{top:0x70a4ce,bot:0xbfe2e7,sun:0xfff2ce,sunI:1.18,hemi:1.05,dir:[-.5,.55,-1],glow:.35},
- classic:{top:0x294a74,bot:0x8cb0cf,sun:0xd9e9ff,sunI:.95,hemi:.78,dir:[.4,.4,-1],glow:.4},
- sunset:{top:0x2a2050,bot:0xe2875a,sun:0xffb36b,sunI:1.05,hemi:.7,dir:[.2,.1,-1],glow:1.2}
+ city:{top:0x529ee0,bot:0xc9eaf0,sun:0xffedd0,sunI:1.22,hemi:1.13,dir:[-.5,.55,-1],glow:.4},
+ classic:{top:0x5fa8dd,bot:0xd8eddb,sun:0xffefc4,sunI:1.16,hemi:1.07,dir:[.4,.4,-1],glow:.35},
+ sunset:{top:0x65599f,bot:0xf4b78b,sun:0xffce8a,sunI:1.07,hemi:.96,dir:[.2,.1,-1],glow:.78}
 };
 let WXk='clear',WXmode='fixed',wxTimer=40,thFlash=0,thTimer=8,decalClock=0,decAcc=0,decDrawn=false,CREST=['',''],drtAny=false;
 const WXc=Object.assign({},WXP.clear);
@@ -2110,7 +2110,7 @@ function envApply(){
  sun.color.set(P.sun).lerp(_c1.set(0xffffff),cl2*.6);sun.intensity=P.sunI*(1-w.cloud*.5-w.dark*.4);
  if(hemiL)hemiL.intensity=P.hemi*(1-w.cloud*.15-w.dark*.45)+thFlash*1.1;
  fillLight.intensity=.5*(1-w.cloud*.3);
- R.toneMappingExposure=.9*(P.exp||1)*(1-w.dark*.2);
+ R.toneMappingExposure=1.06*(P.exp||1)*(1-w.dark*.18);
  pitchU.wet.value=Math.max(wetAcc*(1-snowAcc*.5),w.wet*.12);pitchU.pud.value=cl((wetAcc-.35)*1.6,0,1);pitchU.snow.value=snowAcc*.88;pitchU.rainA.value=Math.min(1,w.rain);pitchU.cloud.value=w.cloud*(1-w.dark*.6);
  if(starsP)starsP.material.opacity=Math.max(0,(stadiumMode==='sunset'?.9:.1)*(1-w.cloud));
  const fo=Math.min(1,.3+.5*(w.dark+(stadiumMode==='sunset'?.5:0)+w.fog*.3));flares.forEach(fs=>fs.material.opacity=fo);
@@ -2134,10 +2134,10 @@ const BIOMES={
 };
 Object.assign(ENVPAL,{
  beach:{top:0x1f7ae0,bot:0xa9e6ff,sun:0xfff2cf,sunI:1.2,hemi:1,dir:[.35,.36,-1],glow:.9,fogN:210,fogF:560,exp:1.05},
- volcano:{top:0x14070b,bot:0xc4400f,sun:0xff8a3a,sunI:.95,hemi:.55,dir:[.1,.16,-1],glow:1.6,fogN:80,fogF:380,exp:1.1},
- arctic:{top:0x050d2c,bot:0x3a86b8,sun:0xcfe9ff,sunI:.9,hemi:.85,dir:[-.3,.12,-1],glow:.5,fogN:140,fogF:460,exp:1.05},
+ volcano:{top:0x685f9d,bot:0xe7a077,sun:0xffc27a,sunI:1.07,hemi:.92,dir:[.1,.16,-1],glow:.92,fogN:140,fogF:490,exp:1.04},
+ arctic:{top:0x4a91ca,bot:0xcce9f0,sun:0xfff9e9,sunI:1.13,hemi:1.06,dir:[-.3,.12,-1],glow:.54,fogN:180,fogF:550,exp:1.04},
  space:{top:0x02020a,bot:0x180a36,sun:0xd0e0ff,sunI:.9,hemi:.6,dir:[-.4,.3,-1],glow:.25,fogN:500,fogF:1200,exp:1.1},
- desert:{top:0x2d62b8,bot:0xf6cd8e,sun:0xfff0c8,sunI:1.25,hemi:.95,dir:[.45,.28,-1],glow:1,fogN:160,fogF:480,exp:1.05}
+ desert:{top:0x429cd2,bot:0xffdfa6,sun:0xfff0c8,sunI:1.24,hemi:1.13,dir:[.45,.28,-1],glow:.82,fogN:190,fogF:530,exp:1.06}
 });
 Object.assign(STN,{beach:'Playa',volcano:'Volcán',arctic:'Glaciar',space:'Espacio',desert:'Desierto'});
 const BIO={anims:[],T:{value:0},fog:{value:new THREE.Color(0x88aacc)},seed:1};
@@ -4881,7 +4881,7 @@ function buildEnds(mode){
  }
 }
 cityFloor.material.map=null;cityFloor.material.color.setHex(0x9fa69f);cityFloor.material.needsUpdate=true;
-buildEnds(stadiumMode);buildCityV3();syncBiomeWeather();
+buildEnds(stadiumMode);buildCityV3();mdPaintPitch(stadiumMode);mdIllustratedWorld(stadiumMode);syncBiomeWeather();
 
 const DMW=1024,DMH=614,dmC=document.createElement('canvas');dmC.width=DMW;dmC.height=DMH;const dmq=dmC.getContext('2d');
 const dmT=srgb(new THREE.CanvasTexture(dmC));
