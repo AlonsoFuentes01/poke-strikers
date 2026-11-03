@@ -7,7 +7,7 @@
 'use strict';
 function build(o){
  const {THREE,cityG,HX,HZ,GW,apron,pitchMat,SCENIC_TEXTURES}=o;
- const scene=new THREE.Group();scene.name='ESTADIO_VOLCAN_PMD_CIUDAD_BASE';cityG.add(scene);
+ const scene=new THREE.Group();scene.name='ESTADIO_VOLCAN_PMD_CALDERA';cityG.add(scene);
  let seed=18473;const rand=()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483647};
  const C={
   sky:'#58436b',sky2:'#ab6b79',cloud:'#a4849a',cloudShadow:'#604b66',
@@ -119,7 +119,7 @@ function build(o){
  const pavement=canvas(1024,614,(q)=>{
   // Adoquín de plaza PMD: bloques de piedra cálida, juntas suaves y desgaste natural.
   // El mismo material continúa bajo las líneas de la cancha y en la zona exterior.
-  r(q,0,0,1024,614,'#aa929a');
+  r(q,0,0,1024,614,'#49394f');
   const stones=['#675668','#705d70','#766273','#655568','#756071','#806879','#716073','#6d566b'];
   const bw=63,bh=29;
   for(let row=0;row<Math.ceil(614/bh);row++){
@@ -215,26 +215,109 @@ function build(o){
    r(q,x,y,13+rand()*29,6+rand()*9,C.cloudShadow);
   }
  });
- const town=canvas(1536,540,q=>{
-  // Pueblo fortificado: la arquitectura usa las mismas funciones que Ciudad.
-  for(let i=0;i<16;i++){
-   const x=i*102-25,h=174+(i*37)%105;
-   building(q,x,530,94,h,{roof:i%3===0?'#a04b53':i%2?C.roof:C.roofDark,shop:i%4===2});
-  }
-  clockTower(q,1183,529);
-  for(let i=0;i<17;i++)tree(q,43+i*99,540,.5+(i%3)*.06);
-  for(const x of [87,316,493,1050,1272,1465]){
-   for(let yy=422;yy<508;yy+=35){
-    r(q,x-14,yy,29,30,C.ink);r(q,x-9,yy+3,19,24,C.water);
-    r(q,x-5,yy+6,9,18,C.waterLight);
+ // Paisaje exterior volcánico: no hay ciudad, casas ni tiendas.
+ // Mantiene idéntico plano y resolución que el paisaje de Ciudad PMD.
+ const caldera=canvas(1536,540,q=>{
+  const outline=C.ink,rock=C.stoneDark,light=C.stoneLight;
+  function cliff(x,base,w,h,back=false){
+   const y=base-h;
+   poly(q,[[x-9,base],[x-15,y+42],[x+w*.09,y+12],[x+w*.28,y-10],
+     [x+w*.43,y+27],[x+w*.60,y+4],[x+w*.80,y+20],
+     [x+w-6,y+7],[x+w+13,base]],back?C.mountainShade:outline);
+   poly(q,[[x+2,base],[x-2,y+50],[x+w*.16,y+24],
+     [x+w*.33,y+9],[x+w*.52,y+48],[x+w*.73,y+21],
+     [x+w-1,y+31],[x+w-4,base]],back?C.mountain:rock);
+   poly(q,[[x+w*.12,base-3],[x+w*.15,y+37],[x+w*.30,y+26],
+     [x+w*.43,y+51],[x+w*.44,base-3]],back?C.mountainLight:C.stone);
+   poly(q,[[x+w*.74,y+25],[x+w*.88,y+34],
+     [x+w-4,y+27],[x+w-4,base-1],[x+w*.71,base-1]],back?C.mountainShade:outline);
+   for(let k=0;k<Math.max(8,Math.floor(w*h/2000));k++){
+    const xx=x+8+rand()*(w-18),yy=y+57+rand()*(h-66);
+    r(q,xx,yy,6+rand()*16,2,k%4===0?C.stoneLight:C.stoneDark);
+    if(k%7===0)r(q,xx+3,yy+4,2,10,C.ink);
+   }
+   if(!back)for(let k=0;k<4;k++){
+    const xx=x+w*(.18+k*.17),yy=y+h*(.44+(k%2)*.16);
+    r(q,xx,yy,4,20+k*5,C.flower);
+    r(q,xx+1,yy+3,2,9,C.waterLight);
    }
   }
-  // Dos cascadas lejanas dentro del mismo fondo, no planos enormes sueltos.
-  for(const x of [195,1362]){
-   r(q,x-27,362,55,174,C.ink);
-   r(q,x-18,366,38,163,C.water);
-   for(let i=0;i<5;i++)
-    r(q,x-13+i*7,371,5,152-i*4,i%2?C.flower:C.waterLight);
+  function lavafall(x,y,w,h){
+   r(q,x-11,y-5,w+22,h+14,C.ink);
+   r(q,x-6,y,w+12,h,'#843a4d');
+   for(let i=0;i<Math.ceil(w/8);i++){
+    const xx=x+2+i*8,off=i%4*6;
+    r(q,xx,y+off,6,h-off-((i*3)%17),i%3===0?C.waterLight:C.water);
+    if(i%3===0)r(q,xx+1,y+off+13,2,h-off-25,C.flower2);
+   }
+   r(q,x-12,y+h,w+24,10,C.water);
+   for(let k=0;k<11;k++)r(q,x-10+rand()*(w+20),y+h+rand()*16,
+     5+rand()*9,3,k%3===0?C.waterLight:C.flower);
+  }
+  function ruins(x,base,w,h){
+   const y=base-h;
+   r(q,x-12,y+42,w+24,h-35,C.ink);r(q,x-4,y+51,w+8,h-48,C.stoneDark);
+   // Dos pilares erosionados, sin tejados ni ventanas urbanas.
+   for(const dx of [7,w-30]){
+    r(q,x+dx,y+38,24,h-55,C.ink);
+    r(q,x+dx+5,y+44,14,h-68,C.stone);
+    for(let j=0;j<6;j++)
+     r(q,x+dx+4,y+50+j*(h-76)/6,18,3,C.stoneDark);
+    r(q,x+dx-5,y+29,34,15,C.stoneLight);
+   }
+   r(q,x+2,y+22,w-4,18,C.ink);r(q,x+9,y+25,w-18,9,C.stoneLight);
+   for(let k=0;k<Math.floor(w/28);k++){
+    r(q,x+5+k*27,y-3+(k%3)*5,19,30,C.ink);
+    r(q,x+9+k*27,y+2+(k%3)*5,11,19,C.stone);
+   }
+   const mid=x+w*.5;
+   poly(q,[[mid-24,base-11],[mid-24,base-75],[mid-14,base-93],
+    [mid,base-105],[mid+14,base-93],[mid+24,base-75],
+    [mid+24,base-11]],C.ink);
+   r(q,mid-14,base-69,28,55,C.water);
+   r(q,mid-5,base-57,10,40,C.waterLight);
+   r(q,x-17,base-20,w+34,20,C.ink);
+   r(q,x-11,base-17,w+22,7,C.stoneLight);
+  }
+  // Profundidad: colinas de ceniza -> acantilados -> santuario en ruinas.
+  for(let i=0;i<13;i++){
+   const x=i*137-75,h=138+(i*57)%95;
+   cliff(x,431,158,h,true);
+  }
+  for(let i=0;i<11;i++){
+   const x=i*151-60,h=205+(i*47)%87;
+   cliff(x,537,175,h,false);
+  }
+  // Muros de contención fragmentados que conectan las formaciones naturales.
+  r(q,0,461,1536,76,C.ink);r(q,6,467,1524,61,C.stoneDark);
+  for(let row=0;row<3;row++){
+   const y=470+row*20;
+   r(q,7,y,1522,3,C.ink);
+   for(let x=(row%2)*29;x<1536;x+=65){
+    r(q,x,y+4,4,15,C.ink);
+    if((x+row)%3===0)r(q,x+8,y+8,28,2,C.stoneLight);
+   }
+  }
+  // Restos de un anfiteatro excavado en la roca, no una calle con casas.
+  for(const [x,w,h] of [[64,145,193],[303,149,230],[1086,149,223],[1349,145,196]]){
+   ruins(x,508,w,h);
+  }
+  // Grietas verticales de magma y grandes cascadas flanqueando la entrada.
+  lavafall(209,284,53,242);
+  lavafall(1274,274,56,252);
+  for(const [x,y,w,h] of [[23,350,27,166],[490,351,25,170],
+    [1022,343,27,172],[1485,347,28,176]]){
+   lavafall(x,y,w,h);
+  }
+  // Escarpes próximos, piedras cristalizadas y fogatas naturales.
+  for(let i=0;i<22;i++){
+   const x=31+i*70;
+   if(i%4===0)tree(q,x,525,.58+(i%3)*.14);
+   else flowers(q,x,516);
+  }
+  for(let i=0;i<50;i++){
+   const xx=rand()*1536,yy=399+rand()*120;
+   r(q,xx,yy,6+rand()*28,2,i%6===0?C.flower:C.stoneLight);
   }
  });
  // New spectator architecture, intentionally EMPTY of hand-drawn creatures;
@@ -399,7 +482,7 @@ function build(o){
  // El conjunto está compacto: edificio + escaleras + gradas junto al borde norte.
  // Capas paralelas, misma escala de lectura y sin bloques dispersos.
  plane(sky,117,62,0,-12,-56);
- plane(town,102,48,0,0,-44);
+ plane(caldera,102,48,0,0,-44);
  plane(tribune,91,29,0,11.5,-28);
  // Side gardens are decor, not old stands. Keep outside the gameplay perimeter.
  const garden=canvas(256,192,q=>{
