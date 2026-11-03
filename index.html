@@ -792,6 +792,8 @@ float sn=pN(vWP.xz*.4+3.1)*.5+pN(vWP.xz*1.3)*.32+pN(vWP.xz*4.5)*.18;
 float cov=clamp((uSnow*1.3-sn*.9)*2.3,0.,1.);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.8,.86,.9),uSnow*.22*(1.-cov));
 vec2 tuv=vec2((vWP.x+30.)/60.,(vWP.z+18.)/36.);
 float tr=0.;if(tuv.x>0.&&tuv.x<1.&&tuv.y>0.&&tuv.y<1.)tr=texture2D(uTramp,tuv).a;
+// Marcas de botas persistentes sobre el césped; con nieve se convierten en huellas.
+diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.25,.2,.105),clamp(tr*(.45+.35*uWear),0.,.65)*(1.-uSnow));
 cov*=1.-.62*smoothstep(.72,.9,lum0);cov*=1.-tr*.85;pud*=1.-cov;
 vec2 rc=vWP.xz*2.4,cell=floor(rc),rf=fract(rc)-.5;float ph=fract(uTime*.85+pH(cell)),rr=abs(length(rf)-ph*.48);
 float rip=smoothstep(.05,.0,rr)*(1.-ph)*uRainA*step(.25,pH(cell+3.7));
@@ -1516,7 +1518,7 @@ function l4Tick(){
 
 // ---------- flujo ----------
 async function start(){
- audioInit();ready=false;over=false;document.body.classList.add('playing');$('menu').style.display='none';$('splash').style.display='none';$('end').style.display='none';$('msg').style.color='#fff';$('msg').textContent='CARGANDO…';
+ audioInit();ready=false;over=false;trClear();pitchU.wear.value=.38;document.body.classList.add('playing');$('menu').style.display='none';$('splash').style.display='none';$('end').style.display='none';$('msg').style.color='#fff';$('msg').textContent='CARGANDO…';
  grp.clear();P=[];const T=sel.map(team);names=T.map(t=>t.n);cols=T.map(t=>t.c);CREST=T.map(t=>'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/'+t.p[0]+'.png');
  BENCH=[[],[]];SUBS=[0,0];
  [0,1].forEach(t=>T[t].p.forEach((id,i)=>{if(i<3)P.push(mkPlayer(id,T[t].c,t,i==2,i));else{const b=mkPlayer(id,T[t].c,t,false,i-3);b.g.visible=false;BENCH[t].push(b)}}));
@@ -1795,6 +1797,13 @@ function groundTick(dt){
   if(w.snow>.1){trFade+=el;if(trFade>.5){trFade=0;trq.globalCompositeOperation='destination-out';trq.fillStyle='rgba(0,0,0,'+(.06*w.snow)+')';trq.fillRect(0,0,512,308);trq.globalCompositeOperation='source-over';trDirty=true}}
   if(ready&&!paused){P.forEach(p=>{if(p.mv||p.lunge>0)addTramp(p.x,p.z,1.1,.5)});if(B&&Math.hypot(B.vx,B.vz)>.1&&!B.o)addTramp(vb.x,vb.z,.7,.4)}
   if(trDirty){trT.needsUpdate=true;trDirty=false}}}
+ else if(ready&&!paused){
+  // La superficie se marca con el paso de los jugadores. Actualización limitada a 5 Hz.
+  trAcc+=dt;if(trAcc>.2){trAcc=0;
+   P.forEach(p=>{if(p.mv||p.lunge>0)addTramp(p.x,p.z,.48,.12)});
+   if(trDirty){trT.needsUpdate=true;trDirty=false}
+  }
+ }
  chipT-=dt;if(chipT<=0){chipT=1.5;envChipUpdate()}
 }
 function envApply(){
