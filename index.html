@@ -2601,6 +2601,79 @@ function bBeachV4(){
   rect(q,81,55,16,35,'#75503d');rect(q,12,87,104,5,'#26394c');
  });
  plane(kiosk,-116,7,-61,19,14,true);
+ // Centro Pokémon costero: fachada en pixel-art sobre un volumen 3D pequeño.
+ const centerArt=canvas(160,160,q=>{
+  rect(q,12,52,137,105,'#1d3648');rect(q,16,56,129,100,'#e6dcc4');
+  rect(q,7,42,145,17,'#20374b');rect(q,12,25,135,22,'#d6594c');
+  rect(q,23,21,111,10,'#f8e1ba');
+  rect(q,11,56,138,10,'#ce6c52');
+  rect(q,26,76,42,57,'#25485f');rect(q,30,80,34,47,'#6cbbd0');
+  rect(q,91,74,42,80,'#26445b');rect(q,96,80,32,66,'#72bad0');
+  for(let i=0;i<4;i++)rect(q,33+i*9,86,4,23,'#c4f1f2');
+  rect(q,39,5,83,20,'#22384c');rect(q,44,9,73,14,'#fff3d7');
+  q.fillStyle='#e66c57';q.beginPath();q.arc(80,16,8,Math.PI,Math.PI*2);q.fill();
+  q.fillStyle='#ffffff';q.beginPath();q.arc(80,16,8,0,Math.PI);q.fill();
+  rect(q,72,15,16,2,'#20374b');rect(q,76,12,8,8,'#20374b');
+  rect(q,78,14,4,4,'#ffffff');
+  rect(q,9,153,145,5,'#22394c');
+ });
+ const centerBody=block(20,19,5,black,-138,9,-75);
+ block(19.4,18.5,4.7,white,-138,9,-74.6);
+ plane(centerArt,-138,9,-71.9,20,19,true);
+ // Palmeras con COPA y TRONCO conectados, dibujados como sprites GBA.
+ const palmArt=canvas(128,192,q=>{
+  // Tronco curvo por escalones, con borde de tinta oscura.
+  for(let i=0;i<12;i++){
+   const y=181-i*9,x=52+Math.round(Math.sin(i*.24)*8);
+   rect(q,x-2,y,15,13,'#193647');
+   rect(q,x+1,y+2,9,10,i%2?'#c38a50':'#a06b41');
+   rect(q,x+2,y+3,3,3,'#f1bd73');
+  }
+  const leaf=(a,b,c,d)=>{
+   polygon(q,[[59,65],[a,b],[c,d],[62,70]],'#1b4250',null,0);
+   polygon(q,[[61,62],[a+4,b+2],[c-2,d+1],[63,67]],'#3da55f',null,0);
+  };
+  for(const [a,b,c,d] of [[8,27,25,63],[22,6,38,56],[52,3,56,60],[85,4,76,58],
+    [119,28,91,62],[123,58,91,70],[104,85,74,72],[20,89,42,73],[0,58,35,65]])leaf(a,b,c,d);
+  rect(q,53,59,20,10,'#214d50');rect(q,57,61,13,8,'#4fae62');
+  for(let i=0;i<9;i++)rect(q,14+i*11,25+((i*19)%31),7,3,'#a2db71');
+ });
+ const palms=[[-159,22,-86,25],[-108,14,-78,19],[159,18,-94,25]];
+ for(const [x,y,z,h] of palms)plane(palmArt,x,y,z,h*.66,h,true);
+ // Escaleras de madera reales sobre el acantilado izquierdo.
+ for(let i=0;i<8;i++){
+  const x=-103+i*2.05,y=-.65+i*.72,z=-74-i*.35;
+  block(3.7,.26,2.5,black,x,y-.1,z);
+  block(3.45,.18,2.3,timber,x,y+.1,z);
+  for(const side of [-1,1])if(i%2===0)
+   block(.15,2,.15,black,x,y+.9,z+side*1.25);
+ }
+ // Jardineras y vegetación entre estructuras, fuera del campo.
+ for(const x of [-129,-96,93,131]){
+  block(3.3,.64,2.1,black,x,-1.08,-65);
+  block(3,.4,1.8,timber,x,-.75,-65);
+  block(2.8,.46,1.7,foliage,x,-.38,-65);
+ }
+ // Pokémon decorativos que observan ocasionalmente desde el paseo marítimo.
+ const watchers=[];
+ for(const [id,x,z] of [[54,-99,-61],[7,75,-69],[278,113,-75]]){
+  const img=loader.load(spr(id),t=>{
+   t.encoding=THREE.sRGBEncoding;t.magFilter=THREE.NearestFilter;
+   t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;
+  });
+  SCENIC_TEXTURES.push(img);
+  const m=new THREE.SpriteMaterial({map:img,transparent:true,depthWrite:false,alphaTest:.07});
+  const creature=new THREE.Sprite(m);
+  creature.scale.set(3.4,3.4,1);creature.position.set(x,1,z);root.add(creature);
+  watchers.push({creature,x,offset:rnd()*6.28});
+ }
+ BIO.anims.push((dt,T)=>{
+  for(const b of watchers){
+   b.creature.position.y=1+Math.sin(T*1.7+b.offset)*.18;
+   b.creature.position.x=b.x+Math.sin(T*.18+b.offset)*.65;
+  }
+ });
+
  const surfing=canvas(96,128,q=>{
   for(const [i,c] of ['#eb7559','#49b4b8','#f4c55d'].entries()){
    rect(q,12+i*25,17,21,95,'#21374b');
