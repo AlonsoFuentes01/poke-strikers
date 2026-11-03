@@ -143,7 +143,137 @@ function build(o){
   const glow=new THREE.PointLight(0xff7432,.45,13);glow.position.set(x,3,z);group.add(glow);
   flames.push({m,glow,phase:rnd()*6});
  }
+
+ // Segunda capa de profundidad: volumen de piedra real, encima de la ilustración.
+ // Todo permanece al fondo o fuera de cancha, evitando interferir con las jugadas.
+ const stoneMain=new THREE.MeshStandardMaterial({color:0x473745,roughness:1,flatShading:true});
+ const stoneFace=new THREE.MeshStandardMaterial({color:0x6e5866,roughness:1,flatShading:true});
+ const stoneDark=new THREE.MeshStandardMaterial({color:0x241d2c,roughness:1,flatShading:true});
+ const stoneTop=new THREE.MeshStandardMaterial({color:0x99808a,roughness:.92,flatShading:true});
+ const emberMat=new THREE.MeshBasicMaterial({color:0xff843b});
+ const emberBright=new THREE.MeshBasicMaterial({color:0xffca72});
+ const trimMat=new THREE.MeshStandardMaterial({color:0x986a54,roughness:.7,flatShading:true});
+ const animateParts=[];
+ function block(w,h,d,x,y,z,mat=stoneMain,bevel=0){
+  const obj=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+  obj.position.set(x,y,z);group.add(obj);return obj;
+ }
+ function spire(x,z,scale=1){
+  block(4.5*scale,9*scale,4.5*scale,x,4.5*scale,z,stoneDark);
+  block(3.8*scale,8.5*scale,3.8*scale,x,5.25*scale,z,stoneMain);
+  block(5.3*scale,1.1*scale,5.3*scale,x,9.8*scale,z,stoneFace);
+  block(3.65*scale,1.0*scale,3.65*scale,x,10.8*scale,z,stoneTop);
+  const crown=new THREE.Mesh(new THREE.ConeGeometry(2.9*scale,3.8*scale,4),stoneDark);
+  crown.rotation.y=Math.PI/4;crown.position.set(x,13*scale,z);group.add(crown);
+  // Lamas luminosas verticales con sombras en los bordes.
+  block(.58*scale,4.0*scale,.13*scale,x-1.0*scale,5.4*scale,z+2.28*scale,emberMat);
+  block(.58*scale,2.8*scale,.13*scale,x+1.0*scale,5.0*scale,z+2.28*scale,emberBright);
+  for(let yy=1;yy<9;yy+=2.3)block(4.7*scale,.18*scale,4.7*scale,x,yy*scale,z,stoneFace);
+ }
+ // Dos torres escalonadas que se recortan delante de la fachada.
+ spire(-22,-33,.92);spire(22,-33,.92);
+ spire(-39,-40,.67);spire(39,-40,.67);
+ // Bastiones laterales más cercanos a la cámara, de piedra fracturada.
+ for(const side of [-1,1]){
+  const xx=side*32;
+  block(9,6.8,6.8,xx,3.4,-32,stoneDark);
+  block(8,6.0,6.0,xx,3.75,-31.3,stoneMain);
+  block(8.6,.95,6.6,xx,7.25,-31.3,stoneTop);
+  for(let i=0;i<4;i++){
+   block(1.7,1.6,1.9,xx-3.2+i*2.13,8.4,-31.2,stoneFace);
+  }
+  // Vetas laterales de magma, con una segunda capa incandescente.
+  block(.25,3.9,.15,xx-side*1.35,3.7,-28.18,emberMat);
+  block(.13,2.3,.16,xx-side*.97,3.1,-28.09,emberBright);
+  // Rocas toscas delante de los parapetos: irregularidad real.
+  for(let k=0;k<7;k++){
+   const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(.85+rnd()*.85,0),
+    k%3===0?stoneFace:k%3===1?stoneMain:stoneDark);
+   rock.position.set(xx+side*(1+rnd()*4),.7+rnd()*.48,-27.8+rnd()*2.5);
+   rock.rotation.set(rnd()*2,rnd()*3,rnd());rock.scale.set(1.4,.8+rnd()*.8,.95);
+   group.add(rock);
+  }
+ }
+ // Puerta tallada: un túnel oscuro real en cuatro profundidades.
+ // Se mantiene en z=-35, por donde pasan los sprites de la entrada.
+ block(15.1,1.2,3.8,0,13.7,-35.0,stoneDark);
+ block(13.6,1.1,4.1,0,14.3,-34.7,stoneTop);
+ for(const side of [-1,1]){
+  const x=side*8.8;
+  block(2.2,12.4,4.8,x,6.2,-35.0,stoneDark);
+  block(1.65,11.7,5.2,x-side*.16,6.5,-34.6,stoneFace);
+  for(let j=0;j<5;j++)block(2.7,.30,5.4,x,2.0+j*2.5,-34.5,stoneTop);
+  // Pilastras más profundas y pequeñas ventanas con resplandor.
+  block(1.4,8.5,1.6,side*12.5,5,-32.8,stoneDark);
+  block(.47,3.7,.16,side*12.5,6,-31.93,emberMat);
+ }
+ // Bóveda del arco mediante dovelas poligonales.
+ for(let i=0;i<9;i++){
+  const angle=Math.PI*(i/8);
+  const x=Math.cos(angle)*8.0,y=10.25+Math.sin(angle)*4.2;
+  const stone=block(2.25,2.2,4.5,x,y,-34.75,i%2?stoneFace:stoneMain);
+  stone.rotation.z=angle-Math.PI/2;
+ }
+ // Escalera tridimensional hacia la salida: nueve peldaños reales.
+ // La primera huella está en z=-26.4, fuera del terreno que arranca z=-18.
+ for(let i=0;i<9;i++){
+  const zz=-26.4-i*.86,wide=9.4-i*.36,h=.25+i*.23;
+  block(wide,h,1.02,0,h*.5,zz,stoneDark);
+  block(wide,.15,1.04,0,h+.06,zz,stoneFace);
+  block(wide*.92,.045,.24,0,h+.16,zz+.39,stoneTop);
+ }
+ // Paredes en terrazas para una sensación de recinto cerrado y no una lámina plana.
+ for(const side of [-1,1]){
+  for(let k=0;k<5;k++){
+   const x=side*(28+k*3.15),z=-31-k*.6;
+   block(3.1,3.8+k*.48,4.2,x,2.0+k*.24,z,stoneMain);
+   block(3.3,.42,4.4,x,4.1+k*.48,z,stoneTop);
+  }
+ }
+ // Letrero flotante del escudo, con piezas que sobresalen de la mampostería.
+ const disk=new THREE.Mesh(new THREE.CylinderGeometry(3.15,3.15,.55,24),
+  new THREE.MeshStandardMaterial({color:0x312330,metalness:.18,roughness:.6}));
+ disk.rotation.x=Math.PI/2;disk.position.set(0,15.7,-31.9);group.add(disk);
+ const diskRing=new THREE.Mesh(new THREE.TorusGeometry(2.72,.27,6,30),
+  new THREE.MeshBasicMaterial({color:0xe99552}));
+ diskRing.position.set(0,15.7,-31.52);group.add(diskRing);
+ block(4.5,.25,.25,0,15.7,-31.45,trimMat);
+ const centerDisc=new THREE.Mesh(new THREE.CircleGeometry(.65,20),emberBright);
+ centerDisc.position.set(0,15.7,-31.21);group.add(centerDisc);
+ // Estandartes separados en el espacio con forma de tela, relieve y oscilación.
+ const banner=canvas(96,172,q=>{
+  poly(q,[[10,8],[86,8],[86,130],[48,166],[10,130]],'#201925');
+  poly(q,[[17,14],[79,14],[79,126],[48,154],[17,126]],'#b34e49');
+  fill(q,22,20,53,6,'#e7a470');fill(q,28,36,40,5,'#e07a5c');
+  q.fillStyle='#f6c68e';q.beginPath();q.arc(48,91,19,0,7);q.fill();
+  q.fillStyle='#a44a45';q.beginPath();q.arc(48,91,13,0,7);q.fill();
+  fill(q,30,88,36,6,'#f6c68e');q.fillStyle='#f6c68e';q.beginPath();q.arc(48,91,6,0,7);q.fill();
+ });
+ for(const side of [-1,1]){
+  const flag=plane(banner,3.25,6.15,side*15.0,7.8,-29.2);
+  flag.material.depthTest=true;flag.renderOrder=4;
+  block(3.8,.21,.37,side*15.0,11.1,-29.1,trimMat);
+  animateParts.push({flag,phase:rnd()*7});
+ }
+ // Chispas y ceniza subiendo desde las brechas (pocas: móvil primero).
+ const sparkCanvas=canvas(24,24,q=>{
+  fill(q,9,6,6,12,'#fca252');fill(q,11,3,3,16,'#ffedaa');
+ });
+ const sparkTexture=tex(sparkCanvas);
+ const sparks=[];
+ for(let i=0;i<15;i++){
+  const m=new THREE.Sprite(new THREE.SpriteMaterial({map:sparkTexture,transparent:true,opacity:.84,depthWrite:false}));
+  m.scale.set(.22+rnd()*.23,.35+rnd()*.34,1);m.renderOrder=5;group.add(m);
+  sparks.push({m,x:(rnd()-.5)*86,z:-27-rnd()*20,base:.8+rnd()*2,phase:rnd()*12,speed:.30+rnd()*.70});
+ }
+
  group.userData.pmdTick=(dt,t)=>{
+  for(const item of animateParts)item.flag.rotation.y=Math.sin(t*.0015+item.phase)*.07;
+  for(const s of sparks){
+   const p=(t*.001*s.speed+s.phase)%5;
+   s.m.position.set(s.x+Math.sin(t*.0018+s.phase)*.65,s.base+p*1.6,s.z);
+   s.m.material.opacity=.72*Math.min(1,p*2)*Math.min(1,(5-p)*1.3);
+  }
   for(const f of flames){
    const w=Math.sin(t*.008+f.phase),h=Math.sin(t*.012+f.phase);
    f.m.scale.set(1+w*.06,1+h*.09,1);f.glow.intensity=.34+.16*(.5+.5*w);
