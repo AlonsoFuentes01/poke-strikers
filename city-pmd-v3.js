@@ -59,38 +59,58 @@ function build(o){
   addPlane('lamp_large',3.3,34,5,-23.4,-7);
   addPlane('banners',8.8,-44,7,-30,-11);
   addPlane('banners',8.8,44,7,-30,-11);
-  // Porterías situadas EXACTAMENTE en x=±HX y z=±GW. El marco tiene
-  // la altura jugable original de 3.6. La red se construye por píxeles.
-  const goalPost=new THREE.MeshBasicMaterial({color:0xfff6e4,roughness:1});
-  const goalShadow=new THREE.MeshBasicMaterial({color:0x705774,roughness:1});
+  // Porterías pixel art con volumen: poste frontal, fondo, dos laterales,
+  // malla superior y marco superior. Boca 11 unidades, 3.6 de alto.
+  // La física mantiene sus límites originales en x=+-HX, z=+-GW.
+  const white=new THREE.MeshBasicMaterial({color:0xfff2db,toneMapped:false});
+  const edge=new THREE.MeshBasicMaterial({color:0x644f7c,toneMapped:false});
+  const light=new THREE.MeshBasicMaterial({color:0xe9c6b6,toneMapped:false});
+  const deep=new THREE.MeshBasicMaterial({color:0x896d96,toneMapped:false});
   const netCanvas=document.createElement('canvas');
   netCanvas.width=128;netCanvas.height=64;
   const nq=netCanvas.getContext('2d');nq.clearRect(0,0,128,64);
-  for(let xx=0;xx<=128;xx+=12){nq.fillStyle='rgba(248,233,229,.83)';nq.fillRect(xx,0,2,64)}
-  for(let yy=0;yy<=64;yy+=10){nq.fillStyle='rgba(249,229,225,.76)';nq.fillRect(0,yy,128,2)}
-  const goalNet=new THREE.CanvasTexture(netCanvas);goalNet.encoding=THREE.sRGBEncoding;
-  goalNet.magFilter=goalNet.minFilter=THREE.NearestFilter;
-  goalNet.generateMipmaps=false;SCENIC_TEXTURES.push(goalNet);
-  function goalBox(w,h,d,material,x,y,z){
-   const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
-   mesh.position.set(x,y,z);root.add(mesh);return mesh;
+  for(let yy=0;yy<64;yy+=8){
+   for(let xx=0;xx<128;xx+=8){
+    nq.fillStyle='rgba(252,239,237,.78)';nq.fillRect(xx,yy,1,8);
+    nq.fillStyle='rgba(252,239,237,.71)';nq.fillRect(xx,yy,8,1);
+    nq.fillStyle='rgba(115,88,131,.22)';nq.fillRect(xx+2,yy+2,2,2);
+   }
   }
+  const netTex=new THREE.CanvasTexture(netCanvas);netTex.encoding=THREE.sRGBEncoding;
+  netTex.magFilter=netTex.minFilter=THREE.NearestFilter;netTex.generateMipmaps=false;
+  SCENIC_TEXTURES.push(netTex);
+  const netMat=new THREE.MeshBasicMaterial({map:netTex,transparent:true,
+   opacity:.77,side:THREE.DoubleSide,depthWrite:false,toneMapped:false});
+  const box=(w,h,d,mat,x,y,z)=>{
+   const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+   mesh.position.set(x,y,z);root.add(mesh);return mesh;
+  };
+  const panel=(w,h,x,y,z,rx=0,ry=0,mat=netMat)=>{
+   const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat);
+   mesh.position.set(x,y,z);mesh.rotation.x=rx;mesh.rotation.y=ry;
+   root.add(mesh);return mesh;
+  };
   for(const side of [-1,1]){
-   // Sombra y marco: dos postes y travesaño que abrazan la abertura real.
-   for(const gz of [-GW,GW]){
-    goalBox(.36,3.6,.42,goalShadow,side*(HX+.11),1.8,gz+.11);
-    goalBox(.3,3.5,.30,goalPost,side*HX,1.75,gz);
-   }
-   goalBox(.32,.34,2*GW+.28,goalPost,side*HX,3.6,0);
-   // Cortina de red en el fondo, sin ocupar ni tapar el campo.
-   const net=new THREE.Mesh(new THREE.PlaneGeometry(2*GW,3.3),
-    new THREE.MeshBasicMaterial({map:goalNet,transparent:true,opacity:.84,
-     side:THREE.DoubleSide,depthWrite:false}));
-   net.rotation.y=Math.PI/2;net.position.set(side*(HX+1.85),1.74,0);
-   root.add(net);
+   const frontX=side*HX,backX=side*(HX+2.25),midX=side*(HX+1.125);
+   // La estructura oscura perfila los marcos luminosos, estilo ilustración PMD.
    for(const z of [-GW,GW]){
-    goalBox(.18,.18,1.2,goalShadow,side*(HX+.92),.14,z);
+    box(.53,3.7,.52,edge,frontX,1.85,z);
+    box(.35,3.55,.36,white,frontX-side*.07,1.8,z);
+    box(.2,3.05,.22,deep,backX,1.53,z);
+    box(2.3,.21,.22,edge,midX,3.56,z);
+    box(2.24,.1,.12,light,midX,3.7,z);
+    // Cada lateral ocupa la profundidad de red, sin tapar el terreno.
+    panel(2.25,3.25,midX,1.68,z);
+    box(.52,.2,.52,light,frontX,3.7,z);
    }
+   box(.56,.5,2*GW+.5,edge,frontX,3.7,0);
+   box(.31,.27,2*GW+.27,white,frontX-side*.1,3.74,0);
+   box(.23,.22,2*GW+.13,deep,backX,3.52,0);
+   // Fondo y techo de red visibles desde la cámara ortográfica inclinada.
+   panel(2*GW,3.28,backX,1.72,0,0,Math.PI/2);
+   panel(2*GW,2.3,midX,3.52,0,-Math.PI/2);
+   // Piedra del zócalo y sombra, justo por fuera del límite de juego.
+   for(const z of [-GW,GW])box(2.45,.12,.35,edge,midX,.1,z);
   }
   // Near wall sits outside the field and never blocks the active players.
   addPlane('front_wall',79,0,-3.2,HZ+12,4);
