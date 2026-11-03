@@ -2068,7 +2068,7 @@ function mdStadiumCards(){
 function buildStadium(){
  disposeScenicTextures();BIO.anims.length=0;cityG.clear();
  cityFloor.visible=false;stadiumMode='city';skyM.visible=false;
- window.PMD_CITY.build({THREE,cityG,HX,HZ,GW,apron,pitchMat,SCENIC_TEXTURES});
+ window.PMD_CITY.activeScene=window.PMD_CITY.build({THREE,cityG,HX,HZ,GW,apron,pitchMat,SCENIC_TEXTURES});
  S.background.setHex(0x75bafa);S.fog.color.setHex(0x75bafa);
  S.fog.near=190;S.fog.far=490;
  syncBiomeWeather();envApply();envChipUpdate();
@@ -2145,6 +2145,7 @@ document.querySelectorAll('#weatherPick button').forEach(b=>b.onclick=()=>{
 envApply();
 const clk=new THREE.Clock();
 function render(t){pollSplashPad();aimTick(t);ctlTick(t);const dt=Math.min(.1,clk.getDelta());guestFrame(dt);envTick(dt,t);refTick(dt,t);
+ if(window.PMD_CITY.activeScene&&window.PMD_CITY.activeScene.userData.pmdTick)window.PMD_CITY.activeScene.userData.pmdTick(dt,t);
  // Cámara de tiro libre: SOLO para el equipo que lo lanza (el rival conserva la cámara normal).
  const fvc=ready&&!over?fvNow():null,fkCam=!goalCelebration&&!!(fvc&&fkLoc(fvc));FKCAM=fkCam;
  if(AU.ambG)AU.ambG.gain.setTargetAtTime(ready?.03+(cheer>0?.22:0):0,AU.ctx.currentTime,.2);
