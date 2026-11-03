@@ -549,7 +549,7 @@ const HX=30,HZ=18,GW=5.5,DZ=4,DUGX=13.5,DUGW=16,$=i=>document.getElementById(i),
 const gx=t=>t?-HX:HX,d=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z),art=id=>`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
 const team=v=>{const[a,b]=String(v).split('|');return{n:b,...(EXTRA[v]||(L[a]&&L[a][b]))}};
 const keys={};let padPrev=[];let power=0,powerBoost=0,possessionTicks=0;let P=[],B=null,score=[0,0],names=['',''],cols=[0,0],time=0,freeze=0,charge=0,sta=1,cheer=0,alt=false,ready=false,over=false,crowd=[];
-let cameraCue=null,impactCue=0;
+let cameraCue=null,impactCue=0,goalCelebration=null,lastGoalShooter=null;
 // ===== Modo local 2 vs 2 (4 jugadores) =====
 const L4={mode:1,on:false,dev:['kbA','pad0','kbB','pad1'],c:[],set:new Set()};
 const L4COL=['#ffd23f','#7dff8a','#66e0ff','#ff7ad9'];
@@ -1031,10 +1031,37 @@ function move(p,dx,dz,k){
  const n=Math.hypot(dx,dz);p.mv=n>=.25;if(!p.mv)return;p.fx=dx/n;p.fz=dz/n;
  p.x=cl(p.x+p.fx*p.spd*k*1.35*PACE*SURF,-HX+1.2,HX-1.2);p.z=cl(p.z+p.fz*p.spd*k*1.35*PACE*SURF,-HZ+1.2,HZ-1.2);
 }
+// Celebración de tres segundos. La cámara se aproxima lentamente al goleador.
+// En móvil, el mismo botón de TIRO sirve para SALTAR solo durante este momento.
+const GOAL_CELEBRATION_SECONDS=3;
+const GOAL_FREEZE_TICKS=Math.round(GOAL_CELEBRATION_SECONDS*60*.82);
+function goalJump(){
+ if(!goalCelebration||goalCelebration.jumpT>=0)return;
+ goalCelebration.jumpT=0;
+ goalCelebration.hasJumped=true;
+ if(AU.ctx&&AU.ctx.state==='running')sfx('jump');
+}
+function beginGoalCelebration(team,scorer,remote=false){
+ const candidate=scorer&&scorer.t===team?scorer:(lastGoalShooter&&lastGoalShooter.t===team?lastGoalShooter:null);
+ const player=candidate||P.filter(p=>p.t===team&&!p.k).sort((a,b)=>Math.abs(a.x-B.x)-Math.abs(b.x-B.x))[0]||P.find(p=>p.t===team);
+ if(!player)return;
+ goalCelebration={player,jumpT:-1,hasJumped:false,elapsed:0};
+ cameraCue={kind:'goal',t:0,player};
+ const shootButton=document.querySelector('#touch button[data-a="shoot"]');
+ if(shootButton){shootButton.textContent='↑ SALTAR';shootButton.classList.add('celebrateJump');}
+ if(!remote&&NET.role==='host'&&NET.open)NET.evq.push(['goalcam',P.indexOf(player),team]);
+}
+function finishGoalCelebration(){
+ const shootButton=document.querySelector('#touch button[data-a="shoot"]');
+ if(shootButton){shootButton.textContent='TIRO';shootButton.classList.remove('celebrateJump');}
+ goalCelebration=null;
+ if(cameraCue&&cameraCue.kind==='goal')cameraCue=null;
+}
+
 function shotCue(p){cameraCue={kind:'shot',t:0,player:p,ballX:p.x+p.fx*2.2,ballZ:p.z+p.fz*2.2};}
 function tackleImpact(p,o){sfx('tackle');sfx(p.t==0?'steal':'miss');addDecal(o.x,o.z,2.6,16,34);addTramp(o.x,o.z,3.2,.9);addTramp(p.x,p.z,1.8,.7);addDecal(p.x,p.z,1.6,10,16);dirtBurst(o.x,o.z,46);impactCue=18;document.body.classList.remove('impact-shake');void document.body.offsetWidth;document.body.classList.add('impact-shake');const f=$('impactFlash');f.classList.remove('pop');void f.offsetWidth;f.classList.add('pop');cameraCue={kind:'impact',t:0,player:p,other:o};}
 let PACE=.7;let passing=false; // ritmo del juego: 1 = original, menor = más lento
-function kick(p,dx,dz,pw,sup,cinematic=false){if(NET.role==='guest'){netSend({t:'e',a:'sh',dx:r2(dx),dz:r2(dz),ch:r2(Math.min(1.2,charge))});return}if(FK&&p===FK.p&&!passing){if(FK.hold>0)return;if(FK.shot){fkShoot(p,FK.az,cl((pw/(p.pw||.6)-1)/.45,0,1));return}}
+function kick(p,dx,dz,pw,sup,cinematic=false){if(NET.role==='guest'){netSend({t:'e',a:'sh',dx:r2(dx),dz:r2(dz),ch:r2(Math.min(1.2,charge))});return}lastGoalShooter=p;if(FK&&p===FK.p&&!passing){if(FK.hold>0)return;if(FK.shot){fkShoot(p,FK.az,cl((pw/(p.pw||.6)-1)/.45,0,1));return}}
 if(sup&&!passing&&!SK){startSkill(p,dx,dz,pw);if(cinematic)shotCue(p);return}
 const n=Math.hypot(dx,dz)||1,f=(sup?2:1)*PACE;B.h=0;B.vh=0;B.fk=false;B.sx0=p.x;B.o=null;B.tg=null;B.sup=!!sup;B.vx=dx/n*pw*f;B.vz=dz/n*pw*f;p.cd=25;B.x=p.x+dx/n*2.2;B.z=p.z+dz/n*2.2;if(cinematic)shotCue(p);if(!passing)sfx(sup?'super':'kick',Math.min(1,.5+pw))}
 function pass(p,dx,dz,q,air){if(NET.role==='guest'){netSend({t:'e',a:'ps',dx:r2(dx),dz:r2(dz),qi:q?P.indexOf(q):-1,air:air?1:0});return}
@@ -1049,7 +1076,7 @@ function pass(p,dx,dz,q,air){if(NET.role==='guest'){netSend({t:'e',a:'ps',dx:r2(
  passing=true;kick(p,lx-p.x,lz-p.z,Math.min(1,.55+dd*.014),false);passing=false;B.tg=q;sfx('pass');
 }
 // Pase por aire: el balón sube en parábola y cae sobre el receptor (por encima de los rivales).
-function lobBall(p,lx,lz,dd,q){
+function lobBall(p,lx,lz,dd,q){lastGoalShooter=p;
  const n=Math.hypot(lx-p.x,lz-p.z)||1,ux=(lx-p.x)/n,uz=(lz-p.z)/n,dist=Math.max(5,dd-2.2),T=cl(26+dist*1.2,30,72),f=.997,hs=dist*(1-f)/(1-Math.pow(f,T));
  B.o=null;B.tg=q;B.sup=false;B.fk=false;B.sx0=p.x;p.cd=25;p.fx=ux;p.fz=uz;B.x=p.x+ux*2.2;B.z=p.z+uz*2.2;B.vx=ux*hs;B.vz=uz*hs;B.h=.5;B.vh=GRAV*T/2;sfx('pass');
 }
@@ -1348,7 +1375,8 @@ function doShoot(){const u=B&&B.o;if(!u||u!==user())return;const[dx,dz]=aimDir(u
 function doPass(u,air){const q=passTarget(u);if(!q)return;pass(u,q.x-u.x,q.z-u.z,q,air)}
 // Las acciones dependen del contexto: con balón → tiro/pase; sin balón → placaje/cambio. Clic izq. sin balón no hace nada.
 function actDown(a,has){
- if(L4.on||!ready||freeze||over||paused)return;const u=user();
+ if(freeze&&goalCelebration){if(a==='shoot'&&!paused)goalJump();return}
+  if(L4.on||!ready||freeze||over||paused)return;const u=user();
  if(a==='shoot'){if(has)shootArmed=true}
  else if(a==='pass'){if(has)doPass(u)}
  else if(a==='lob'){if(has)doPass(u,true)}
@@ -1375,7 +1403,7 @@ function postHit(cx,cz){
 }
 function update(){
  if(!ready||(paused&&!netOn())||NET.role==='guest'||(NET.role==='host'&&NET.open&&!NET.guestReady))return;if(cheer>0)cheer--;
- if(freeze>0){if(--freeze==0){$('msg').textContent='';kickoff();sfx('whistle')}return}
+ if(freeze>0){if(--freeze==0){$('msg').textContent='';finishGoalCelebration();kickoff();sfx('whistle')}return}
  if(FK&&FK.hold>0){if(--FK.hold===0){$('msg').textContent='';sfx('whistle')}return}   // pausa de la falta
  if(FK&&B.o!==FK.p){FK=null;FKV=null}                                                 // el balón salió (pase)
  if(FKV&&FKV.phase==='fly'&&(tickN>FKV.endT||B.o))FKV=null
@@ -1399,7 +1427,7 @@ function update(){
  // Postes: colisión circular (balón r=.6, poste r=.15). Antes solo contaba el centro del balón y podía atravesar el poste.
  if(Math.abs(B.x)>HX-2){const psx=Math.sign(B.x);for(const pz of [-GW,GW])postHit(psx*HX,pz)}
  if(Math.abs(B.x)>HX){
-  if(Math.abs(B.z)<GW-.15&&(B.h||0)<3.5){const s=B.x>0?0:1;score[s]++;$('msg').style.color=hex(cols[s]);$('msg').textContent='¡GOOOL!';toast(names[s]+' anota');freeze=130;burst(cols[s]);hud();sfx('goal');return}
+  if(Math.abs(B.z)<GW-.15&&(B.h||0)<3.5){const s=B.x>0?0:1;score[s]++;$('msg').style.color=hex(cols[s]);$('msg').textContent='¡GOOOL!';toast(names[s]+' anota');freeze=GOAL_FREEZE_TICKS;beginGoalCelebration(s,null);burst(cols[s]);hud();sfx('goal');return}
   sfx('bounce',Math.min(1,Math.abs(B.vx)*2));B.vx*=-1;B.x=Math.sign(B.x)*HX}
  P.forEach(p=>{if(B.o||p.stun>0||(p.cd>0&&B.tg!==p))return;if(B.fkPass>tickN&&B.tg&&p.t!==B.tg.t)return;
   if(p.k){keeperContact(p)}
@@ -1548,11 +1576,11 @@ async function start(){
  BENCH=[[],[]];SUBS=[0,0];
  [0,1].forEach(t=>T[t].p.forEach((id,i)=>{if(i<3)P.push(mkPlayer(id,T[t].c,t,i==2,i));else{const b=mkPlayer(id,T[t].c,t,false,i-3);b.g.visible=false;BENCH[t].push(b)}}));
  await Promise.all([...P,...BENCH[0],...BENCH[1]].map(loadStats));buildCrowd(T);
- score=[0,0];time=5400;beginStadiumAtmosphere();envChipUpdate();sta=1;charge=0;cameraCue=null;impactCue=0;power=0;powerBoost=0;possessionTicks=0;alt=false;l4Setup();netMatchInit();kickoff();cam.position.set(0,11.5,18.5);cam.lookAt(0,.8,0);camLook.set(0,.8,0);lookT.set(0,.8,0);camBall.set(0,0,0);vb.x=vb.z=0;hud();$('msg').textContent=netOn()?'ESPERANDO AL RIVAL…':'';ready=true;if(!netOn())sfx('whistle');netReadyHook();
+ finishGoalCelebration();lastGoalShooter=null;score=[0,0];time=5400;beginStadiumAtmosphere();envChipUpdate();sta=1;charge=0;cameraCue=null;impactCue=0;power=0;powerBoost=0;possessionTicks=0;alt=false;l4Setup();netMatchInit();kickoff();cam.position.set(0,11.5,18.5);cam.lookAt(0,.8,0);camLook.set(0,.8,0);lookT.set(0,.8,0);camBall.set(0,0,0);vb.x=vb.z=0;hud();$('msg').textContent=netOn()?'ESPERANDO AL RIVAL…':'';ready=true;if(!netOn())sfx('whistle');netReadyHook();
 }
 // Online: la partida (y la revancha) solo empieza cuando AMBOS jugadores confirman "Listo".
 $('go').onclick=()=>{if(netOn())setReady(!NET.myReady);else start()};$('re').onclick=()=>{if(netOn())setReady(!NET.myReady);else start()};
-const toMenu=(fromNet)=>{document.body.classList.remove('l4');L4.on=false;netMenu(fromNet===true);ready=false;document.body.classList.remove('playing');splashActive=false;$('splash').style.display='none';$('end').style.display='none';$('msg').textContent='';$('menu').style.display='flex';showMenuPreview();if(window.wizGo)wizGo(2)};
+const toMenu=(fromNet)=>{finishGoalCelebration();document.body.classList.remove('l4');L4.on=false;netMenu(fromNet===true);ready=false;document.body.classList.remove('playing');splashActive=false;$('splash').style.display='none';$('end').style.display='none';$('msg').textContent='';$('menu').style.display='flex';showMenuPreview();if(window.wizGo)wizGo(2)};
 $('chg').onclick=toMenu;$('ch2').onclick=toMenu;
 
 // ---------- render ----------
@@ -1598,7 +1626,18 @@ function sfx(n,v=1){
   case'steal':tn(520,980,.1,'square',.2);tn(780,1300,.14,'square',.2,.09);break;
   case'miss':tn(320,140,.2,'sawtooth',.22);break;
   case'bounce':tn(210,90,.09,'sine',.4*v);break;
-  case'goal':tn(196,196,1.2,'sawtooth',.16);tn(247,247,1.2,'sawtooth',.12,.02);tn(294,294,1.2,'sawtooth',.12,.04);nz(2.6,.8,'bandpass',500,1100,0,null,true);[523,659,784,1047].forEach((f,i)=>tn(f,f,.22,'square',.14,.5+i*.14));break;
+  case'goal':{
+    // Fanfarrias suaves 8-bit: melodía original, SIN ruido blanco ni zumbidos sostenidos.
+    const tune=[392,523.25,659.26,783.99,659.26,783.99,1046.5];
+    tune.forEach((f,i)=>{
+     const at=i*.14;
+     tn(f,f*.995,.16,'triangle',.12,at);
+     tn(f/2,f/2,.20,'sine',.075,at+.015);
+    });
+    [261.63,329.63,392].forEach((f,i)=>tn(f,f,1.05,'sine',.045,1.05+i*.025));
+    break;
+   }
+   case'jump':tn(360,610,.12,'sine',.09);tn(650,850,.08,'triangle',.045,.07);break;
   case'whistle':tn(2700,2500,.18,'sine',.3);tn(2750,2550,.35,'sine',.3,.22);break;
   case'whistleEnd':[0,.4,.8].forEach(x=>tn(2700,2500,.3,'sine',.3,x));break;
   case'power':[392,523,659,880].forEach((f,i)=>tn(f,f*1.01,.14,'square',.16,i*.07));break;
@@ -3734,8 +3773,21 @@ function render(t){pollSplashPad();aimTick(t);ctlTick(t);const dt=Math.min(.1,cl
  // Cámara de tiro libre: SOLO para el equipo que lo lanza (el rival conserva la cámara normal).
  const fvc=ready&&!over?fvNow():null,fkCam=!!(fvc&&fkLoc(fvc));FKCAM=fkCam;
  if(AU.ambG)AU.ambG.gain.setTargetAtTime(ready?.03+(cheer>0?.22:0):0,AU.ctx.currentTime,.2);
- if(ready){const u=user();
+ if(ready){
+   if(goalCelebration){
+    goalCelebration.elapsed+=dt;
+    if(goalCelebration.jumpT>=0){
+     goalCelebration.jumpT+=dt;
+     if(goalCelebration.jumpT>=.66)goalCelebration.jumpT=-1;
+    }
+    if(goalCelebration.elapsed>.6&&!goalCelebration.hasJumped)goalJump();
+   }
+   const u=user();
   P.forEach(p=>{const _ix=p.px==null?p.x:p.px+(p.x-p.px)*alpha,_iz=p.pz==null?p.z:p.pz+(p.z-p.pz)*alpha;p.g.position.set(_ix,0,_iz);
+   if(goalCelebration&&goalCelebration.player===p){
+    const j=goalCelebration.jumpT;
+    p.g.position.y=j>=0&&j<.66?Math.sin(Math.PI*j/.66)*1.6:0;
+   }
    const tr=Math.abs(p.fx)>.05?Math.atan2(p.fx,p.fz):(p.t?Math.PI:0);let dd=tr-p.ry;dd=Math.atan2(Math.sin(dd),Math.cos(dd));p.ry+=dd*.18;
    if(p.spriteMesh){
     p.spriteMesh.rotation.y=fkCam?Math.atan2(cam.position.x-p.g.position.x,cam.position.z-p.g.position.z):0;
@@ -3763,7 +3815,20 @@ function render(t){pollSplashPad();aimTick(t);ctlTick(t);const dt=Math.min(.1,cl
    if(fvc.phase==='fly')lookT.set(vb.x+fvc.fx*6,1.3+(B.h||0)*.4,vb.z+fvc.fz*6);else lookT.set(fvc.bx+fvc.fx*la,sh?1.6:.8,fvc.bz+fvc.fz*la);
   }else if(cameraCue){
    cameraCue.t+=dt;const c=cameraCue,elapsed=c.t;
-   if(c.kind==='shot'){
+   if(c.kind==='goal'){
+     // Acercamiento gradual durante 3 s; la cámara vuelve a su modo habitual al reiniciar.
+     const p=c.player,progress=Math.min(1,elapsed/GOAL_CELEBRATION_SECONDS);
+     const ease=1-Math.exp(-dt*1.8);
+     const px=p.px==null?p.x:p.px+(p.x-p.px)*alpha;
+     const pz=p.pz==null?p.z:p.pz+(p.z-p.pz)*alpha;
+     cam.position.x+=(px-cam.position.x)*ease;
+     cam.position.y+=(5.8-cam.position.y)*ease;
+     cam.position.z+=(pz+9.5-cam.position.z)*ease;
+     lookT.set(px,1.9,pz);
+     const targetFov=progress<.8?38:40;
+     cam.fov+=(targetFov-cam.fov)*Math.min(1,dt*2.1);
+     cam.updateProjectionMatrix();
+    }else if(c.kind==='shot'){
     // Cinemática lenta: primero se lee el tiro (0-.48s), luego se sigue la pelota hasta 1.65s.
     // El movimiento de cámara usa dt para que la transición sea suave y consistente.
     const playerPhase=elapsed<.48;
@@ -4326,6 +4391,7 @@ function netEvApply(e){
  switch(e[0]){
   case'sfx':_sfx(e[1],e[2]);break;case'toast':_toast(e[1]);break;case'burst':_burst(e[1]);break;
   case'dec':_addDecal(e[1],e[2],e[3],e[4],e[5]);break;case'drt':_dirtBurst(e[1],e[2],e[3]);break;
+  case'goalcam':if(P[e[1]])beginGoalCelebration(e[2],P[e[1]],true);break;
   case'sc':if(P[e[1]])_shotCue(P[e[1]]);break;case'ti':if(P[e[1]]&&P[e[2]])_ti(P[e[1]],P[e[2]]);break;case'wx':_setW(e[1]);break;case'sub':doSub(e[1],e[2],e[3]);renderSubs();break;
  }
 }
@@ -4556,7 +4622,7 @@ let cinematicSlowSkip=0;
 (function loop(now){const elapsed=Math.max(0,Math.min(.05,(now-last)/1000));last=now;acc+=elapsed*.82;let steps=0;while(acc>=1/60&&steps<3){
  // Durante el tiro y el placaje, simulamos solo cada segundo tick: la acción se ralentiza
  // sin congelar el renderizado. Así se entiende la jugada y no hay saltos de cámara bruscos.
- if(cameraCue){cinematicSlowSkip^=1;snap();if(cinematicSlowSkip===0)update();}
+ if(cameraCue&&cameraCue.kind!=='goal'){cinematicSlowSkip^=1;snap();if(cinematicSlowSkip===0)update();}
  else{cinematicSlowSkip=0;snap();update();}
  acc-=1/60;steps++}if(steps===3)acc=Math.min(acc,1/60);alpha=cl(acc*60,0,1);try{netTick(now)}catch(e2){console.error('Error de red Poké Strikers:',e2)}try{render(now)}catch(err){console.error('Error de renderizado Poké Strikers:',err);$('warn').textContent='⚠ Error visual detectado. Prueba recargar el juego.'}requestAnimationFrame(loop)})(last);
 
