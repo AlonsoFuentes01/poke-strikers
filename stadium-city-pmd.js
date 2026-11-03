@@ -43,6 +43,15 @@ function build(o){
    circle(q,x+dx*s,y+dy*s,rr*s,rr>30?C.treeLight:C.tree);
   }
   for(let i=0;i<8;i++)r(q,x+(-40+rand()*82)*s,y+(-105+rand()*47)*s,6*s,3*s,C.mountainLight);
+  // Hojas, sombras y puntos de luz que rompen la silueta circular.
+  for(let i=0;i<65;i++){
+   const dx=(rand()-.5)*86,dy=-(31+rand()*82);
+   if(dx*dx*.75+(dy+71)*(dy+71)>.95*48*48)continue;
+   r(q,x+dx*s,y+dy*s,(2+rand()*6)*s,(2+rand()*4)*s,
+     i%6===0?C.stoneLight:i%3===0?C.treeLight:i%2?C.tree:C.green2);
+  }
+  r(q,x-4*s,y-28*s,4*s,31*s,'#c08d65');
+
  }
  function flowers(q,x,y){
   r(q,x-15,y-7,30,9,C.ink);r(q,x-12,y-11,24,8,C.stone);r(q,x-9,y-18,18,8,C.tree);
@@ -52,6 +61,12 @@ function build(o){
   r(q,x-3,y-3,w+6,h+6,C.ink);r(q,x,y,w,h,C.water);
   r(q,x+3,y+3,6,h*.36,C.waterLight);r(q,x+w-4,y,4,h,C.ink);
   r(q,x,y+h-5,w,5,C.stoneLight);
+  // Vidrios divididos, marcos en madera y brillo diagonal discreto.
+  r(q,x+w/2-1,y,3,h,C.ink);
+  r(q,x,y+h*.52,w,3,C.ink);
+  for(let k=0;k<3;k++)r(q,x+3+k*3,y+3+k*4,6,2,'rgba(235,250,255,.6)');
+  r(q,x-3,y+h+3,w+6,3,C.stoneDark);
+
  }
  function building(q,x,base,w,h,opt={}){
   const y=base-h;const roof=opt.roof||C.roof;
@@ -59,6 +74,22 @@ function build(o){
   poly(q,[[x-11,y+11],[x+12,y-16],[x+w-14,y-16],[x+w+12,y+11]],C.roofDark);
   poly(q,[[x-8,y+8],[x+15,y-15],[x+w-17,y-15],[x+w+8,y+8]],roof);
   r(q,x,y+10,w,5,C.roofLight);r(q,x-3,base-7,w+6,8,C.stoneLight);
+  // Tejas vistas, imposta, piedra imperfecta y reflejos: pixel art a escala nativa.
+  for(let ry=y-12;ry<y+8;ry+=6)for(let rx=x+4+(ry%12?8:0);rx<x+w-5;rx+=17){
+   r(q,rx,ry,13,2,ry%12?C.roofLight:C.roofDark);
+   r(q,rx+2,ry+3,10,1,'rgba(255,218,174,.38)');
+  }
+  for(let by=y+16;by<base-9;by+=13){
+   r(q,x+2,by,w-4,1,'rgba(117,81,92,.26)');
+   for(let bx=x+3+((by/13|0)%2)*14;bx<x+w-6;bx+=29)
+    r(q,bx,by+2,1,9,'rgba(116,83,83,.18)');
+  }
+  r(q,x+4,base-14,w-8,2,'rgba(255,236,193,.75)');
+  for(let k=0;k<5;k++){
+   const px=x+7+rand()*(w-14),py=y+22+rand()*Math.max(1,h-48);
+   r(q,px,py,3+rand()*6,2,'rgba(247,229,199,.32)');
+  }
+
   const cols=Math.max(1,Math.floor((w-15)/29)),rows=Math.max(1,Math.floor((h-25)/43));
   for(let iy=0;iy<rows;iy++)for(let ix=0;ix<cols;ix++){
    const xx=x+12+ix*(w-24)/cols,yy=y+28+iy*38;
@@ -167,12 +198,38 @@ function build(o){
   poly(q,[[546,272],[585,213],[618,194],[913,194],[950,213],[988,272]],C.roofDark);
   poly(q,[[553,264],[592,213],[622,203],[910,203],[941,213],[981,264]],C.roof);
   r(q,549,267,438,19,C.ink);r(q,558,269,420,9,C.roofLight);
+  // Tejas del tejado del Centro Pokémon, ladrillos y canalones.
+  for(let yy=210;yy<261;yy+=9){
+   for(let xx=558+((yy/9|0)%2)*11;xx<970;xx+=24){
+    if((xx>575&&xx<945)&&yy>222){
+     r(q,xx,yy,19,3,yy%18?C.roofLight:C.roofDark);
+     r(q,xx+3,yy+3,13,1,'rgba(255,225,172,.45)');
+    }
+   }
+  }
+  r(q,554,282,430,6,C.stoneDark);
+  for(let yy=295;yy<495;yy+=16){
+   r(q,587,yy,357,2,'rgba(121,89,99,.20)');
+   for(let xx=595+((yy/16|0)%2)*22;xx<938;xx+=44)
+    r(q,xx,yy+2,2,11,'rgba(131,96,105,.19)');
+  }
+  for(let xx=595;xx<940;xx+=19)r(q,xx,481,13,5,'rgba(245,219,179,.48)');
+
   r(q,607,286,319,6,C.stoneLight);
   for(const x of [608,838]){r(q,x-9,312,95,135,C.stoneDark);window(q,x,326,27,63);window(q,x+48,326,27,63);}
   // Entrance, door frame and highlights.
   r(q,691,399,154,105,C.ink);r(q,700,408,136,96,C.water);
   r(q,765,408,7,96,C.ink);r(q,708,414,56,10,C.waterLight);
   r(q,781,414,46,10,C.waterLight);r(q,688,391,162,12,C.roof2);
+  // Puertas y marcos de entrada con sensación de profundidad.
+  r(q,702,397,133,7,C.roofLight);
+  r(q,700,406,6,95,C.ink);r(q,831,406,6,95,C.ink);
+  r(q,702,416,56,10,'#bbebea');r(q,781,416,42,8,'#b7ebf3');
+  r(q,711,435,5,53,'rgba(223,250,246,.65)');
+  r(q,819,431,4,49,'rgba(212,238,250,.5)');
+  r(q,758,465,5,9,'#e9cf83');r(q,773,465,5,9,'#e9cf83');
+  r(q,684,500,168,7,C.stoneLight);
+
   // Architectural Poké Ball emblem (not a fabricated spectator).
   circle(q,767,250,58,C.ink);circle(q,767,250,50,C.stoneLight);
   circle(q,767,250,43,'#fff2e2');q.fillStyle=C.roof;
@@ -195,6 +252,39 @@ function build(o){
    r(q,x+21,327,34,8,C.waterLight);r(q,x+22,359,32,7,C.stoneLight);
   }
   for(let i=0;i<18;i++)flowers(q,36+i*85,497);
+  // Escaleras monumentales: pasamanos, huellas y zócalos sombreados.
+  for(const sx of [331,1119]){
+   r(q,sx-23,314,8,196,C.ink);r(q,sx-20,314,5,189,C.stoneLight);
+   r(q,sx+88,314,8,196,C.ink);r(q,sx+90,314,5,189,C.stoneLight);
+   for(let i=0;i<9;i++){
+    const yy=334+i*19;
+    r(q,sx+1,yy+7,82,4,'#ad8e89');
+    r(q,sx+3,yy+12,77,3,'rgba(80,67,84,.17)');
+   }
+  }
+  // Jardineras sobre pedestales, arbustos y flores a distintas alturas.
+  for(const x of [35,212,426,1000,1212,1462]){
+   r(q,x-36,446,72,47,C.ink);r(q,x-31,452,62,34,C.stone);
+   r(q,x-40,442,80,12,C.stoneLight);
+   r(q,x-26,438,54,9,C.treeDark);
+   for(let j=0;j<8;j++){
+    circle(q,x-30+j*9,436+(j%2)*3,7,j%2?C.tree:C.treeLight);
+    r(q,x-27+j*8,427-(j%3)*4,6,5,j%2?C.flower:C.flower2);
+   }
+  }
+  // Ornamental lanterns: frames and warm glass.
+  for(const x of [44,456,1078,1496]){
+   r(q,x-5,369,11,125,C.ink);r(q,x-3,374,6,119,C.wood);
+   r(q,x-18,351,35,35,C.ink);r(q,x-12,355,24,27,'#f4d38e');
+   r(q,x-8,359,11,15,'#fff2b5');r(q,x-19,349,37,7,C.stoneLight);
+  }
+  // Banderines de la ciudad y pilastras, no personajes artificiales.
+  for(const x of [261,497,1042,1282]){
+   r(q,x,343,10,142,C.ink);r(q,x+4,345,4,136,C.wood);
+   r(q,x+10,352,47,66,C.banner);
+   r(q,x+13,356,39,5,C.waterLight);r(q,x+16,390,30,4,C.stoneLight);
+  }
+
   r(q,0,539,1536,13,C.stoneLight);r(q,0,553,1536,10,C.ink);
  });
  const foreground=canvas(1024,160,q=>{
