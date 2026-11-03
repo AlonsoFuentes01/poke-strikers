@@ -354,8 +354,8 @@ function build(o){
   }
  });
  // Las imágenes comparten el mismo tamaño lógico de pixel que la fachada.
- plane(standPanel(-1),44,38,-44.7,7.7,-32);
- plane(standPanel(1),44,38,44.7,7.7,-32);
+ plane(standPanel(-1),44,32,-44.7,13.5,-32);
+ plane(standPanel(1),44,32,44.7,13.5,-32);
  // Barandillas delante de los pies, por fila, con separación de Pokémon.
  const railArt=canvas(832,76,q=>{
   for(let y=0;y<76;y+=19){
@@ -376,7 +376,7 @@ function build(o){
   rect(q,0,65,832,11,C.ink);rect(q,0,67,832,4,C.light);
  });
  for(const side of [-1,1]){
-  for(const yy of [3.2,6.65,10.05]){
+  for(const yy of [3.0,8.0,13.0]){
    const r=plane(railArt,31.7,1.35,side*41.2,yy,-26.15);
    r.renderOrder=4;r.material.depthTest=false;
   }
