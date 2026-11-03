@@ -255,6 +255,57 @@ function build(o){
   for(const x of [403,1133]){rock(q,x,588,1.27);crystal(q,x+(x<768?-34:32),622,1.0);}
   // Lámparas junto al acceso, visibles a escala cinematográfica.
   for(const x of [597,938])torch(q,x,524,.90);
+
+  // Fachada ceremonial detallada, como los paneles de referencia aprobados.
+  rect(q,575,99,386,80,C.ink);rect(q,584,108,368,64,C.light);
+  rect(q,592,116,352,48,C.red);rect(q,598,122,340,36,'#633747');
+  rect(q,600,123,336,4,C.hot);
+  q.font='bold 40px monospace';q.textAlign='center';q.textBaseline='middle';
+  q.lineWidth=5;q.strokeStyle=C.ink;q.strokeText('ESTADIO VOLCÁN',768,143,320);
+  q.fillStyle=C.cream;q.fillText('ESTADIO VOLCÁN',768,143,320);
+  // Torres auxiliares con almenas y hornacinas iluminadas.
+  for(const side of [-1,1]){
+   const x0=768+side*290;
+   for(let i=0;i<5;i++){
+    const x=x0+side*i*47;
+    rect(q,x-17,234,35,45,C.ink);rect(q,x-12,241,25,35,C.stone2);
+    rect(q,x-19,229,41,12,C.light);
+    rect(q,x-7,250,14,21,i%2?C.lava:'#382838');
+    if(i%2)rect(q,x-3,258,5,13,C.core);
+   }
+   // Cadenas de hierro en suspensión entre las torres.
+   for(let i=0;i<12;i++){
+    const u=i/11,x=768+side*(135+u*272),y=299+Math.sin(u*Math.PI)*42;
+    q.lineWidth=8;q.strokeStyle=C.ink;
+    q.beginPath();q.ellipse(x,y,8,5,side*.15,0,Math.PI*2);q.stroke();
+    q.lineWidth=2.4;q.strokeStyle=C.shine;
+    q.beginPath();q.ellipse(x,y,8,4,side*.15,0,Math.PI*2);q.stroke();
+   }
+   // Nichos tallados y pequeños retablos Poké Ball.
+   const x=768+side*360;
+   rect(q,x-32,397,64,116,C.ink);rect(q,x-27,402,54,103,C.stone2);
+   bricks(q,x-25,408,50,89,.37);crest(q,x,459,.54);
+   torch(q,x+side*64,430,.55);
+   for(let j=0;j<32;j++){
+    const xx=x+(rand()-.5)*200,yy=356+rand()*220;
+    rect(q,xx,yy,3+rand()*13,2,j%4===0?C.shine:j%3===0?C.ink:C.stone2);
+   }
+  }
+  // Portón con reja visible delante de las llamas y dintel decorado.
+  for(let i=0;i<11;i++){
+   const x=668+i*20;
+   rect(q,x,392,6,178,'#332437');
+   rect(q,x+2,396,2,164,'#836377');
+   rect(q,x-2,413,10,7,C.shine);
+  }
+  rect(q,665,432,209,13,C.ink);rect(q,670,436,199,4,C.shine);
+  rect(q,666,569,206,11,C.ink);
+  // Friso de ventanas de fuego en la base de la fortaleza.
+  for(const x of [461,494,527,1008,1041,1074]){
+   rect(q,x-15,551,30,73,C.ink);rect(q,x-10,558,21,57,C.stone2);
+   rect(q,x-7,566,15,43,C.lava);rect(q,x-3,574,7,27,C.hot);
+   rect(q,x-18,546,37,10,C.light);
+  }
   rect(q,0,631,1536,19,C.ink);rect(q,0,631,1536,6,C.light);
  });
  plane(entrance,106,45,0,3,-40);
