@@ -1689,7 +1689,7 @@ const WXP={
  snow:{cloud:.85,rain:0,snow:1,fog:.35,dark:.12,wet:.2,thunder:0}
 };
 const ENVPAL={
- city:{top:0x1a3a70,bot:0x5b93c4,sun:0x75dfff,sunI:.95,hemi:.78,dir:[-.5,.35,-1],glow:.5},
+ city:{top:0x5b96c9,bot:0xc0ddec,sun:0xfff0cb,sunI:1.2,hemi:1,dir:[-.5,.55,-1],glow:.35},
  classic:{top:0x294a74,bot:0x8cb0cf,sun:0xd9e9ff,sunI:.95,hemi:.78,dir:[.4,.4,-1],glow:.4},
  sunset:{top:0x2a2050,bot:0xe2875a,sun:0xffb36b,sunI:1.05,hemi:.7,dir:[.2,.1,-1],glow:1.2}
 };
@@ -2455,8 +2455,8 @@ void main(){
 const _bs=buildStadium;buildStadium=function(m){
  if(BIOMES[m]){buildBiome(m);buildEnds(m);livingLandscape(m);stadiumLightShow(m,BIOMES[m].glow);envApply();envChipUpdate();return}
  BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=cityFloorTex;cityFloor.material.needsUpdate=true;
- _bs(m);if(m==='city')livingCity();else cityLife(m);buildEnds(m);livingLandscape(m);if(m!=='city')stadiumLightShow(m,m==='sunset'?0xff9d5c:0x9bd9ff);envApply();envChipUpdate()};
-livingCity();
+ if(m==='city'){stadiumMode=m;cityG.clear();livingCity();}else{_bs(m);cityLife(m);}buildEnds(m);livingLandscape(m);if(m!=='city')stadiumLightShow(m,m==='sunset'?0xff9d5c:0x9bd9ff);envApply();envChipUpdate()};
+cityG.clear();livingCity();
 // Fondo de los arcos: gradas escalonadas, muro con franjas de luz, techo, vallas y skyline.
 function buildEnds(mode){
  const sunset=mode==='sunset',tw=HZ*2+16,TH=BIOMES[mode],wallCol=TH?TH.wall:(sunset?0x3a2748:0x1a2a58),glow=TH?TH.glow:(sunset?0xff9d5c:0x2fd0ff),
