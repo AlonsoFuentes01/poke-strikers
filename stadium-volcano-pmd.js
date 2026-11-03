@@ -427,7 +427,7 @@ function build(o){
   rect(q,0,65,832,11,C.ink);rect(q,0,67,832,4,C.light);
  });
  for(const side of [-1,1]){
-  for(const yy of [3.0,8.0,13.0]){
+  for(const yy of [5.5,10.5,15.5]){
    const r=plane(railArt,31.7,1.35,side*41.2,yy,-26.15);
    r.renderOrder=4;r.material.depthTest=false;
   }
