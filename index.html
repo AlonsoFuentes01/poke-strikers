@@ -4019,12 +4019,12 @@ function disposeWorldV31(){
 }
 function buildWorldV31(mode){
  const art={
-  classic:{ground:'#71996a',floor:'#d6bd93',line:'#31594a',bright:'#ffe3a2',ink:'#1c3842',roof:0x588576,kind:'gates',mon:[25,133,39,58],sign:'LIGA POKÉ'},
-  sunset:{ground:'#bc8e72',floor:'#e9b694',line:'#ab5d54',bright:'#ffe2ac',ink:'#48364d',roof:0xa75c4b,kind:'village',mon:[16,133,43,37],sign:'VILLA ATARDECER'},
-  beach:{ground:'#e8d196',floor:'#bf935f',line:'#4b9f9a',bright:'#ffecc3',ink:'#285060',roof:0x53b8ac,kind:'pier',mon:[278,54,7,120],sign:'MUELLE POKÉ'},
+  classic:{ground:'#80a875',floor:'#c8aa7c',line:'#e8e7d5',bright:'#ffe8ac',ink:'#284d48',roof:0x648c75,kind:'gates',mon:[25,133,39,58],sign:'ESTADIO DE LA LIGA'},
+  sunset:{ground:'#bd8a78',floor:'#e3ae88',line:'#b15f59',bright:'#ffe0a0',ink:'#49364e',roof:0xa75c4b,kind:'village',mon:[16,133,43,37],sign:'ARENA DEL OCASO'},
+  beach:{ground:'#edd6a4',floor:'#d5aa71',line:'#44b7b5',bright:'#fff0c8',ink:'#285c68',roof:0x4aada6,kind:'pier',mon:[278,54,7,120],sign:'BAHÍA CORAL'},
   volcano:{ground:'#46353a',floor:'#63504b',line:'#e07040',bright:'#eeb47b',ink:'#221d29',roof:0x34272c,kind:'basalt',mon:[322,228,218,77],sign:'CALDERA MAGMA'},
-  arctic:{ground:'#bddde4',floor:'#90becd',line:'#71a6c4',bright:'#f4ffff',ink:'#436f90',roof:0xe5faff,kind:'ice',mon:[363,459,393,215],sign:'BASE GLACIAR'},
-  space:{ground:'#34436b',floor:'#5e729b',line:'#77c6e0',bright:'#c5eaff',ink:'#1e2949',roof:0x7d93c2,kind:'station',mon:[479,81,35,173],sign:'ORBITAL STRIKERS'},
+  arctic:{ground:'#d1e6ec',floor:'#a9d1d9',line:'#75b6d5',bright:'#f7ffff',ink:'#477b9f',roof:0xe5faff,kind:'ice',mon:[363,459,393,215],sign:'ARENA GLACIAR'},
+  space:{ground:'#293456',floor:'#5c6994',line:'#9b8ce3',bright:'#d5ddff',ink:'#1a2248',roof:0x7789c7,kind:'station',mon:[479,81,35,173],sign:'COLISEO ASTRAL'},
   desert:{ground:'#e1bd80',floor:'#d1a071',line:'#97704c',bright:'#ffe4b1',ink:'#76523d',roof:0xcca174,kind:'ruins',mon:[551,328,27,50],sign:'CAMINO DEL SOL'}
  }[mode];if(!art)return;
  const root=new THREE.Group();root.name='DIORAMA_V31_'+mode;cityG.add(root);worldV31Root=root;
@@ -4035,7 +4035,7 @@ function buildWorldV31(mode){
  const box=(w,h,d,m,x,y,z)=>put(new THREE.BoxGeometry(w,h,d),m,x,y,z);
  const paint=(w,h,fn)=>{const c=document.createElement('canvas');c.width=w;c.height=h;const q=c.getContext('2d');q.imageSmoothingEnabled=false;fn(q);return c;};
  const px=(q,x,y,w,h,col)=>{q.fillStyle=col;q.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h));};
- const tex=c=>{const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.magFilter=THREE.NearestFilter;t.minFilter=THREE.LinearFilter;t.generateMipmaps=false;SCENIC_TEXTURES.push(t);return t;};
+ const tex=c=>{const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.magFilter=THREE.NearestFilter;t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;t.anisotropy=1;SCENIC_TEXTURES.push(t);return t;};
  const floorCanvas=paint(256,256,q=>{
   px(q,0,0,256,256,art.ground);
   for(let i=0;i<3200;i++){const x=rnd()*256,y=rnd()*256;
