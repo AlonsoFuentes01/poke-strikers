@@ -754,6 +754,8 @@ float cs=pN(vWP.xz*.07+uTime*.03)*.6+pN(vWP.xz*.15-uTime*.02)*.4;diffuseColor.rg
 float lum0=dot(diffuseColor.rgb,vec3(.299,.587,.114));
 diffuseColor.rgb=mix(diffuseColor.rgb,mix(vec3(lum0),diffuseColor.rgb,1.25)*vec3(.72,.86,.8),uWet*.8);
 float fdist=1.0-smoothstep(22.,62.,length(vViewPosition));diffuseColor.rgb*=1.0+((pN(vWP.xz*11.)-.5)*.2+(pN(vWP.xz*34.)-.5)*.14)*fdist;
+float blade=pN(vec2(vWP.x*32.,vWP.z*58.));float mow=.5+.5*sin(vWP.x*1.2566);diffuseColor.rgb*=1.+(blade-.5)*(.12+.13*fdist)+.035*(mow-.5);
+float dew=pow(max(0.,pN(vWP.xz*21.+vec2(3.7,9.1))-.78),3.)*9.*uWet*fdist;diffuseColor.rgb+=vec3(.16,.22,.19)*dew;
 float pn=pN(vWP.xz*.3+7.3)*.65+pN(vWP.xz*.85+1.7)*.35;
 float pud=smoothstep(.55,.66,pn)*uPud;
 float sn=pN(vWP.xz*.4+3.1)*.5+pN(vWP.xz*1.3)*.32+pN(vWP.xz*4.5)*.18;
@@ -2156,6 +2158,31 @@ function buildBiome(mode){
 }
 
 
+// Shaders de arquitectura para los ocho estadios: juntas minerales y luz animada.
+function stadiumWallMaterial(base,accent){
+ const mat=new THREE.MeshStandardMaterial({color:base,roughness:.82,metalness:.12,emissive:accent,emissiveIntensity:.12});
+ const tint=new THREE.Color(accent);
+ mat.onBeforeCompile=sh=>{
+  sh.uniforms.uArenaTime=BIO.T;sh.uniforms.uArenaAccent={value:tint};
+  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vArenaWorld;')
+   .replace('#include <begin_vertex>','#include <begin_vertex>\nvArenaWorld=(modelMatrix*vec4(transformed,1.0)).xyz;');
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>
+varying vec3 vArenaWorld;uniform float uArenaTime;uniform vec3 uArenaAccent;
+float arenaHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+`).replace('#include <map_fragment>',`#include <map_fragment>
+vec2 cell=floor(vArenaWorld.zy*1.3);
+float seams=min(fract(vArenaWorld.z*1.3),fract(vArenaWorld.y*1.3));
+float grout=1.-smoothstep(.025,.065,seams);
+diffuseColor.rgb*=.82+.25*arenaHash(cell)-.23*grout;
+`).replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
+float band=pow(max(0.,sin(vArenaWorld.y*2.1+uArenaTime*1.5+vArenaWorld.z*.12)),12.);
+float pulse=.5+.5*sin(uArenaTime*1.8+vArenaWorld.z*.14);
+totalEmissiveRadiance+=uArenaAccent*(band*.17+pulse*.065);
+`);
+ };
+ mat.customProgramCacheKey=()=> 'poke-arena-wall-v1';
+ return mat;
+}
 // ================= VIDA EN EL FONDO (ciudad / atardecer / clásico): todo en 2D =================
 function cityLife(mode){
  if(BIOMES[mode])return;
@@ -2246,7 +2273,7 @@ function buildEnds(mode){
    const by=.55*(Math.min(r,3)+1)+Math.max(0,r-3)*.5,x=s*(HX+2.6+r*1.15);
    const b=new THREE.Mesh(new THREE.BoxGeometry(1.15,by,tw),seatMat(tw/2.2,by/1.1));b.position.set(x,by/2,0);cityG.add(b);
   }
-  const wx=s*(HX+17.4),wh=TH?7.5:16,wall=new THREE.Mesh(new THREE.BoxGeometry(1,wh,tw+6),new THREE.MeshStandardMaterial({color:wallCol,roughness:.9}));wall.position.set(wx,wh/2,0);cityG.add(wall);
+  const wx=s*(HX+17.4),wh=TH?7.5:16,wall=new THREE.Mesh(new THREE.BoxGeometry(1,wh,tw+6),stadiumWallMaterial(wallCol,glow));wall.position.set(wx,wh/2,0);cityG.add(wall);
   for(const y of (TH?[2.2,4.4,6.6]:[5.5,9.5,13.5])){const st=new THREE.Mesh(new THREE.BoxGeometry(.3,.35,tw+6),new THREE.MeshBasicMaterial({color:glow}));st.position.set(wx-s*.6,y,0);cityG.add(st)}
   const roof=new THREE.Mesh(new THREE.BoxGeometry(8,.4,tw+6),new THREE.MeshStandardMaterial({color:TH?TH.roof:0x1b2340,roughness:.8}));roof.position.set(s*(HX+13.6),10.2,0);if(!TH)cityG.add(roof);
   const ad=new THREE.Mesh(new THREE.PlaneGeometry(tw-6,1.3),new THREE.MeshBasicMaterial({map:adT}));ad.position.set(s*(HX+2.45),.75,0);ad.rotation.y=s>0?-Math.PI/2:Math.PI/2;cityG.add(ad);
