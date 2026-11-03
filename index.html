@@ -1840,7 +1840,7 @@ function envApply(){
  skyU.uTop.value.set(P.top).lerp(GTOP,cl2).multiplyScalar(dk);
  skyU.uBot.value.set(P.bot).lerp(GBOT,cl2).multiplyScalar(dk);
  skyU.uSunC.value.set(P.sun);skyU.uSunD.value.set(P.dir[0],P.dir[1],P.dir[2]);skyU.uGlow.value=P.glow;
- skyU.uCloud.value=w.cloud;skyU.uDark.value=w.dark;skyU.uFlash.value=thFlash;
+ skyU.uCloud.value=stadiumMode==='space'?0:w.cloud;skyU.uDark.value=w.dark;skyU.uFlash.value=thFlash;
  const fogK=Math.min(1,w.fog+.25*Math.min(1,w.rain)+.2*w.snow);
  S.fog.color.copy(skyU.uBot.value).lerp(FOGW,w.fog*.45);S.background.copy(S.fog.color);
  S.fog.near=mixn(P.fogN||190,12,fogK);S.fog.far=mixn(P.fogF||450,140,fogK);
@@ -2519,7 +2519,8 @@ function livingWorldV2(mode){
  const poleMat=new THREE.MeshStandardMaterial({color:0x706e64,metalness:.35,roughness:.7});
  const poleGeo=new THREE.CylinderGeometry(.13,.19,13,6);
  const fabricGeo=new THREE.PlaneGeometry(8,3,16,4);
- for(const side of [-1,1])for(const z of [-HZ-15,HZ+16]){
+ // En el vacío espacial no hay viento que haga flamear banderas.
+ if(mode!=='space')for(const side of [-1,1])for(const z of [-HZ-15,HZ+16]){
   const x=side*(HX+23);
   const pole=new THREE.Mesh(poleGeo,poleMat);pole.position.set(x,6.5,z);cityG.add(pole);
   const banner=new THREE.Mesh(fabricGeo,clothMat);
@@ -2783,7 +2784,7 @@ function ambientStory(mode){
   add(new THREE.BoxGeometry(8,.16,.17),timber,-49,13,-51.65);
  }
  const eventDefs={
-  city:['Meowth saluda desde el balcón','Pidgey cruza el barrio','Un vecino se asoma'],
+  city:['Meowth saluda desde el balcón','Pidgey cruza el barrio','Pikachu observa el partido'],
   classic:['Pikachu anima la grada','Eevee observa el partido','Jigglypuff aparece'],
   sunset:['Pidgey visita las azoteas','Eevee mira el atardecer','Oddish sale entre las plantas'],
   beach:['Wingull visita la costa','Psyduck aparece en el quiosco','Squirtle mira el mar'],
