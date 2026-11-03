@@ -754,6 +754,8 @@ float cs=pN(vWP.xz*.07+uTime*.03)*.6+pN(vWP.xz*.15-uTime*.02)*.4;diffuseColor.rg
 float lum0=dot(diffuseColor.rgb,vec3(.299,.587,.114));
 diffuseColor.rgb=mix(diffuseColor.rgb,mix(vec3(lum0),diffuseColor.rgb,1.25)*vec3(.72,.86,.8),uWet*.8);
 float fdist=1.0-smoothstep(22.,62.,length(vViewPosition));diffuseColor.rgb*=1.0+((pN(vWP.xz*11.)-.5)*.2+(pN(vWP.xz*34.)-.5)*.14)*fdist;
+float blade=pN(vec2(vWP.x*32.,vWP.z*58.));float mow=.5+.5*sin(vWP.x*1.2566);diffuseColor.rgb*=1.+(blade-.5)*(.12+.13*fdist)+.035*(mow-.5);
+float dew=pow(max(0.,pN(vWP.xz*21.+vec2(3.7,9.1))-.78),3.)*9.*uWet*fdist;diffuseColor.rgb+=vec3(.16,.22,.19)*dew;
 float pn=pN(vWP.xz*.3+7.3)*.65+pN(vWP.xz*.85+1.7)*.35;
 float pud=smoothstep(.55,.66,pn)*uPud;
 float sn=pN(vWP.xz*.4+3.1)*.5+pN(vWP.xz*1.3)*.32+pN(vWP.xz*4.5)*.18;
@@ -1687,7 +1689,7 @@ const WXP={
  snow:{cloud:.85,rain:0,snow:1,fog:.35,dark:.12,wet:.2,thunder:0}
 };
 const ENVPAL={
- city:{top:0x1a3a70,bot:0x5b93c4,sun:0x75dfff,sunI:.95,hemi:.78,dir:[-.5,.35,-1],glow:.5},
+ city:{top:0x5b96c9,bot:0xc0ddec,sun:0xfff0cb,sunI:1.2,hemi:1,dir:[-.5,.55,-1],glow:.35},
  classic:{top:0x294a74,bot:0x8cb0cf,sun:0xd9e9ff,sunI:.95,hemi:.78,dir:[.4,.4,-1],glow:.4},
  sunset:{top:0x2a2050,bot:0xe2875a,sun:0xffb36b,sunI:1.05,hemi:.7,dir:[.2,.1,-1],glow:1.2}
 };
@@ -2156,6 +2158,229 @@ function buildBiome(mode){
 }
 
 
+// Franjas LED animadas, visibles en las tribunas laterales sin alterar la cancha.
+function stadiumLedMaterial(color){
+ return new THREE.ShaderMaterial({
+  uniforms:{uTime:BIO.T,uColor:{value:new THREE.Color(color)}},
+  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader:`uniform float uTime;uniform vec3 uColor;varying vec2 vUv;
+  void main(){
+   float scan=pow(.5+.5*sin(vUv.x*45.-uTime*5.),8.);
+   float sweep=pow(.5+.5*sin(vUv.x*7.+uTime*2.3),12.);
+   float edge=smoothstep(.02,.16,vUv.y)*smoothstep(.02,.16,1.-vUv.y);
+   vec3 c=uColor*(.6+1.4*scan+1.7*sweep);
+   gl_FragColor=vec4(c,edge);
+  }`,
+  transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide
+ });
+}
+function stadiumLightShow(mode,glow){
+ const material=stadiumLedMaterial(glow);
+ stadiumV2(mode,glow);
+ // Dos grandes cintas LED, a los lados y fuera de la zona jugable.
+ for(const side of [-1,1]){
+  for(const y of [4.2,8.6]){
+   const strip=new THREE.Mesh(new THREE.PlaneGeometry(51,1.05),material);
+   strip.rotation.y=side*Math.PI/2;
+   strip.position.set(side*(HX+16.7),y,0);
+   cityG.add(strip);
+  }
+ }
+ // Arco luminoso detrás de la tribuna lejana; no tapa la acción.
+ const arch=new THREE.Mesh(new THREE.TorusGeometry(30,.3,6,72,Math.PI),new THREE.MeshBasicMaterial({color:glow,transparent:true,opacity:.85}));
+ arch.position.set(0,11,-HZ-20);cityG.add(arch);
+}
+// ================= POKÉ STRIKERS 2.0 · ARENAS DE NUEVA GENERACIÓN =================
+// Gran tribuna del fondo, videomarcador holográfico, luminarias y efectos propios.
+// Todo queda fuera de los límites jugables; sin cámaras ni mecánicas nuevas.
+function stadiumV2(mode,glow){
+ const names={city:'NEON CITY',sunset:'GOLDEN HOUR',classic:'CHAMPIONS',beach:'TROPICAL CUP',volcano:'MAGMA ARENA',arctic:'FROST LEAGUE',space:'GALAXY CUP',desert:'DUNE BATTLE'};
+ const palettes={
+  city:[0x101a49,0x00edff,0xff45d8],sunset:[0x42214d,0xffa44c,0xffd48a],
+  classic:[0x173b5a,0x7ad9ff,0xffdf70],beach:[0x075a85,0x36f9ef,0xffdd79],
+  volcano:[0x280d13,0xff571f,0xffb329],arctic:[0x18375c,0x91f8ff,0xd6e8ff],
+  space:[0x170b45,0xb766ff,0x39eaff],desert:[0x654025,0xffc65c,0xffefb0]
+ };
+ const pal=palettes[mode]||palettes.city,accent=new THREE.Color(pal[1]),secondary=new THREE.Color(pal[2]);
+ const basic=(c,opacity=1)=>new THREE.MeshBasicMaterial({color:c,transparent:opacity<1,opacity,depthWrite:opacity===1});
+ const structure=new THREE.MeshStandardMaterial({color:pal[0],roughness:.58,metalness:.38});
+ const lightMat=new THREE.MeshBasicMaterial({color:pal[1]});
+ const secondMat=new THREE.MeshBasicMaterial({color:pal[2]});
+ const add=(geo,mat,x,y,z)=>{const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);cityG.add(o);return o};
+ // Tribuna monumental: graderías inclinadas y líneas luminosas.
+ const back=-HZ-15;
+ for(let row=0;row<9;row++){
+  const y=2.4+row*1.43,z=back-row*1.55;
+  add(new THREE.BoxGeometry(92,1.22,1.65),structure,0,y,z);
+  add(new THREE.BoxGeometry(92,.16,.2),row%3===0?secondMat:lightMat,0,y+.68,z+.78);
+ }
+ // Fachada exterior, pórticos y cubierta de la arena.
+ for(const x of [-47,47]){
+  add(new THREE.BoxGeometry(2.8,24,3.5),structure,x,11.5,back-10);
+  add(new THREE.BoxGeometry(1.0,22,3.7),lightMat,x+(x<0?1.8:-1.8),12,back-10);
+  add(new THREE.BoxGeometry(3.2,2.8,4.2),secondMat,x,24,back-10);
+ }
+ add(new THREE.BoxGeometry(101,2.2,10),structure,0,25,back-11);
+ add(new THREE.BoxGeometry(100,.65,.8),lightMat,0,23.7,back-6.3);
+ add(new THREE.BoxGeometry(100,.55,.7),secondMat,0,26.5,back-6.3);
+ // Pantalla gigante: shader de barrido electrónico y panel tipográfico pixelado.
+ const screenU={uT:BIO.T,uA:{value:accent},uB:{value:secondary}};
+ const screenMat=new THREE.ShaderMaterial({uniforms:screenU,side:THREE.DoubleSide,
+  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader:`uniform float uT;uniform vec3 uA,uB;varying vec2 vUv;
+   void main(){
+    float grid=step(.07,fract(vUv.x*96.))*step(.12,fract(vUv.y*28.));
+    float wave=.5+.5*sin(vUv.x*20.-uT*2.8+sin(vUv.y*8.));
+    float scan=pow(.5+.5*sin(vUv.x*55.-uT*7.),14.);
+    float line=.5+.5*sin(vUv.y*110.);
+    vec3 col=mix(uA*.13,uB*.55,wave)+uA*(scan*.75+.13);
+    col*=grid*(.85+.15*line);
+    gl_FragColor=vec4(col,1.);
+   }`});
+ add(new THREE.BoxGeometry(61,12,1.2),structure,0,20.5,back-5.8);
+ add(new THREE.PlaneGeometry(58,10),screenMat,0,20.5,back-5.13);
+ const tc=document.createElement('canvas');tc.width=1024;tc.height=180;const ctx=tc.getContext('2d');
+ ctx.clearRect(0,0,1024,180);ctx.textAlign='center';ctx.textBaseline='middle';
+ ctx.font='bold 78px monospace';ctx.lineWidth=12;ctx.strokeStyle='#09101f';ctx.strokeText(names[mode]||'POKÉ STRIKERS',512,91);
+ ctx.fillStyle='#ffffff';ctx.fillText(names[mode]||'POKÉ STRIKERS',512,91);
+ const tx=new THREE.CanvasTexture(tc);tx.encoding=THREE.sRGBEncoding;tx.minFilter=THREE.LinearFilter;
+ add(new THREE.PlaneGeometry(53,8.5),new THREE.MeshBasicMaterial({map:tx,transparent:true,depthWrite:false,side:THREE.DoubleSide}),0,20.5,back-5.04);
+ // Haces de luz volumétricos simulados, sin postprocesado costoso.
+ const beamMat=new THREE.ShaderMaterial({uniforms:{uT:BIO.T,uC:{value:accent}},
+  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader:`uniform float uT;uniform vec3 uC;varying vec2 vUv;
+   void main(){float edge=pow(max(0.,1.-abs(vUv.x-.5)*2.),2.);
+    float fade=pow(1.-vUv.y,1.6);
+    float pulse=.85+.15*sin(uT*1.8+vUv.y*9.);
+    gl_FragColor=vec4(uC,edge*fade*pulse*.16);}`,
+  transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending});
+ for(const x of [-39,-24,24,39]){
+  const light=add(new THREE.BoxGeometry(7,1.5,1.6),secondMat,x,24,back+3);
+  for(let k=-2;k<=2;k++)add(new THREE.BoxGeometry(.7,.8,.2),lightMat,x+k*1.15,23.5,back+4);
+  const beam=add(new THREE.PlaneGeometry(11,28),beamMat,x,10,back+7);
+  beam.rotation.z=(x<0?-.16:.16);
+ }
+ // Banderas luminosas de identidad de cada estadio.
+ for(const x of [-43,43]){
+  const pole=add(new THREE.BoxGeometry(.4,15,.4),structure,x,28,back-2);
+  const flag=add(new THREE.PlaneGeometry(10,4),stadiumLedMaterial(pal[2]),x+(x<0?5:-5),34,back-2);
+  flag.material.side=THREE.DoubleSide;
+ }
+}
+
+// ================= V2.1 · MUNDO VIVO: VEGETACIÓN Y VIENTO =================
+// Plantas agrupadas por geometría: pocas draw calls, movimiento íntegro en GPU.
+function livingLandscape(mode){
+ const natural=mode==='city'||mode==='classic'||mode==='sunset'||mode==='beach'||mode==='desert';
+ if(!natural)return;
+ const desert=mode==='desert',beach=mode==='beach',sunset=mode==='sunset';
+ const seed=mode.length*91+mode.charCodeAt(0);let n=seed;
+ const rand=()=>{n=(n*16807)%2147483647;return(n-1)/2147483646};
+ const greens=desert?[0x8e9850,0x9b9145,0x727c39]:beach?[0x1eab6b,0x2ac884,0x53ba55]:[0x287e40,0x39974c,0x5ba953,0x2d6d42];
+ const stems=[],leaves=[],cols=[],orig=[];
+ const count=desert?240:beach?350:850;
+ const range=mode==='city'?100:135;
+ for(let i=0;i<count;i++){
+  let x=(rand()-.5)*range*2,z=-22-rand()*115;
+  if(rand()<.38){x=(rand()<.5?-1:1)*(HX+21+rand()*55);z=(rand()-.5)*115;}
+  const height=(desert?.8:1.3)+rand()*(beach?3.6:desert?2:2.8);
+  const w=.35+rand()*.65;
+  const k=rand()*6.283;
+  const col=new THREE.Color(greens[Math.floor(rand()*greens.length)]);
+  const base=stems.length/3;
+  stems.push(x-w,-1.2,z,x+w,-1.2,z,x,height-1.2,z);
+  for(let j=0;j<3;j++){cols.push(col.r,col.g,col.b);orig.push(k,height,j===2?1:0);}
+ }
+ const geo=new THREE.BufferGeometry();
+ geo.setAttribute('position',new THREE.Float32BufferAttribute(stems,3));
+ geo.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));
+ geo.setAttribute('aWind',new THREE.Float32BufferAttribute(orig,3));
+ const mat=new THREE.ShaderMaterial({uniforms:{uT:BIO.T,uWind:{value:mode==='desert'?1.4:mode==='beach'?1.2:.85}},
+  vertexShader:`attribute vec3 color;attribute vec3 aWind;uniform float uT,uWind;varying vec3 vC;
+   void main(){vC=color;vec3 p=position;
+    float gust=sin(uT*1.6+aWind.x+p.x*.07+p.z*.03)*.65+sin(uT*.72+p.z*.12)*.35;
+    p.x+=aWind.z*gust*uWind*aWind.y*.35;
+    p.z+=aWind.z*sin(uT*1.15+aWind.x*1.7)*uWind*aWind.y*.18;
+    gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
+  fragmentShader:'varying vec3 vC;void main(){gl_FragColor=vec4(vC,1.);}',
+  side:THREE.DoubleSide,depthWrite:true});
+ const field=new THREE.Mesh(geo,mat);field.frustumCulled=false;cityG.add(field);
+ // Árboles tridimensionales en grupos instanciados, fuera de la cancha.
+ if(!desert){
+  const amount=mode==='city'?130:beach?95:180;
+  const trunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.24,.4,1,5),new THREE.MeshStandardMaterial({color:beach?0x947044:0x654b32,roughness:1}),amount);
+  const foliage=new THREE.InstancedMesh(new THREE.ConeGeometry(1,2.4,6),new THREE.MeshStandardMaterial({color:beach?0x38a45a:0x348c43,roughness:1,flatShading:true,side:THREE.DoubleSide}),amount);
+  const obj=new THREE.Object3D();
+  for(let i=0;i<amount;i++){
+   let x=(rand()-.5)*210,z=-35-rand()*95;
+   if(rand()<.35){x=(rand()<.5?-1:1)*(HX+22+rand()*52);z=(rand()-.5)*105;}
+   const h=3+rand()*5;
+   obj.position.set(x,h*.5-1.4,z);obj.scale.set(1,h,1);obj.rotation.set(0,rand()*6.28,0);obj.updateMatrix();trunks.setMatrixAt(i,obj.matrix);
+   obj.position.set(x,h+1-1.4,z);obj.scale.set(1.4+rand()*1.8,2.4+rand()*2.6,1.4+rand()*1.8);obj.updateMatrix();foliage.setMatrixAt(i,obj.matrix);
+   foliage.setColorAt(i,new THREE.Color(greens[Math.floor(rand()*greens.length)]));
+  }
+  foliage.material.onBeforeCompile=sh=>{
+   sh.uniforms.uWindTime=BIO.T;
+   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uWindTime;')
+    .replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.x+=sin(uWindTime*1.4+instanceMatrix[3].x*.14+instanceMatrix[3].z*.1)*max(0.,position.y+1.)*.12;');
+  };
+  foliage.material.customProgramCacheKey=()=> 'living-tree-wind-v1';
+  trunks.frustumCulled=false;foliage.frustumCulled=false;cityG.add(trunks,foliage);
+ }
+ // Partículas de viento: polen, arena o pequeñas hojas a distintas alturas.
+ const particles=mode==='desert'?180:mode==='beach'?115:95;
+ const p=new Float32Array(particles*3),speed=new Float32Array(particles);
+ for(let i=0;i<particles;i++){p[i*3]=(rand()-.5)*150;p[i*3+1]=2+rand()*19;p[i*3+2]=-15-rand()*75;speed[i]=2+rand()*5;}
+ const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(p,3));
+ const pm=new THREE.PointsMaterial({color:desert?0xffdf95:beach?0xf3e6b3:0xd6ed9d,size:desert?.6:.33,transparent:true,opacity:.65,depthWrite:false});
+ const dust=new THREE.Points(pg,pm);dust.frustumCulled=false;cityG.add(dust);
+ BIO.anims.push((dt,T)=>{for(let i=0;i<particles;i++){p[i*3]+=speed[i]*dt*(desert?2:1);p[i*3+1]+=Math.sin(T+i)*dt*.5;if(p[i*3]>85)p[i*3]=-85;}pg.attributes.position.needsUpdate=true;});
+}
+function livingCity(){
+ // Ciudad contemporánea con parques y edificios de baja altura, no rascacielos futuristas.
+ const wall=new THREE.MeshStandardMaterial({color:0xc6b49c,roughness:.95});
+ const roof=new THREE.MeshStandardMaterial({color:0x8a4c3a,roughness:.92});
+ const windows=new THREE.MeshStandardMaterial({color:0x739ab1,roughness:.32,metalness:.05});
+ let seed=821;const rnd=()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483646;};
+ const blocks=50;
+ const houses=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),wall,blocks);
+ const windowsFront=new THREE.InstancedMesh(new THREE.BoxGeometry(.8,1,.08),windows,blocks*4);
+ const roofs=new THREE.InstancedMesh(new THREE.ConeGeometry(1,1,4),roof,blocks);
+ const ob=new THREE.Object3D();
+ for(let i=0;i<blocks;i++){
+  const x=-110+i*4.5,z=-67-rnd()*18,h=4+rnd()*8,w=3.5+rnd()*2;
+  ob.position.set(x,h/2-1.2,z);ob.scale.set(w,h,4);ob.rotation.set(0,0,0);ob.updateMatrix();houses.setMatrixAt(i,ob.matrix);
+  ob.position.set(x,h+.5-1.2,z);ob.scale.set(w*1.5,3,5.8);ob.rotation.set(0,Math.PI/4,0);ob.updateMatrix();roofs.setMatrixAt(i,ob.matrix);
+  for(let j=0;j<4;j++){ob.position.set(x+(j%2?1:-1)*w*.23,h*(j<2?.34:.73)-1.2,z+2.045);ob.scale.set(1,1.15,1);ob.rotation.set(0,0,0);ob.updateMatrix();windowsFront.setMatrixAt(i*4+j,ob.matrix);}
+ }
+ cityG.add(houses,roofs,windowsFront);
+}
+
+// Shaders de arquitectura para los ocho estadios: juntas minerales y luz animada.
+function stadiumWallMaterial(base,accent){
+ const mat=new THREE.MeshStandardMaterial({color:base,roughness:.82,metalness:.12,emissive:accent,emissiveIntensity:.12});
+ const tint=new THREE.Color(accent);
+ mat.onBeforeCompile=sh=>{
+  sh.uniforms.uArenaTime=BIO.T;sh.uniforms.uArenaAccent={value:tint};
+  sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vArenaWorld;')
+   .replace('#include <begin_vertex>','#include <begin_vertex>\nvArenaWorld=(modelMatrix*vec4(transformed,1.0)).xyz;');
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>
+varying vec3 vArenaWorld;uniform float uArenaTime;uniform vec3 uArenaAccent;
+float arenaHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+`).replace('#include <map_fragment>',`#include <map_fragment>
+vec2 cell=floor(vArenaWorld.zy*1.3);
+float seams=min(fract(vArenaWorld.z*1.3),fract(vArenaWorld.y*1.3));
+float grout=1.-smoothstep(.025,.065,seams);
+diffuseColor.rgb*=.82+.25*arenaHash(cell)-.23*grout;
+`).replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
+float band=pow(max(0.,sin(vArenaWorld.y*2.1+uArenaTime*1.5+vArenaWorld.z*.12)),12.);
+float pulse=.5+.5*sin(uArenaTime*1.8+vArenaWorld.z*.14);
+totalEmissiveRadiance+=uArenaAccent*(band*.17+pulse*.065);
+`);
+ };
+ mat.customProgramCacheKey=()=> 'poke-arena-wall-v1';
+ return mat;
+}
 // ================= VIDA EN EL FONDO (ciudad / atardecer / clásico): todo en 2D =================
 function cityLife(mode){
  if(BIOMES[mode])return;
@@ -2230,10 +2455,10 @@ void main(){
  });
 }
 const _bs=buildStadium;buildStadium=function(m){
- if(BIOMES[m]){buildBiome(m);buildEnds(m);envApply();envChipUpdate();return}
+ if(BIOMES[m]){buildBiome(m);buildEnds(m);livingLandscape(m);stadiumLightShow(m,BIOMES[m].glow);envApply();envChipUpdate();return}
  BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=cityFloorTex;cityFloor.material.needsUpdate=true;
- _bs(m);cityLife(m);buildEnds(m);envApply();envChipUpdate()};
-cityLife('city');
+ if(m==='city'){stadiumMode=m;cityG.clear();livingCity();}else{_bs(m);cityLife(m);}buildEnds(m);livingLandscape(m);if(m!=='city')stadiumLightShow(m,m==='sunset'?0xff9d5c:0x9bd9ff);envApply();envChipUpdate()};
+cityG.clear();livingCity();
 // Fondo de los arcos: gradas escalonadas, muro con franjas de luz, techo, vallas y skyline.
 function buildEnds(mode){
  const sunset=mode==='sunset',tw=HZ*2+16,TH=BIOMES[mode],wallCol=TH?TH.wall:(sunset?0x3a2748:0x1a2a58),glow=TH?TH.glow:(sunset?0xff9d5c:0x2fd0ff),
@@ -2246,7 +2471,7 @@ function buildEnds(mode){
    const by=.55*(Math.min(r,3)+1)+Math.max(0,r-3)*.5,x=s*(HX+2.6+r*1.15);
    const b=new THREE.Mesh(new THREE.BoxGeometry(1.15,by,tw),seatMat(tw/2.2,by/1.1));b.position.set(x,by/2,0);cityG.add(b);
   }
-  const wx=s*(HX+17.4),wh=TH?7.5:16,wall=new THREE.Mesh(new THREE.BoxGeometry(1,wh,tw+6),new THREE.MeshStandardMaterial({color:wallCol,roughness:.9}));wall.position.set(wx,wh/2,0);cityG.add(wall);
+  const wx=s*(HX+17.4),wh=TH?7.5:16,wall=new THREE.Mesh(new THREE.BoxGeometry(1,wh,tw+6),stadiumWallMaterial(wallCol,glow));wall.position.set(wx,wh/2,0);cityG.add(wall);
   for(const y of (TH?[2.2,4.4,6.6]:[5.5,9.5,13.5])){const st=new THREE.Mesh(new THREE.BoxGeometry(.3,.35,tw+6),new THREE.MeshBasicMaterial({color:glow}));st.position.set(wx-s*.6,y,0);cityG.add(st)}
   const roof=new THREE.Mesh(new THREE.BoxGeometry(8,.4,tw+6),new THREE.MeshStandardMaterial({color:TH?TH.roof:0x1b2340,roughness:.8}));roof.position.set(s*(HX+13.6),10.2,0);if(!TH)cityG.add(roof);
   const ad=new THREE.Mesh(new THREE.PlaneGeometry(tw-6,1.3),new THREE.MeshBasicMaterial({map:adT}));ad.position.set(s*(HX+2.45),.75,0);ad.rotation.y=s>0?-Math.PI/2:Math.PI/2;cityG.add(ad);
@@ -2258,7 +2483,7 @@ function buildEnds(mode){
   }
  }
 }
-buildEnds(stadiumMode);
+buildEnds(stadiumMode);livingLandscape(stadiumMode);
 
 const DMW=1024,DMH=614,dmC=document.createElement('canvas');dmC.width=DMW;dmC.height=DMH;const dmq=dmC.getContext('2d');
 const dmT=srgb(new THREE.CanvasTexture(dmC));
