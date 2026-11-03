@@ -1720,6 +1720,36 @@ const WXP={
  fog:{cloud:.55,rain:0,snow:0,fog:1,dark:.1,wet:.15,thunder:0},
  snow:{cloud:.85,rain:0,snow:1,fog:.35,dark:.12,wet:.2,thunder:0}
 };
+// Biomas coherentes: nieve solo en glaciar; en espacio no hay precipitación.
+const STADIUM_WEATHER={
+ city:['clear','cloudy','rain','storm','fog'],
+ classic:['clear','cloudy','rain','storm','fog'],
+ sunset:['clear','cloudy','rain','fog'],
+ beach:['clear','cloudy','rain','storm'],
+ volcano:['clear','cloudy','fog'],
+ arctic:['clear','cloudy','fog','snow'],
+ space:['clear'],
+ desert:['clear','cloudy']
+};
+function allowedWeather(mode){return STADIUM_WEATHER[mode]||STADIUM_WEATHER.city;}
+function pickBiomeWeather(mode,except){
+ const list=allowedWeather(mode).filter(k=>k!==except);
+ return list[Math.floor(Math.random()*list.length)]||allowedWeather(mode)[0];
+}
+function syncBiomeWeather(){
+ const modes=allowedWeather(stadiumMode);
+ document.querySelectorAll('#weatherPick button').forEach(b=>{
+  const weather=b.dataset.weather,enabled=weather==='auto'?modes.length>1:modes.includes(weather);
+  b.disabled=!enabled;b.hidden=!enabled;
+  b.title=enabled?'':'No disponible en este bioma';
+ });
+ if(!modes.includes(WXk)){
+  setWeather(modes[0],true);
+  document.querySelectorAll('#weatherPick button').forEach(b=>b.classList.toggle('on',b.dataset.weather===(WXmode==='auto'&&modes.length>1?'auto':WXk)));
+ }
+ if(!modes.includes('snow'))snowAcc=0;
+ if(!modes.some(k=>WXP[k].rain>0))wetAcc=0;
+}
 const ENVPAL={
  city:{top:0x70a4ce,bot:0xbfe2e7,sun:0xfff2ce,sunI:1.18,hemi:1.05,dir:[-.5,.55,-1],glow:.35},
  classic:{top:0x294a74,bot:0x8cb0cf,sun:0xd9e9ff,sunI:.95,hemi:.78,dir:[.4,.4,-1],glow:.4},
@@ -1825,7 +1855,13 @@ function envApply(){
  rainM.visible=w.rain>.03;rainU.uAmt.value=Math.min(1,w.rain);snowM.visible=w.snow>.03;snowU.uAmt.value=Math.min(1,w.snow);
 }
 function envChipUpdate(){const e=$('envChip');if(e)e.textContent=WXN[WXk][0]+' '+WXN[WXk][1]+' · '+STN[stadiumMode]+(snowAcc>.08?' · ❄ nieve '+Math.round(snowAcc*100)+'%':wetAcc>.3?' · 💧 pasto mojado':'')}
-function setWeather(k,instant){WXk=k;if(instant)Object.assign(WXc,WXP[k]);if(!ready)seedGround(k);envChipUpdate()}
+function setWeather(k,instant){
+ const list=allowedWeather(stadiumMode);
+ if(!list.includes(k))k=list[0];
+ WXk=k;if(instant)Object.assign(WXc,WXP[k]);
+ if(!ready)seedGround(k);
+ envChipUpdate();
+}
 // ================= BIOMAS: estadios temáticos (playa, volcán, glaciar, espacio, desierto) =================
 const BIOMES={
  beach:{name:'Playa',wall:0xc2915a,glow:0x2ff3ff,roof:0x8a5a33},
@@ -2818,9 +2854,9 @@ void main(){
 }
 const _bs=buildStadium;buildStadium=function(m){
  disposeScenicTextures();
- if(BIOMES[m]){buildBiome(m);buildEnds(m);livingLandscape(m);livingWorldV2(m);ambientStory(m);stadiumLightShow(m,BIOMES[m].glow);envApply();envChipUpdate();return}
+ if(BIOMES[m]){buildBiome(m);buildEnds(m);livingLandscape(m);livingWorldV2(m);ambientStory(m);stadiumLightShow(m,BIOMES[m].glow);syncBiomeWeather();envApply();envChipUpdate();return}
  BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=cityFloorTex;cityFloor.material.needsUpdate=true;
- stadiumMode=m;cityG.clear();cityFloor.material.color.setHex(m==='sunset'?0xd6c6aa:m==='classic'?0xc0cfbd:0xffffff);buildEnds(m);if(m==='city')ordinaryCityStadium();livingLandscape(m);livingWorldV2(m);ambientStory(m);if(m!=='city')stadiumLightShow(m,m==='sunset'?0xff9d5c:0x9bd9ff);envApply();envChipUpdate()};
+ stadiumMode=m;cityG.clear();cityFloor.material.color.setHex(m==='sunset'?0xd6c6aa:m==='classic'?0xc0cfbd:0xffffff);buildEnds(m);if(m==='city')ordinaryCityStadium();livingLandscape(m);livingWorldV2(m);ambientStory(m);if(m!=='city')stadiumLightShow(m,m==='sunset'?0xff9d5c:0x9bd9ff);syncBiomeWeather();envApply();envChipUpdate()};
 cityG.clear();
 // Fondo de los arcos: gradas escalonadas, muro con franjas de luz, techo, vallas y skyline.
 function buildEnds(mode){
@@ -2854,7 +2890,7 @@ function buildEnds(mode){
   }
  }
 }
-buildEnds(stadiumMode);ordinaryCityStadium();livingLandscape(stadiumMode);livingWorldV2(stadiumMode);ambientStory(stadiumMode);
+buildEnds(stadiumMode);ordinaryCityStadium();livingLandscape(stadiumMode);livingWorldV2(stadiumMode);ambientStory(stadiumMode);syncBiomeWeather();
 
 const DMW=1024,DMH=614,dmC=document.createElement('canvas');dmC.width=DMW;dmC.height=DMH;const dmq=dmC.getContext('2d');
 const dmT=srgb(new THREE.CanvasTexture(dmC));
@@ -2889,7 +2925,7 @@ function envTick(dt,t){
  const k=1-Math.exp(-dt*.8),T=WXP[WXk];for(const key in T)WXc[key]+=(T[key]-WXc[key])*k;
  if(WXc.thunder>.5){thTimer-=dt;if(thTimer<=0){thTimer=7+Math.random()*9;thFlash=1;setTimeout(()=>sfx('thunder'),600+Math.random()*900)}}
  thFlash=Math.max(0,thFlash-dt*3.2);
- if(WXmode==='auto'&&ready&&!paused){wxTimer-=dt;if(wxTimer<=0){wxTimer=32+Math.random()*25;const ks=Object.keys(WXP).filter(x=>x!==WXk);setWeather(ks[Math.random()*ks.length|0]);toast('El clima cambia: '+WXN[WXk][0]+' '+WXN[WXk][1])}}
+ if(WXmode==='auto'&&ready&&!paused){wxTimer-=dt;if(wxTimer<=0){wxTimer=32+Math.random()*25;const ks=allowedWeather(stadiumMode).filter(x=>x!==WXk);if(ks.length){setWeather(ks[Math.random()*ks.length|0]);toast('El clima cambia: '+WXN[WXk][0]+' '+WXN[WXk][1])}}}
  envApply();
  const tt=t*.001;skyU.uT.value=tt;pitchU.time.value=tt;rainU.uT.value=tt;snowU.uT.value=tt;
  skyM.position.copy(cam.position);rainU.uC.value.copy(cam.position);snowU.uC.value.copy(cam.position);
@@ -2907,8 +2943,12 @@ function drawMini(){
  P.forEach(p=>{mq.fillStyle=hex(cols[p.t]);mq.beginPath();mq.arc(mx(p.x),mz(p.z),p.k?3:4.5,0,7);mq.fill();if(p===u){mq.strokeStyle='#ffd23f';mq.lineWidth=2;mq.stroke()}});
  mq.fillStyle='#fff';mq.strokeStyle='#000';mq.lineWidth=1;mq.beginPath();mq.arc(mx(vb.x),mz(vb.z),3,0,7);mq.fill();mq.stroke();
 }
-document.querySelectorAll('#weatherPick button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#weatherPick button').forEach(x=>x.classList.toggle('on',x===b));
- const w=b.dataset.weather;WXmode=w==='auto'?'auto':'fixed';setWeather(w==='auto'?Object.keys(WXP)[Math.random()*6|0]:w)});
+document.querySelectorAll('#weatherPick button').forEach(b=>b.onclick=()=>{
+ if(b.disabled)return;
+ document.querySelectorAll('#weatherPick button').forEach(x=>x.classList.toggle('on',x===b));
+ const w=b.dataset.weather;WXmode=w==='auto'?'auto':'fixed';
+ setWeather(w==='auto'?pickBiomeWeather(stadiumMode,WXk):w);
+});
 envApply();
 const clk=new THREE.Clock();
 function render(t){pollSplashPad();aimTick(t);ctlTick(t);const dt=Math.min(.1,clk.getDelta());guestFrame(dt);envTick(dt,t);refTick(dt,t);
