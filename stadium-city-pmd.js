@@ -386,9 +386,9 @@ function build(o){
   r(q,12,44,88,12,C.ink);r(q,18,46,76,7,C.woodLight);
   r(q,23,53,8,14,C.ink);r(q,82,53,8,14,C.ink);
  });
- const shadowMat=new THREE.MeshBasicMaterial({color:0x59455e,transparent:true,opacity:.15,depthWrite:false});
+ const decorShadowMat=new THREE.MeshBasicMaterial({color:0x59455e,transparent:true,opacity:.15,depthWrite:false});
  function sideObject(tex,w,h,x,z,yOff=0,animate=false){
-  const shadow=new THREE.Mesh(new THREE.CircleGeometry(w*.43,12),shadowMat);
+  const shadow=new THREE.Mesh(new THREE.CircleGeometry(w*.43,12),decorShadowMat);
   shadow.rotation.x=-Math.PI/2;shadow.position.set(x,.025,z);scene.add(shadow);
   const m=decorSprite(tex,w,h,x,h/2+yOff,z);
   if(animate)life.push({mesh:m,baseX:x,baseY:h/2+yOff,phase:rand()*6.28,amp:.035+rand()*.05});
