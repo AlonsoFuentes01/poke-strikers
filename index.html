@@ -500,6 +500,44 @@ button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
 }
 
 
+/* Controles móviles translúcidos: conservar color y contraste del texto, despejar la cancha. */
+@media (pointer:coarse){
+ body.playing:not(.laying) #touch .actions button{
+  color:#fffaf0!important;
+  border:2px solid rgba(218,237,255,.52)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.26),0 2px 6px rgba(7,19,42,.25)!important;
+  text-shadow:0 1px 3px rgba(0,0,0,.8)!important;
+  backdrop-filter:blur(2px);
+  -webkit-backdrop-filter:blur(2px);
+  transition:background-color .12s ease,box-shadow .12s ease;
+ }
+ body.playing:not(.laying) #touch button[data-a="shoot"]{background:rgba(229,91,80,.57)!important}
+ body.playing:not(.laying) #touch button[data-a="pass"]{background:rgba(56,145,208,.53)!important}
+ body.playing:not(.laying) #touch button[data-a="lob"]{background:rgba(66,165,220,.50)!important}
+ body.playing:not(.laying) #touch button[data-a="tackle"]{background:rgba(51,73,111,.55)!important}
+ body.playing:not(.laying) #touch button[data-a="sprint"]{background:rgba(51,73,111,.53)!important}
+ body.playing:not(.laying) #touch button[data-a="switch"]{background:rgba(51,73,111,.53)!important}
+ body.playing:not(.laying) #touch .actions button:active{
+  filter:brightness(1.25);box-shadow:inset 0 0 0 2px rgba(255,255,255,.40)!important;
+ }
+ body.playing:not(.laying) #joy{
+  background:radial-gradient(circle,rgba(33,74,113,.13),rgba(15,34,63,.30) 75%)!important;
+  border-color:rgba(229,247,255,.39)!important;
+  box-shadow:inset 0 0 22px rgba(63,183,239,.12),0 2px 8px rgba(0,0,0,.22)!important;
+ }
+ body.playing:not(.laying) #joyK{
+  background:radial-gradient(circle at 32% 25%,rgba(203,247,255,.78),rgba(43,134,217,.62))!important;
+  border-color:rgba(255,255,255,.83)!important;
+  box-shadow:0 2px 7px rgba(0,0,0,.25)!important;
+ }
+ body.playing:not(.laying) #powerBtn{
+  background:rgba(132,81,215,.61)!important;
+  color:#fff!important;border-color:rgba(242,224,255,.7)!important;
+  box-shadow:0 2px 7px rgba(34,12,76,.30)!important;
+  text-shadow:0 1px 3px rgba(16,0,45,.7)!important;
+  backdrop-filter:blur(2px);
+ }
+}
 /* Orientación horizontal obligatoria para la interfaz móvil. */
 #landscapeGate{display:none;position:fixed;inset:0;z-index:20000;box-sizing:border-box;background:radial-gradient(ellipse at center,#243a70 0%,#09142e 70%);color:#fff;align-items:center;justify-content:center;flex-direction:column;gap:13px;padding:calc(18px + env(safe-area-inset-top)) 22px calc(18px + env(safe-area-inset-bottom));text-align:center}
 #landscapeGate .rotatePhone{width:74px;height:122px;border:6px solid #bdeeff;border-radius:17px;display:grid;place-items:center;box-shadow:0 0 0 4px #0b1b3a,0 0 30px #44ddff55;transform:rotate(-90deg);animation:phoneTurn 2.5s ease-in-out infinite alternate;font:34px sans-serif}
