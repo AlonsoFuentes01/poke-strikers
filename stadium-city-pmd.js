@@ -112,22 +112,22 @@ function build(o){
  }
  // Pixel tiles based on the actual visual reference, not a retextured old model.
  const pavement=canvas(1024,614,(q)=>{
-  // Baldosas irregulares a tamaño nativo: sin estirar el suelo ni crear rejillas blancas.
-  r(q,0,0,1024,614,'#846e81');
-  const stones=['#ac97a0','#bba4a7','#a9969e','#c3aca8','#a794a0','#b5a1a6','#ad979e'];
-  for(let row=0;row<33;row++){
-   const yy=row*19,offset=row%2?18:0;
-   for(let col=-1;col<32;col++){
-    const xx=col*34+offset,shade=stones[Math.floor(rand()*stones.length)];
-    r(q,xx+1,yy+1,32,17,shade);
-    // Borde cálido de un píxel, nunca blanco brillante.
-    r(q,xx+3,yy+2,24,1,'rgba(255,228,204,.18)');
-    r(q,xx+1,yy+16,32,1,'rgba(75,60,76,.22)');
-    if(rand()<.24)r(q,xx+9+rand()*12,yy+8+rand()*5,4+rand()*5,1,'rgba(99,83,88,.19)');
-    if(rand()<.12)r(q,xx+24,yy+4,2,3,'rgba(237,200,166,.35)');
+  // Bloques de piedra pastel, con escala y mortero compatibles con las murallas.
+  r(q,0,0,1024,614,'#a79aab');
+  const stones=['#d8c7d3','#dacbd8','#e3d4df','#ccbccc','#dfcfda','#d3c1d1','#e6d9e1'];
+  const bw=72,bh=28;
+  for(let row=0;row<Math.ceil(614/bh);row++){
+   const yy=row*bh,offset=row%2?bw/2:0;
+   for(let col=-1;col<Math.ceil(1024/bw)+1;col++){
+    const xx=col*bw+offset,shade=stones[Math.floor(rand()*stones.length)];
+    r(q,xx+2,yy+2,bw-4,bh-4,shade);
+    r(q,xx+4,yy+3,bw-8,2,'rgba(255,245,249,.20)');
+    r(q,xx+3,yy+bh-5,bw-6,2,'rgba(105,86,116,.10)');
+    if(rand()<.38)r(q,xx+10+rand()*35,yy+9+rand()*11,7+rand()*13,2,'rgba(143,119,144,.10)');
+    if(rand()<.20)r(q,xx+7+rand()*48,yy+5,4,2,'rgba(255,250,246,.25)');
    }
   }
-  for(let i=0;i<460;i++)r(q,rand()*1024,rand()*614,2+rand()*3,1,rand()<.5?'#a89398':'#d0b9b0');
+  for(let i=0;i<260;i++)r(q,rand()*1024,rand()*614,2+rand()*4,1,rand()<.5?'rgba(109,94,120,.10)':'rgba(255,241,241,.20)');
  });
  const pitchC=canvas(1024,614,(q)=>{
   // Continuous textured stone court: same logical 60 × 36 playing field.
