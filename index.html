@@ -2611,12 +2611,26 @@ function ordinaryCityStadium(){
 // Los panoramas se liberan cuando cambia el estadio para no acumular texturas.
 const SCENIC_TEXTURES=[];
 function disposeScenicTextures(){for(const t of SCENIC_TEXTURES)t.dispose();SCENIC_TEXTURES.length=0;}
+// Los objetos 3D del barrio son propiedad de esta escena y se liberan al cambiar
+// de estadio. Los sprites Pokémon utilizan una textura compartida.
+let cityV3Root=null,_cityV3Meowth=null;
+function disposeCityV3(){
+ if(!cityV3Root)return;
+ cityV3Root.traverse(o=>{
+  if(o.geometry)o.geometry.dispose();
+  if(o.material){
+   const mats=Array.isArray(o.material)?o.material:[o.material];
+   for(const m of mats)m.dispose();
+  }
+ });
+ cityV3Root=null;
+}
 // ================= CIUDAD REHECHA V3 · BARRIO CONTINUO 2.5D =================
 // Planta urbana legible: calle y veredas continuas, intersecciones, bloques
 // cohesionados de edificios de volumen real y fachadas dibujadas pixel a pixel.
 // Este es el estándar de calidad para los siguientes escenarios.
 function buildCityV3(){
- const cgroup=new THREE.Group();cgroup.name='CIUDAD_V3_BARRIO';cityG.add(cgroup);
+ const cgroup=new THREE.Group();cgroup.name='CIUDAD_V3_BARRIO';cityG.add(cgroup);cityV3Root=cgroup;
  const surface=(color,roughness=1)=>new THREE.MeshStandardMaterial({color,roughness,metalness:0});
  const sidewalk=surface(0xb9b2a3),curb=surface(0xe2d8c6);
  const asphalt=surface(0x46505b),mark=new THREE.MeshBasicMaterial({color:0xe6d7a8});
@@ -2802,9 +2816,9 @@ function buildCityV3(){
    block(.6,.25,.5,greens,anchor.x+dx,by+.94,anchor.frontZ+1.45);
   }
  }
- const meowthT=loader.load(spr(52),t=>{
+ const meowthT=_cityV3Meowth||(_cityV3Meowth=loader.load(spr(52),t=>{
   t.encoding=THREE.sRGBEncoding;t.magFilter=THREE.NearestFilter;t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;
- });
+ }));
  const meowth=new THREE.Sprite(new THREE.SpriteMaterial({map:meowthT,transparent:true,depthWrite:false,fog:false,opacity:0}));
  const balconyY=anchor?anchor.y*.53+1.2:11;
  meowth.position.set(anchor?anchor.x:-95,balconyY,anchor?anchor.frontZ+2.3:-73);
@@ -3363,7 +3377,7 @@ void main(){
  });
 }
 const _bs=buildStadium;buildStadium=function(m){
- disposeScenicTextures();
+ disposeCityV3();disposeScenicTextures();
  if(BIOMES[m]){buildBiome(m);buildEnds(m);livingLandscape(m);livingWorldV2(m);ambientStory(m);stadiumLightShow(m,BIOMES[m].glow);syncBiomeWeather();envApply();envChipUpdate();return}
  if(m==='city'){stadiumMode='city';cityG.clear();BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=null;cityFloor.material.color.setHex(0x9fa69f);cityFloor.material.needsUpdate=true;buildEnds('city');buildCityV3();syncBiomeWeather();envApply();envChipUpdate();return}
  BIO.anims.length=0;cityFloor.visible=true;cityFloor.material.map=cityFloorTex;cityFloor.material.needsUpdate=true;
