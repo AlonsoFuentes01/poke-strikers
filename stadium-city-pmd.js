@@ -112,22 +112,33 @@ function build(o){
  }
  // Pixel tiles based on the actual visual reference, not a retextured old model.
  const pavement=canvas(1024,614,(q)=>{
-  // Bloques de piedra pastel, con escala y mortero compatibles con las murallas.
-  r(q,0,0,1024,614,'#a79aab');
-  const stones=['#d8c7d3','#dacbd8','#e3d4df','#ccbccc','#dfcfda','#d3c1d1','#e6d9e1'];
-  const bw=72,bh=28;
+  // Adoquín de plaza PMD: bloques de piedra cálida, juntas suaves y desgaste natural.
+  // El mismo material continúa bajo las líneas de la cancha y en la zona exterior.
+  r(q,0,0,1024,614,'#aa929a');
+  const stones=['#e5d1c7','#e0c9c5','#ddc5c6','#ead5cb','#d7bec3','#e7d2d1','#dec8ca','#ecd8cf'];
+  const bw=63,bh=29;
   for(let row=0;row<Math.ceil(614/bh);row++){
-   const yy=row*bh,offset=row%2?bw/2:0;
-   for(let col=-1;col<Math.ceil(1024/bw)+1;col++){
-    const xx=col*bw+offset,shade=stones[Math.floor(rand()*stones.length)];
-    r(q,xx+2,yy+2,bw-4,bh-4,shade);
-    r(q,xx+4,yy+3,bw-8,2,'rgba(255,245,249,.20)');
-    r(q,xx+3,yy+bh-5,bw-6,2,'rgba(105,86,116,.10)');
-    if(rand()<.38)r(q,xx+10+rand()*35,yy+9+rand()*11,7+rand()*13,2,'rgba(143,119,144,.10)');
-    if(rand()<.20)r(q,xx+7+rand()*48,yy+5,4,2,'rgba(255,250,246,.25)');
+   const yy=row*bh,shift=(row%2)*Math.floor(bw/2);
+   for(let col=-1;col<=Math.ceil(1024/bw);col++){
+    const xx=col*bw+shift,colr=stones[Math.floor(rand()*stones.length)];
+    // Bordes desiguales, sin cuadrícula brillante ni aspecto de baldosas de baño.
+    r(q,xx+2,yy+2,bw-4,bh-4,colr);
+    r(q,xx+4,yy+3,bw-8,2,'rgba(255,247,222,.19)');
+    r(q,xx+3,yy+bh-5,bw-6,2,'rgba(114,80,99,.13)');
+    if(rand()<.57)r(q,xx+7+rand()*29,yy+9+rand()*10,7+rand()*15,2,'rgba(120,85,104,.11)');
+    if(rand()<.24)r(q,xx+8+rand()*33,yy+5+rand()*11,3+rand()*7,2,'rgba(252,238,218,.30)');
+    if(rand()<.16){
+     const cx=xx+14+rand()*32,cy=yy+9+rand()*10;
+     r(q,cx,cy,12,1,'rgba(117,87,103,.15)');
+     r(q,cx+9,cy+1,2,4,'rgba(117,87,103,.12)');
+    }
    }
   }
-  for(let i=0;i<260;i++)r(q,rand()*1024,rand()*614,2+rand()*4,1,rand()<.5?'rgba(109,94,120,.10)':'rgba(255,241,241,.20)');
+  // Zonas de uso: polvo y bordes erosionados discretos, no patrones repetitivos.
+  for(let i=0;i<390;i++){
+   const x=rand()*1024,y=rand()*614;
+   r(q,x,y,2+rand()*5,1,rand()<.5?'rgba(106,78,91,.10)':'rgba(255,246,223,.22)');
+  }
  });
  const pitchC=canvas(1024,614,(q)=>{
   // Continuous textured stone court: same logical 60 × 36 playing field.
@@ -154,7 +165,7 @@ function build(o){
  pitchMat.needsUpdate=true;SCENIC_TEXTURES.push(pt);
  if(apron.material.map&&apron.material.map.userData&&apron.material.map.userData.pmdOwned)apron.material.map.dispose();
  const at=mkTex(pavement);at.userData.pmdOwned=true;at.wrapS=at.wrapT=THREE.RepeatWrapping;
- at.repeat.set(2.4,1.6);apron.material.map=at;apron.material.color.setHex(0xffffff);
+ at.repeat.set((HX*2+16)/(HX*2),(HZ*2+12+6)/(HZ*2));apron.material.map=at;apron.material.color.setHex(0xffffff);
  apron.material.needsUpdate=true;SCENIC_TEXTURES.push(at);
  apron.visible=true;
  // Skyline: three true layers (sky, town, architectural foreground).
@@ -320,6 +331,111 @@ function build(o){
  });
  // Sin paneles laterales rotados ni baranda lejana: rompían la composición.
  // El jardín está pintado dentro de las terrazas centrales, unido al estadio.
+ // Plazoleta lateral: piezas pixel-art genuinas con sombras, jardineras y pequeños movimientos.
+ // Todo se coloca fuera de los límites físicos de la cancha (|x| > HX o z > HZ).
+ const life=[];
+ function decorSprite(c,w,h,x,y,z,opt={}){
+  const texture=mkTex(c);SCENIC_TEXTURES.push(texture);
+  const material=new THREE.MeshBasicMaterial({map:texture,transparent:true,alphaTest:.08,
+   side:THREE.DoubleSide,depthWrite:false,toneMapped:false,fog:false});
+  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,h),material);
+  mesh.position.set(x,y,z);mesh.renderOrder=opt.order||2;scene.add(mesh);
+  return mesh;
+ }
+ const plantTex=canvas(128,104,q=>{
+  // Piedra y cerámica con vegetación en capas.
+  r(q,8,83,113,9,'rgba(52,62,77,.28)');
+  r(q,14,57,101,27,C.ink);r(q,19,59,91,21,C.stone);
+  r(q,16,54,96,9,C.stoneLight);r(q,24,77,84,5,C.stoneDark);
+  for(let j=0;j<13;j++){
+   const x=21+j*7;
+   r(q,x,45-(j%4)*4,11,14,j%3===0?C.treeDark:j%2?C.tree:C.treeLight);
+   r(q,x+3,41-(j%3)*7,7,8,j%4===0?C.flower2:j%3===0?C.flower:'#f6a5c4');
+   r(q,x+5,38-(j%3)*7,3,3,C.stoneLight);
+  }
+  r(q,38,64,9,2,'rgba(255,249,219,.42)');r(q,76,69,13,2,'rgba(255,249,219,.35)');
+ });
+ const bushTex=canvas(96,82,q=>{
+  r(q,9,72,77,6,'rgba(52,62,77,.20)');
+  for(let i=0;i<11;i++){
+   const x=15+i*6,y=39+(i%3)*5;
+   r(q,x,y,17,32,i%3===0?C.treeDark:i%2?C.tree:C.treeLight);
+   r(q,x+3,y-6,12,12,i%2?'#a6d477':'#67b687');
+   if(i%2===0)r(q,x+7,y-10,5,6,i%4?C.flower:C.flower2);
+  }
+ });
+ const lampTex=canvas(72,148,q=>{
+  r(q,29,135,21,7,'rgba(52,62,77,.23)');
+  r(q,32,45,9,93,C.ink);r(q,35,48,4,86,C.wood);
+  r(q,20,28,34,28,C.ink);r(q,24,33,26,20,'#f4ce85');
+  r(q,29,35,15,16,'#fff0b4');r(q,18,27,38,6,C.stoneLight);
+  r(q,27,19,22,9,C.ink);r(q,32,14,12,7,C.roofDark);
+  r(q,26,54,24,4,C.stoneDark);
+ });
+ const pennantTex=canvas(92,128,q=>{
+  r(q,20,12,6,110,C.ink);r(q,22,13,3,107,C.wood);
+  poly(q,[[26,20],[80,25],[73,78],[55,95],[29,78]],C.ink);
+  poly(q,[[29,24],[76,29],[70,75],[55,89],[32,74]],C.banner);
+  r(q,38,34,27,5,C.waterLight);r(q,41,48,20,4,C.stoneLight);
+  circle(q,52,64,8,C.stoneLight);circle(q,52,64,4,C.roofDark);
+ });
+ const benchTex=canvas(112,75,q=>{
+  r(q,9,65,94,5,'rgba(52,62,77,.24)');
+  r(q,18,14,78,29,C.ink);r(q,23,17,68,21,C.wood);
+  for(let i=0;i<3;i++)r(q,26,20+i*6,62,3,i===1?C.woodLight:C.stoneDark);
+  r(q,12,44,88,12,C.ink);r(q,18,46,76,7,C.woodLight);
+  r(q,23,53,8,14,C.ink);r(q,82,53,8,14,C.ink);
+ });
+ const shadowMat=new THREE.MeshBasicMaterial({color:0x59455e,transparent:true,opacity:.15,depthWrite:false});
+ function sideObject(tex,w,h,x,z,yOff=0,animate=false){
+  const shadow=new THREE.Mesh(new THREE.CircleGeometry(w*.43,12),shadowMat);
+  shadow.rotation.x=-Math.PI/2;shadow.position.set(x,.025,z);scene.add(shadow);
+  const m=decorSprite(tex,w,h,x,h/2+yOff,z);
+  if(animate)life.push({mesh:m,baseX:x,baseY:h/2+yOff,phase:rand()*6.28,amp:.035+rand()*.05});
+  return m;
+ }
+ // Bordes en ambos costados. No se ponen objetos detrás de las porterías.
+ for(const side of [-1,1]){
+  const x=side*(HX+5.4);
+  for(const z of [-15.7,-8.5,8.5,15.7])sideObject(plantTex,5,3.7,x,z);
+  sideObject(benchTex,4.6,2.8,x,-2);
+  sideObject(bushTex,3.6,2.8,side*(HX+7),-12.5);
+  sideObject(bushTex,3.4,2.5,side*(HX+7),12.5);
+  const lamp=sideObject(lampTex,2.6,5.1,side*(HX+7),3);
+  life.push({mesh:lamp,phase:rand()*6.28,lamp:true});
+  sideObject(pennantTex,3.2,4.4,side*(HX+7.2),-5.7,0,true);
+ }
+ // El borde cercano funciona como una plaza transitada, sin cruzar la línea lateral.
+ for(const x of [-23,-13,13,23]){
+  sideObject(plantTex,4.4,3.1,x,HZ+3.8);
+ }
+ for(const x of [-28,28])sideObject(pennantTex,2.8,3.9,x,HZ+4.5,0,true);
+ // Luciérnagas de la plaza al atardecer: parpadeo mínimo, sin partículas sobre el campo.
+ const glows=[];
+ const glowTexture=mkTex(canvas(32,32,q=>{
+  for(let k=5;k>=1;k--)circle(q,16,16,k*3,k>3?'rgba(255,220,125,.06)':k>1?'rgba(255,234,145,.15)':'rgba(255,252,217,.6)');
+ }));
+ SCENIC_TEXTURES.push(glowTexture);
+ for(const side of [-1,1])for(const z of [-13,2,13]){
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTexture,transparent:true,
+   opacity:.37,depthWrite:false,blending:THREE.AdditiveBlending}));
+  const bx=side*(HX+5.7),by=2.3+rand()*1.7;
+  sp.position.set(bx,by,z);sp.scale.set(1.3,1.3,1);scene.add(sp);
+  glows.push({sp,bx,by,bz:z,phase:rand()*6.28});
+ }
+ scene.userData.pmdTick=(dt,t)=>{
+  const tm=t*.001;
+  for(const a of life){
+   if(a.lamp)continue;
+   a.mesh.position.x=a.baseX+Math.sin(tm*1.2+a.phase)*a.amp;
+   a.mesh.position.y=a.baseY+Math.cos(tm*1.1+a.phase)*.025;
+  }
+  for(const a of glows){
+   a.sp.position.x=a.bx+Math.sin(tm*.65+a.phase)*.45;
+   a.sp.position.y=a.by+Math.sin(tm*.85+a.phase)*.32;
+   a.sp.material.opacity=.15+.22*(.5+.5*Math.sin(tm*2+a.phase));
+  }
+ };
  // Small pixel-art goal frames, not the former mesh, using existing goal dimensions.
  const goalTex=canvas(64,64,q=>{
   for(let y=0;y<64;y+=8)for(let x=0;x<64;x+=8){
