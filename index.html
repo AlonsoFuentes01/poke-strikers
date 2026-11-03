@@ -1036,7 +1036,7 @@ function move(p,dx,dz,k){
 const GOAL_CELEBRATION_SECONDS=3;
 const GOAL_FREEZE_TICKS=Math.round(GOAL_CELEBRATION_SECONDS*60*.82);
 function goalJump(){
- if(!goalCelebration||goalCelebration.jumpT>=0)return;
+ if(!goalCelebration||!ready||paused||goalCelebration.jumpT>=0)return;
  goalCelebration.jumpT=0;
  goalCelebration.hasJumped=true;
  if(AU.ctx&&AU.ctx.state==='running')sfx('jump');
@@ -1048,12 +1048,12 @@ function beginGoalCelebration(team,scorer,remote=false){
  goalCelebration={player,jumpT:-1,hasJumped:false,elapsed:0};
  cameraCue={kind:'goal',t:0,player};
  const shootButton=document.querySelector('#touch button[data-a="shoot"]');
- if(shootButton){shootButton.textContent='↑ SALTAR';shootButton.classList.add('celebrateJump');}
+ if(shootButton){shootButton.textContent='↑ SALTAR';shootButton.classList.add('celebrateJump');shootButton.setAttribute('aria-label','Saltar durante la celebración');}
  if(!remote&&NET.role==='host'&&NET.open)NET.evq.push(['goalcam',P.indexOf(player),team]);
 }
 function finishGoalCelebration(){
  const shootButton=document.querySelector('#touch button[data-a="shoot"]');
- if(shootButton){shootButton.textContent='TIRO';shootButton.classList.remove('celebrateJump');}
+ if(shootButton){shootButton.textContent='TIRO';shootButton.classList.remove('celebrateJump');shootButton.setAttribute('aria-label','Tiro');}
  goalCelebration=null;
  if(cameraCue&&cameraCue.kind==='goal')cameraCue=null;
 }
@@ -3837,7 +3837,7 @@ envApply();
 const clk=new THREE.Clock();
 function render(t){pollSplashPad();aimTick(t);ctlTick(t);const dt=Math.min(.1,clk.getDelta());guestFrame(dt);envTick(dt,t);refTick(dt,t);
  // Cámara de tiro libre: SOLO para el equipo que lo lanza (el rival conserva la cámara normal).
- const fvc=ready&&!over?fvNow():null,fkCam=!!(fvc&&fkLoc(fvc));FKCAM=fkCam;
+ const fvc=ready&&!over?fvNow():null,fkCam=!goalCelebration&&!!(fvc&&fkLoc(fvc));FKCAM=fkCam;
  if(AU.ambG)AU.ambG.gain.setTargetAtTime(ready?.03+(cheer>0?.22:0):0,AU.ctx.currentTime,.2);
  if(ready){
    if(goalCelebration){
