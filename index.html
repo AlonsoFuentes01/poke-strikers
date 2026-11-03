@@ -3265,6 +3265,8 @@ function buildStadium(m){
  cityG.clear();
  cityFloor.visible=false;
  stadiumMode=m;
+ // La cúpula del cielo anterior no debe mezclarse con el panorama PMD.
+ skyM.visible=m!=='city';
  if(m==='city'){
   window.PMD_CITY.build({THREE,cityG,HX,HZ,GW,apron,pitchMat,SCENIC_TEXTURES});
   S.background.setHex(0x75bafa);S.fog.color.setHex(0x75bafa);
