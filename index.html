@@ -606,7 +606,7 @@ button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
 <div class="pickLbl" id="modeLbl">MODO LOCAL</div><div id="modePick"><button type="button" data-mode="1" class="on">🎮 1 jugador</button><button type="button" data-mode="4">👥 2 vs 2 · 4 jugadores</button></div>
 <div id="l4Cfg"><div class="l4row"><b style="color:#ffd23f">P1 · Eq.1</b><select id="l4s0"></select></div><div class="l4row"><b style="color:#7dff8a">P2 · Eq.1</b><select id="l4s1"></select></div><div class="l4row"><b style="color:#66e0ff">P3 · Eq.2</b><select id="l4s2"></select></div><div class="l4row"><b style="color:#ff7ad9">P4 · Eq.2</b><select id="l4s3"></select></div>
 <small id="l4Warn"></small><small><b>Teclado A:</b> WASD mover · Shift correr · F tiro (mantén) · G pase · T pase aéreo · R placaje · Q poder<br><b>Teclado B:</b> Flechas mover · Shift der. correr · / tiro (mantén) · . pase · , pase aéreo · ; placaje · P poder<br><b>Mando:</b> stick mover · LB correr · RT tiro (mantén) · A pase · RB pase aéreo · B placaje · Y poder<br>Cada jugador maneja a su Pokémon fijo; un puesto en «CPU» (o con el mando desconectado) lo juega la IA. Con un solo teclado, para 4 humanos conviene usar mandos: algunos teclados no registran tantas teclas a la vez. No funciona en online.</small></div>
-<div class="pickLbl">ESTADIO ÚNICO · 2D</div><div id="stadiumPick" aria-label="Selecciona estadio"><button type="button" data-stadium="city" class="on">🏙️ Ciudad PMD</button><button type="button" data-stadium="volcano">🌋 Volcán</button><button type="button" data-stadium="glacier">❄️ Glaciar PMD</button></div>
+<div class="pickLbl">ESTADIOS · PIXEL ART 2D</div><div id="stadiumPick" aria-label="Selecciona estadio"><button type="button" data-stadium="city" class="on">🏙️ Ciudad PMD</button><button type="button" data-stadium="volcano">🌋 Volcán</button><button type="button" data-stadium="glacier">❄️ Glaciar PMD</button></div>
 <div id="weatherPick" aria-label="Seleccionar clima"><button type="button" data-weather="clear" class="on">☀️ Despejado</button><button type="button" data-weather="cloudy">☁️ Nublado</button><button type="button" data-weather="rain">🌧️ Lluvia</button><button type="button" data-weather="storm">⛈️ Tormenta</button><button type="button" data-weather="fog">🌫️ Niebla</button><button type="button" data-weather="snow">❄️ Nieve</button><button type="button" data-weather="auto">🎲 Cambiante</button></div>
 <div id="cols"><section><h3>Tu equipo</h3><div class="grid" id="g0"></div></section><section><h3>Rival</h3><div class="grid" id="g1"></div></section></div>
 <div id="spriteCredit" style="font:11px Nunito,sans-serif;color:#e6efff;opacity:.82;max-width:620px">Sprites estilo Pokémon Mystery Dungeon: PMD Sprite Repository / colaboradores (CC BY-NC 4.0). Créditos de artistas en el repositorio.</div><div id="netBar"></div><button id="go">¡Jugar!</button><button id="readyBtn" type="button">✅ ¡Estoy listo!</button><button id="bdOpen" type="button">🛠️ Armar equipo (6 Pokémon)</button><button id="onlineBtn" type="button">🌐 Jugar online (código de sala)</button></div>
@@ -2450,7 +2450,28 @@ function envTick(dt,t){
 const mq=$('mini').getContext('2d');
 function drawMini(){
  const W=176,H=106,mx=x=>(x+HX)/(2*HX)*(W-12)+6,mz=z=>(z+HZ)/(2*HZ)*(H-12)+6,u=user();
- mq.clearRect(0,0,W,H);mq.fillStyle='rgba('+(30+snowAcc*190|0)+','+(110+snowAcc*110|0)+','+(58+snowAcc*170|0)+',.85)';mq.fillRect(4,4,W-8,H-8);
+ mq.clearRect(0,0,W,H);
+ const miniPalette=stadiumMode==='volcano'?[90,56,77]:
+                   stadiumMode==='glacier'?[128,182,207]:
+                   [30,110,58];
+ const snow=stadiumMode==='glacier'?Math.max(.25,snowAcc):snowAcc;
+ mq.fillStyle='rgba('+miniPalette.map((x,i)=>Math.round(x+(238-x)*snow*(i===0?.42:.65))).join(',')+',.91)';
+ mq.fillRect(4,4,W-8,H-8);
+ // El minimapa se adapta al bioma en vez de mantener el verde de Ciudad.
+ if(stadiumMode==='volcano'){
+  mq.strokeStyle='rgba(255,140,68,.52)';mq.lineWidth=1.25;
+  for(let i=0;i<12;i++){
+   const x=11+i*13,y=13+(i*17)%72;
+   mq.beginPath();mq.moveTo(x,y);mq.lineTo(x+8,y+3);
+   mq.lineTo(x+13,y-3);mq.stroke();
+  }
+ }else if(stadiumMode==='glacier'){
+  mq.strokeStyle='rgba(234,252,255,.43)';mq.lineWidth=1;
+  for(let i=0;i<13;i++){
+   const x=13+i*12,y=17+(i*19)%69;
+   mq.beginPath();mq.moveTo(x,y);mq.lineTo(x+7,y-5);mq.stroke();
+  }
+ }
  mq.strokeStyle='rgba(255,255,255,.6)';mq.lineWidth=1;mq.strokeRect(6,6,W-12,H-12);mq.beginPath();mq.moveTo(W/2,6);mq.lineTo(W/2,H-6);mq.stroke();mq.beginPath();mq.arc(W/2,H/2,11,0,7);mq.stroke();
  mq.fillStyle='rgba(255,255,255,.9)';mq.fillRect(3,mz(-GW),3,mz(GW)-mz(-GW));mq.fillRect(W-6,mz(-GW),3,mz(GW)-mz(-GW));
  P.forEach(p=>{mq.fillStyle=hex(cols[p.t]);mq.beginPath();mq.arc(mx(p.x),mz(p.z),p.k?3:4.5,0,7);mq.fill();if(p===u){mq.strokeStyle='#ffd23f';mq.lineWidth=2;mq.stroke()}});
