@@ -621,7 +621,7 @@ button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
 <script src="./stadium-city-pmd.js"></script>
 <script src="./stadium-volcano-fx.js?v=volcano-lava-fx-2"></script>
 <script src="./stadium-volcano-pmd.js?v=volcano-lava-fx-1"></script>
-<script src="./stadium-glacier-pmd.js?v=glacier-pmd-1"></script>
+<script src="./stadium-glacier-pmd.js?v=glacier-pmd-2"></script>
 <script src="./stadium-stage-atmosphere.js?v=stage-atmosphere-1"></script>
 <script src="./city-pmd-v3.js?v=goal-bench-intro-2"></script>
 <script>
@@ -2739,9 +2739,11 @@ function dugSync(){
  const key=[stadiumMode,names.join('|'),cols.join('|'),ids.map(a=>a.join(',')).join('/'),SUBS.join(','),mir].join('~');
  if(key===dugKey)return;dugKey=key;
  for(const o of [...dugG.children]){dugG.remove(o);o.traverse(p=>{if(p.geometry)p.geometry.dispose();if(p.material)(Array.isArray(p.material)?p.material:[p.material]).forEach(m=>m.dispose());});}dugSprites=[];
- const zSeat=-(HZ+6.1),volcano=stadiumMode==='volcano';
- if(volcano&&window.PMD_VOLCANO&&window.PMD_VOLCANO.buildBench)
-  for(const t of [0,1])window.PMD_VOLCANO.buildBench({THREE,dugG,cx:t?DUGX:-DUGX,zSeat,team:t,color:cols[t]});
+ const zSeat=-(HZ+6.1),volcano=stadiumMode==='volcano',glacier=stadiumMode==='glacier',scenic=volcano||glacier;
+ if(scenic){
+  const mod=volcano?window.PMD_VOLCANO:window.PMD_GLACIER;
+  if(mod&&mod.buildBench)for(const t of [0,1])mod.buildBench({THREE,dugG,cx:t?DUGX:-DUGX,zSeat,team:t,color:cols[t]});
+ }
  const seats=[[-14.9,-10.5,-6.1],[12,16.4,20.8]];
  [0,1].forEach(t=>{
   const cx=t?DUGX:-DUGX;
@@ -2749,12 +2751,12 @@ function dugSync(){
    const anim=crowdAnimFor(id);
    const mat=new THREE.MeshBasicMaterial({map:anim.mat.map,transparent:true,alphaTest:.045,
     side:THREE.DoubleSide,depthWrite:false,depthTest:true,toneMapped:false});
-   const sprite=new THREE.Mesh(volcano?new THREE.PlaneGeometry(3.2,3.2):new THREE.PlaneGeometry(3.25,3.25).translate(0,1.625,0),mat);
-   const foot=volcano?1.30:1.2,x=volcano?seats[t][i]:cx-1.1+i*3.05;
+   const sprite=new THREE.Mesh(scenic?new THREE.PlaneGeometry(3.2,3.2):new THREE.PlaneGeometry(3.25,3.25).translate(0,1.625,0),mat);
+   const foot=scenic?1.30:1.2,x=scenic?seats[t][i]:cx-1.1+i*3.05;
    sprite.position.set(x,foot,zSeat);sprite.renderOrder=4;dugG.add(sprite);dugSprites.push(sprite);
    const u=sprite.userData;u.ph=i*1.9+t*.7;u.y0=foot;u.id=id;
    u.pmdAnim=anim;u.heightDm=BENCH_H[id]||10;u.fitHeight=0;u.fitted=false;
-   if(volcano){
+   if(scenic){
     const shadow=new THREE.Mesh(new THREE.CircleGeometry(1,20),new THREE.MeshBasicMaterial({
      color:0x211728,transparent:true,opacity:.38,depthWrite:false,side:THREE.DoubleSide
     }));
@@ -2866,7 +2868,7 @@ function dugTrainerPos(){
  if(dugTr.length){const rc=R.domElement.getBoundingClientRect(),fl=typeof NETG!=='undefined'&&NETG.flip;
   dugTr.forEach(o=>{const im=o.im;if(!im.dataset.ok||!im.naturalHeight){return}
    const cx=(o.t?DUGX:-DUGX)-5.6,z=-(HZ+6.1);
-   const foot=stadiumMode==='volcano'?1.30:.06;
+   const foot=['volcano','glacier'].includes(stadiumMode)?1.30:.06;
    _dv.set(cx,foot+3.6,z).project(cam);const vis=_dv.z<1;const ty=(-_dv.y*.5+.5)*rc.height;
    _dv.set(cx,foot,z).project(cam);const by=(-_dv.y*.5+.5)*rc.height;let sx=(_dv.x*.5+.5)*rc.width;if(fl)sx=rc.width-sx;
    const hh=by-ty,ww=hh*im.naturalWidth/im.naturalHeight;
@@ -2884,14 +2886,14 @@ function dugTick(t){
   const u=s.userData,ph=u.ph||0;
   if(u.pmdAnim&&u.pmdAnim.ready){
    if(u.pmdAnim.mat.map!==s.material.map){s.material.map=u.pmdAnim.mat.map;s.material.needsUpdate=true;}
-   if(stadiumMode==='volcano')dugFitSprite(s);
+   if(stadiumMode!=='city')dugFitSprite(s);
   }
-  const breath=stadiumMode==='volcano'?Math.sin(t*.0024+ph)*.013:0;
-  const cheerBob=stadiumMode==='volcano'&&cheer>0?Math.abs(Math.sin(t*.012+ph))*.055:0;
+  const breath=stadiumMode!=='city'?Math.sin(t*.0024+ph)*.013:0;
+  const cheerBob=stadiumMode!=='city'&&cheer>0?Math.abs(Math.sin(t*.012+ph))*.055:0;
   s.position.y=(u.y0||1.2)+Math.sin(t*.0022+ph)*.013+cheerBob;
   s.rotation.z=cheer>0?Math.sin(t*.011+ph)*.018:0;
   s.scale.set(1-breath*.35,1+breath,1);
-  if(stadiumMode==='volcano')s.material.color.setHex(0xffffff);
+  if(stadiumMode!=='city')s.material.color.setHex(0xffffff);
   else if(typeof SPT!=='undefined')s.material.color.copy(SPT);
  });
 }
