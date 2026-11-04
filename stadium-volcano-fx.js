@@ -179,9 +179,65 @@ function build(opts){
   b.mesh.position.set(x,.13,z);
   const scale=.70+rnd()*.58;b.mesh.scale.setScalar(scale);
  }
+
+ // Mini-erupciones meteoríticas FUERA de la cancha: ambientación puramente
+ // visual, sin tocar jugadores, balón, goles o red. Mismo sombreado del basalto.
+ const stoneTex=makeTex(64,64,q=>{
+  box(q,8,47,48,12,C.outline);
+  const poly=(pts,col)=>{q.fillStyle=col;q.beginPath();q.moveTo(pts[0][0],pts[0][1]);
+    for(let i=1;i<pts.length;i++)q.lineTo(pts[i][0],pts[i][1]);
+    q.closePath();q.fill();};
+  poly([[7,45],[13,18],[24,9],[45,12],[58,30],[55,49],[42,58],[17,55]],C.outline);
+  poly([[13,43],[17,22],[25,15],[42,17],[49,30],[45,47],[30,53],[17,50]],C.rock);
+  poly([[19,24],[25,16],[41,19],[33,27]],C.rockHi);
+  poly([[40,27],[46,33],[41,46],[30,52]],C.dark);
+  poly([[22,39],[27,35],[31,46],[33,54],[29,53],[26,44],[20,43]],C.orange);
+  box(q,25,38,3,9,C.hot);box(q,27,45,2,5,C.yellow);
+ });
+ const falling=[];
+ for(let i=0;i<4;i++){
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({
+   map:stoneTex,transparent:true,alphaTest:.025,depthWrite:false,
+   depthTest:true,fog:false}));
+  sp.visible=false;sp.scale.set(2.3,2.3,1);sp.renderOrder=4;fx.add(sp);
+  falling.push({sp,time:0,active:false,x:0,z:0,phase:rnd()*TAU});
+ }
+ function spawnDebris(){
+  const free=falling.find(f=>!f.active);if(!free)return;
+  free.active=true;free.time=0;
+  const side=rnd()<.5?-1:1;
+  free.x=side*(HX+7.1+rnd()*4.7);
+  free.z=(rnd()-.5)*HZ*1.8;
+  free.sp.position.set(free.x,16+rnd()*4,free.z);
+  const scale=1.4+rnd()*1.1;
+  free.sp.scale.set(scale,scale,1);free.sp.visible=true;
+  free.sp.material.opacity=1;
+ }
+ let rockTimer=6+rnd()*5;
+
  let clock=0,elapsed=0,spawnTimer=.5,flowIndex=-1;
  function tick(dt,t){
   // dt está en segundos; t es el timestamp en ms del bucle del estadio.
+  // Micro-erupciones detrás de las líneas de banda, nunca en el campo.
+  rockTimer-=Math.min(.10,Math.max(0,dt));
+  if(rockTimer<=0){spawnDebris();rockTimer=7+rnd()*7;}
+  for(const rock of falling){
+   if(!rock.active)continue;
+   rock.time+=Math.min(.10,Math.max(0,dt));
+   const p=Math.min(1,rock.time/.88);
+   rock.sp.position.set(rock.x,Math.max(.9,17*(1-p*p)+.9),rock.z);
+   rock.sp.material.rotation=Math.sin(p*8+rock.phase)*.20;
+   if(p>=1){
+    rock.sp.visible=false;rock.active=false;
+    spawnSteam(rock.x,rock.z,1.1);
+    const b=bubbles.find(e=>!e.active);
+    if(b){
+     b.x=rock.x;b.z=rock.z;b.time=.22;b.active=true;b.phase=2;
+     b.mesh.visible=true;b.mesh.material.map=bubbleFrames[2];
+     b.mesh.position.set(rock.x,.14,rock.z);b.mesh.scale.setScalar(1.0);
+    }
+   }
+  }
   if(!(dt>0))return;
   const step=Math.min(.10,dt);
   clock+=step;elapsed+=step;spawnTimer-=step;
