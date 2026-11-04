@@ -335,7 +335,7 @@ body.netHost .wzModes,body.netGuest .wzModes{display:none}
 #wiz #stadiumPick button{flex:0 0 auto;width:118px;height:84px;padding:0 6px 7px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;font:800 12px Nunito,sans-serif;color:#fff;border:2px solid #ffffff30;box-shadow:inset 0 -30px 28px #000a;text-shadow:0 2px 6px #000;scroll-snap-align:start;transition:.15s;background:var(--bg,#223)}
 #wiz #stadiumPick button.on{border-color:#ffd23f;box-shadow:inset 0 -30px 28px #000a,0 0 0 3px #ffd23f44;transform:translateY(-2px);color:#fff}
 #wiz #stadiumPick [data-stadium=city]{--bg:linear-gradient(180deg,#5b91b7,#97b56c 150%)}#wiz #stadiumPick [data-stadium=sunset]{--bg:linear-gradient(180deg,#2a2050,#ff9b5a)}#wiz #stadiumPick [data-stadium=classic]{--bg:linear-gradient(180deg,#294a74,#9cc0df)}
-#wiz #stadiumPick [data-stadium=beach]{--bg:linear-gradient(180deg,#1f7ae0,#f5d48a)}#wiz #stadiumPick [data-stadium=volcano]{--bg:linear-gradient(180deg,#14070b,#ff5a1f)}#wiz #stadiumPick [data-stadium=arctic]{--bg:linear-gradient(180deg,#7fd0f0,#f1fbff)}
+#wiz #stadiumPick [data-stadium=beach]{--bg:linear-gradient(180deg,#1f7ae0,#f5d48a)}#wiz #stadiumPick [data-stadium=volcano]{--bg:linear-gradient(180deg,#14070b,#ff5a1f)}#wiz #stadiumPick [data-stadium=glacier]{--bg:linear-gradient(180deg,#6ca1ce,#ddf6fb)}#wiz #stadiumPick [data-stadium=arctic]{--bg:linear-gradient(180deg,#7fd0f0,#f1fbff)}
 #wiz #stadiumPick [data-stadium=space]{--bg:linear-gradient(180deg,#0a0420,#7a3cff)}#wiz #stadiumPick [data-stadium=desert]{--bg:linear-gradient(180deg,#e0a85a,#f7d98a)}
 #wiz #weatherPick{display:flex!important;gap:7px;flex-wrap:wrap;margin:6px 0 0!important;max-width:100%!important;align-self:stretch}
 #wiz #weatherPick button{flex:0 0 auto;padding:8px 14px;border-radius:999px;font:800 12px Nunito,sans-serif;background:#ffffff12;border:1px solid #ffffff2a;color:#e6f0ff;box-shadow:none}
@@ -606,7 +606,7 @@ button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
 <div class="pickLbl" id="modeLbl">MODO LOCAL</div><div id="modePick"><button type="button" data-mode="1" class="on">🎮 1 jugador</button><button type="button" data-mode="4">👥 2 vs 2 · 4 jugadores</button></div>
 <div id="l4Cfg"><div class="l4row"><b style="color:#ffd23f">P1 · Eq.1</b><select id="l4s0"></select></div><div class="l4row"><b style="color:#7dff8a">P2 · Eq.1</b><select id="l4s1"></select></div><div class="l4row"><b style="color:#66e0ff">P3 · Eq.2</b><select id="l4s2"></select></div><div class="l4row"><b style="color:#ff7ad9">P4 · Eq.2</b><select id="l4s3"></select></div>
 <small id="l4Warn"></small><small><b>Teclado A:</b> WASD mover · Shift correr · F tiro (mantén) · G pase · T pase aéreo · R placaje · Q poder<br><b>Teclado B:</b> Flechas mover · Shift der. correr · / tiro (mantén) · . pase · , pase aéreo · ; placaje · P poder<br><b>Mando:</b> stick mover · LB correr · RT tiro (mantén) · A pase · RB pase aéreo · B placaje · Y poder<br>Cada jugador maneja a su Pokémon fijo; un puesto en «CPU» (o con el mando desconectado) lo juega la IA. Con un solo teclado, para 4 humanos conviene usar mandos: algunos teclados no registran tantas teclas a la vez. No funciona en online.</small></div>
-<div class="pickLbl">ESTADIO ÚNICO · 2D</div><div id="stadiumPick" aria-label="Selecciona estadio"><button type="button" data-stadium="city" class="on">🏙️ Ciudad PMD</button><button type="button" data-stadium="volcano">🌋 Volcán</button></div>
+<div class="pickLbl">ESTADIO ÚNICO · 2D</div><div id="stadiumPick" aria-label="Selecciona estadio"><button type="button" data-stadium="city" class="on">🏙️ Ciudad PMD</button><button type="button" data-stadium="volcano">🌋 Volcán</button><button type="button" data-stadium="glacier">❄️ Glaciar PMD</button></div>
 <div id="weatherPick" aria-label="Seleccionar clima"><button type="button" data-weather="clear" class="on">☀️ Despejado</button><button type="button" data-weather="cloudy">☁️ Nublado</button><button type="button" data-weather="rain">🌧️ Lluvia</button><button type="button" data-weather="storm">⛈️ Tormenta</button><button type="button" data-weather="fog">🌫️ Niebla</button><button type="button" data-weather="snow">❄️ Nieve</button><button type="button" data-weather="auto">🎲 Cambiante</button></div>
 <div id="cols"><section><h3>Tu equipo</h3><div class="grid" id="g0"></div></section><section><h3>Rival</h3><div class="grid" id="g1"></div></section></div>
 <div id="spriteCredit" style="font:11px Nunito,sans-serif;color:#e6efff;opacity:.82;max-width:620px">Sprites estilo Pokémon Mystery Dungeon: PMD Sprite Repository / colaboradores (CC BY-NC 4.0). Créditos de artistas en el repositorio.</div><div id="netBar"></div><button id="go">¡Jugar!</button><button id="readyBtn" type="button">✅ ¡Estoy listo!</button><button id="bdOpen" type="button">🛠️ Armar equipo (6 Pokémon)</button><button id="onlineBtn" type="button">🌐 Jugar online (código de sala)</button></div>
@@ -621,6 +621,7 @@ button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
 <script src="./stadium-city-pmd.js"></script>
 <script src="./stadium-volcano-fx.js?v=volcano-lava-fx-2"></script>
 <script src="./stadium-volcano-pmd.js?v=volcano-lava-fx-1"></script>
+<script src="./stadium-glacier-pmd.js?v=glacier-pmd-1"></script>
 <script src="./city-pmd-v3.js?v=goal-bench-intro-2"></script>
 <script>
 const L={
@@ -829,10 +830,10 @@ stadiumIntro.innerHTML='<div id="introStageTitle" style="display:inline-block;pa
 document.body.appendChild(stadiumIntro);
 function showStadiumIntro(){
  const title=$('introStageTitle');
- if(title){title.textContent=stadiumMode==='volcano'?'🌋 ESTADIO VOLCÁN':'🏟️ ESTADIO CIUDAD';
- title.style.background=stadiumMode==='volcano'?'#472c3be8':'#243651dc';
- title.style.borderColor=stadiumMode==='volcano'?'#ffb05b':'#eed49b';}
- stadiumIntro.style.top=stadiumMode==='volcano'?'13%':'24%';
+ if(title){title.textContent=stadiumMode==='volcano'?'🌋 ESTADIO VOLCÁN':stadiumMode==='glacier'?'❄️ ESTADIO GLACIAR':'🏟️ ESTADIO CIUDAD';
+ title.style.background=stadiumMode==='volcano'?'#472c3be8':stadiumMode==='glacier'?'#2a5576e8':'#243651dc';
+ title.style.borderColor=stadiumMode==='volcano'?'#ffb05b':stadiumMode==='glacier'?'#b7f4ff':'#eed49b';}
+ stadiumIntro.style.top=stadiumMode==='volcano'?'13%':stadiumMode==='glacier'?'19%':'24%';
  cameraTopMix=0;camIntroLeft=CAM_INTRO_SECONDS;cam.zoom=CAM_ZOOM_INTRO;
  targetZoom2D=CAM_ZOOM_INTRO;cam.updateProjectionMatrix();
  stadiumIntro.style.display='block';stadiumIntro.style.opacity='0';
@@ -859,7 +860,7 @@ S.add(new THREE.HemisphereLight(0xf7fdff,0x78916e,.95));const fillLight=new THRE
 try{$('menu').style.backgroundImage='linear-gradient(90deg,rgba(5,14,39,.62) 0%,rgba(5,14,39,.34) 45%,rgba(5,14,39,.06) 100%)';$('menu').style.backgroundSize='cover';$('menu').style.backgroundPosition='center';}catch(e){}
 document.querySelectorAll('#stadiumPick button').forEach(b=>b.addEventListener('click',()=>{
  document.querySelectorAll('#stadiumPick button').forEach(other=>other.classList.toggle('on',other===b));
- buildStadium(b.dataset.stadium==='volcano'?'volcano':'city');
+ buildStadium(['volcano','glacier'].includes(b.dataset.stadium)?b.dataset.stadium:'city');
 }));
 const loader=new THREE.TextureLoader();loader.setCrossOrigin('anonymous');const texC={},pmdC={};
 function tex(id,col){
@@ -1854,7 +1855,7 @@ function refTick(){}
 renderBinds();keysHint();
 // ================= ENTORNO VISUAL: cielo, clima, daño de césped, minimapa =================
 const mixn=(a,b,k)=>a+(b-a)*k;
-const STN={city:'Ciudad PMD',volcano:'Volcán'};
+const STN={city:'Ciudad PMD',volcano:'Volcán',glacier:'Glaciar PMD'};
 const WXN={clear:['☀️','Despejado'],cloudy:['☁️','Nublado'],rain:['🌧️','Lluvia'],storm:['⛈️','Tormenta'],fog:['🌫️','Niebla'],snow:['❄️','Nieve']};
 const WXP={
  clear:{cloud:.12,rain:0,snow:0,fog:0,dark:0,wet:0,thunder:0},
@@ -1872,6 +1873,7 @@ const STADIUM_CLIMATE={
  sunset:{clear:56,cloudy:29,rain:8,fog:7},
  beach:{clear:60,cloudy:22,rain:14,storm:4},
  volcano:{clear:51,cloudy:28,fog:21},
+ glacier:{clear:29,cloudy:34,snow:30,fog:7},
  arctic:{clear:34,cloudy:32,snow:27,fog:7},
  space:{clear:100},
  desert:{clear:76,cloudy:24}
@@ -1898,10 +1900,11 @@ function beginStadiumAtmosphere(){
 function stadiumWeatherTitle(mode,k){
  if(mode==='space')return ['✨','Cielo espacial'];
  if(mode==='volcano'&&k==='fog')return ['🌋','Humo volcánico'];
+ if(mode==='glacier'&&k==='snow')return ['❄️','Nevada glaciar'];
  if(mode==='desert'&&k==='cloudy')return ['💨','Viento de arena'];
  return WXN[k]||WXN.clear;
 }
-const STADIUM_WEATHER={city:['clear','cloudy','rain','storm','fog'],volcano:['clear','cloudy','fog']};
+const STADIUM_WEATHER={city:['clear','cloudy','rain','storm','fog'],volcano:['clear','cloudy','fog'],glacier:['clear','cloudy','snow','fog']};
 function allowedWeather(mode){return STADIUM_WEATHER[mode]||STADIUM_WEATHER.city;}
 function pickBiomeWeather(mode,except){
  const list=allowedWeather(mode).filter(k=>k!==except);
@@ -2043,6 +2046,7 @@ const BIOMES={
 Object.assign(ENVPAL,{
  beach:{top:0x1f7ae0,bot:0xa9e6ff,sun:0xfff2cf,sunI:1.2,hemi:1,dir:[.35,.36,-1],glow:.9,fogN:210,fogF:560,exp:1.05},
  volcano:{top:0x685f9d,bot:0xe7a077,sun:0xffc27a,sunI:1.07,hemi:.92,dir:[.1,.16,-1],glow:.92,fogN:140,fogF:490,exp:1.04},
+ glacier:{top:0x679dcb,bot:0xd3edf7,sun:0xf8fcff,sunI:1.20,hemi:1.22,dir:[-.45,.55,-1],glow:.60,fogN:160,fogF:510,exp:1.07},
  arctic:{top:0x4a91ca,bot:0xcce9f0,sun:0xfff9e9,sunI:1.13,hemi:1.06,dir:[-.3,.12,-1],glow:.54,fogN:180,fogF:550,exp:1.04},
  space:{top:0x02020a,bot:0x180a36,sun:0xd0e0ff,sunI:.9,hemi:.6,dir:[-.4,.3,-1],glow:.25,fogN:500,fogF:1200,exp:1.1},
  desert:{top:0x429cd2,bot:0xffdfa6,sun:0xfff0c8,sunI:1.24,hemi:1.13,dir:[.45,.28,-1],glow:.82,fogN:190,fogF:530,exp:1.06}
@@ -2107,6 +2111,7 @@ function mdStadiumCards(){
   sunset:['#7067a9','#efb695','#b47f88','#d7a279','#b65b56'],
   beach:['#288fe8','#a4e6ed','#1a96bc','#eed79e','#46ad81'],
   volcano:['#7b72a5','#efaa86','#67526d','#dc905c','#f77f3f'],
+  glacier:['#83b2d8','#e3f7fb','#9cc5dc','#bcddec','#5b9bd0'],
   arctic:['#4b96c9','#d7f1f1','#7bb5d0','#e3f6f0','#8ecfe2'],
   space:['#18274d','#5b6193','#343c74','#9ac7d6','#9a88dd'],
   desert:['#4ca5db','#ffe2ad','#dba26c','#f2c489','#b77854']
@@ -2136,7 +2141,7 @@ function mdStadiumCards(){
    }
   }else if(mode==='desert'){
    for(let i=0;i<6;i++){const x=i*51-12,h=23+i%3*13;v(x,96-h,38,h,p[3]);v(x-4,95-h,46,5,p[4]);}
-  }else if(mode==='volcano'||mode==='arctic'){
+  }else if(mode==='volcano'||mode==='arctic'||mode==='glacier'){
    q.fillStyle=p[2];q.beginPath();q.moveTo(0,98);q.lineTo(125,23);q.lineTo(240,98);q.fill();
    q.fillStyle=p[3];q.beginPath();q.moveTo(55,84);q.lineTo(125,23);q.lineTo(143,88);q.fill();
    if(mode==='volcano'){v(117,32,11,61,'#fd883f');v(121,42,5,42,'#ffd170');}
@@ -2157,14 +2162,14 @@ function mdStadiumCards(){
 // Descartado el generador antiguo: Ciudad emplea solo stadium-city-pmd.js.
 // Modern illustrated stage router. All game rules, camera, controls and UI tabs unchanged.
 function buildStadium(mode='city'){
- const selected=mode==='volcano'?'volcano':'city';
+ const selected=['volcano','glacier'].includes(mode)?mode:'city';
  disposeScenicTextures();BIO.anims.length=0;cityG.clear();
  cityFloor.visible=false;stadiumMode=selected;skyM.visible=false;
  const opts={THREE,cityG,HX,HZ,GW,apron,pitchMat,SCENIC_TEXTURES};
- const stage=selected==='volcano'?window.PMD_VOLCANO.build(opts):window.PMD_CITY.build(opts);
+ const stage=selected==='volcano'?window.PMD_VOLCANO.build(opts):selected==='glacier'?window.PMD_GLACIER.build(opts):window.PMD_CITY.build(opts);
  window.PMD_CITY.activeScene=stage;
  arrangeStadiumCrowd();
- const sky=selected==='volcano'?0x563443:0x75bafa;
+ const sky=selected==='volcano'?0x563443:selected==='glacier'?0x8fc9e7:0x75bafa;
  S.background.setHex(sky);S.fog.color.setHex(sky);
  S.fog.near=190;S.fog.far=490;
  syncBiomeWeather();envApply();envChipUpdate();
