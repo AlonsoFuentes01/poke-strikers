@@ -128,14 +128,14 @@ function build(opts){
   depthWrite:false,depthTest:true,toneMapped:false,fog:false});
  const flowParts=[];
  const channels=[
-  {x:-(HX+9.3),z:-8.5,w:6.2,d:11},
-  {x:HX+9.3,z:8.5,w:6.2,d:11},
-  {x:-(HX+9.3),z:9,w:6.2,d:11},
-  {x:HX+9.3,z:-9,w:6.2,d:11},
-  {x:-19,z:HZ+11,w:18,d:4.7},
-  {x:19,z:HZ+11,w:18,d:4.7},
-  {x:-18,z:-(HZ+10),w:17,d:4.3},
-  {x:18,z:-(HZ+10),w:17,d:4.3}
+  {x:-(HX+4.8),z:-8.5,w:6.2,d:11},
+  {x:HX+4.8,z:8.5,w:6.2,d:11},
+  {x:-(HX+4.8),z:9,w:6.2,d:11},
+  {x:HX+4.8,z:-9,w:6.2,d:11},
+  {x:-19,z:HZ+3.8,w:18,d:4.7},
+  {x:19,z:HZ+3.8,w:18,d:4.7},
+  {x:-18,z:-(HZ+4.0),w:17,d:4.3},
+  {x:18,z:-(HZ+4.0),w:17,d:4.3}
  ];
  for(let i=0;i<channels.length;i++){
   const c=channels[i];
@@ -145,8 +145,14 @@ function build(opts){
   flowParts.push({mesh,offset:i%8});
  }
  function effectMesh(frames,w,h,horizontal=true){
-  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,h),surfaceMaterial(frames[0]));
+  // El vapor mira siempre hacia la cámara; se ve tanto en intro como cenital.
+  const mesh=horizontal?
+   new THREE.Mesh(new THREE.PlaneGeometry(w,h),surfaceMaterial(frames[0])):
+   new THREE.Sprite(new THREE.SpriteMaterial({
+    map:frames[0],transparent:true,alphaTest:.018,depthWrite:false,
+    depthTest:true,opacity:.64}));
   if(horizontal)mesh.rotation.x=-Math.PI/2;
+  else mesh.scale.set(w,h,1);
   mesh.visible=false;mesh.renderOrder=4;fx.add(mesh);return mesh;
  }
  // Burbujas de escala distinta, siempre al nivel del magma.
