@@ -211,7 +211,10 @@
    near.visible=k<.99;
    near.position.y=-11*k;
   };
+  // Los tres efectos trabajan en un grupo escénico independiente del terreno.
+  const lavaFX=window.PMD_VOLCANO_FX&&window.PMD_VOLCANO_FX.build({THREE,scene,HX,HZ,SCENIC_TEXTURES});
   scene.userData.pmdTick=(dt,t)=>{
+   if(lavaFX)lavaFX.tick(dt,t);
    for(const e of embers){
     const pulse=Math.sin(t*.008+e.phase);
     e.mesh.scale.set(1+pulse*.045,1+Math.sin(t*.011+e.phase)*.06,1);
