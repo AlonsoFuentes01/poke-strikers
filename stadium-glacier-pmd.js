@@ -333,5 +333,91 @@ function build(o){
  };
  return scene;
 }
-global.PMD_GLACIER={build};
+
+/* Banquillo de hielo para Glaciar PMD: los Pokémon son sprites reales del juego.
+ * No hay entrenadores generados; se mantiene el sistema oficial existente. */
+const benchTextures=new Map();
+function buildBench(o){
+ const {THREE,dugG,cx,zSeat,team}=o;
+ const A={ink:'#314563',dark:'#617895',mid:'#9bbdd3',ice:'#b5e3f0',
+  light:'#eefcff',blue:'#4f9ac5',gold:'#fce7b1'};
+ const color=team===0?'#ed8c8d':'#77c8ec';
+ const tex=(key,w,h,draw)=>{
+  const cacheKey=key+team;
+  if(benchTextures.has(cacheKey))return benchTextures.get(cacheKey);
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+  const q=cv.getContext('2d');q.imageSmoothingEnabled=false;
+  const r=(x,y,w,h,col)=>{q.fillStyle=col;q.fillRect(x,y,w,h);};
+  draw(q,r);
+  const t=new THREE.CanvasTexture(cv);t.encoding=THREE.sRGBEncoding;
+  t.magFilter=t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;
+  benchTextures.set(cacheKey,t);return t;
+ };
+ const wall=tex('wall',512,208,(q,r)=>{
+  r(0,0,512,208,A.ink);r(7,9,498,189,A.dark);
+  for(let row=0;row<10;row++){
+   const y=16+row*18;
+   r(9,y,494,3,A.ink);r(11,y+3,491,2,A.light);
+   for(let x=15+(row%2)*25;x<492;x+=58){
+    r(x,y+6,3,10,A.ink);r(x+7,y+8,24,2,A.mid);
+   }
+  }
+  r(0,0,512,20,A.ink);r(7,4,498,10,A.light);
+  for(let x=15;x<506;x+=70){
+   r(x,0,42,28,A.ink);r(x+4,3,34,19,A.mid);
+   r(x+7,5,26,4,A.light);
+  }
+  for(let x=52;x<485;x+=111){
+   r(x-18,59,49,73,A.ink);
+   q.fillStyle=A.ink;q.beginPath();q.moveTo(x-18,64);
+   q.lineTo(x+6,37);q.lineTo(x+31,64);q.fill();
+   r(x-10,66,35,57,A.blue);r(x-5,68,26,50,A.ice);
+   r(x,70,12,38,A.light);
+  }
+  r(4,181,505,22,A.ink);r(10,186,492,8,A.light);
+ });
+ const base=tex('floor',256,128,(q,r)=>{
+  r(0,0,256,128,A.dark);
+  for(let yy=0;yy<128;yy+=18){
+   for(let xx=(yy%36)*2-35;xx<256;xx+=49){
+    r(xx+2,yy+2,45,15,(xx+yy)%3===0?A.ice:A.mid);
+    r(xx+5,yy+3,37,2,A.light);
+    r(xx+5,yy+15,37,2,A.ink);
+   }
+  }
+ });
+ const rail=tex('rail',512,82,(q,r)=>{
+  for(let x=0;x<512;x+=49){
+   r(x,11,13,70,A.ink);r(x+3,14,7,62,A.mid);
+   r(x-4,8,20,11,A.light);
+  }
+  r(0,35,512,17,A.ink);r(0,37,512,7,A.light);
+  r(0,74,512,8,A.ink);
+  for(let x=28;x<512;x+=112){
+   r(x-11,52,27,17,color);r(x-7,54,19,11,A.ink);
+   r(x-3,56,10,7,A.ice);
+  }
+ });
+ const mat=(map,opacity=1)=>new THREE.MeshBasicMaterial({
+  map,transparent:true,opacity,alphaTest:.025,
+  depthWrite:false,side:THREE.DoubleSide,toneMapped:false});
+ const panel=(w,h,x,y,z,t,order)=>{
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat(t));
+  m.position.set(x,y,z);m.renderOrder=order;dugG.add(m);return m;
+ };
+ const ground=new THREE.Mesh(new THREE.PlaneGeometry(21,4),mat(base));
+ ground.rotation.x=-Math.PI/2;ground.position.set(cx,1.05,zSeat);
+ dugG.add(ground);
+ panel(21.0,7.3,cx,4.65,zSeat-2.2,wall,1);
+ // Barandilla y pedestales delante de los pies.
+ panel(20.3,1.3,cx,.79,zSeat+1.9,rail,5);
+ for(const dx of [-8.6,8.6]){
+  const p=new THREE.Mesh(new THREE.BoxGeometry(.8,3.2,1.2),
+   new THREE.MeshBasicMaterial({color:0x9bbdd3}));
+  p.position.set(cx+dx,1.8,zSeat+1.6);dugG.add(p);
+ }
+ return true;
+}
+
+global.PMD_GLACIER={build,buildBench};
 })(window);
