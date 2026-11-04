@@ -622,6 +622,7 @@ button:focus-visible{outline:3px solid #fff9c8;outline-offset:3px}
 <script src="./stadium-volcano-fx.js?v=volcano-lava-fx-2"></script>
 <script src="./stadium-volcano-pmd.js?v=volcano-lava-fx-1"></script>
 <script src="./stadium-glacier-pmd.js?v=glacier-pmd-1"></script>
+<script src="./stadium-stage-atmosphere.js?v=stage-atmosphere-1"></script>
 <script src="./city-pmd-v3.js?v=goal-bench-intro-2"></script>
 <script>
 const L={
@@ -2167,6 +2168,16 @@ function buildStadium(mode='city'){
  cityFloor.visible=false;stadiumMode=selected;skyM.visible=false;
  const opts={THREE,cityG,HX,HZ,GW,apron,pitchMat,SCENIC_TEXTURES};
  const stage=selected==='volcano'?window.PMD_VOLCANO.build(opts):selected==='glacier'?window.PMD_GLACIER.build(opts):window.PMD_CITY.build(opts);
+ if(selected!=='city'&&window.PMD_STAGE_ATMOSPHERE){
+  const atmosphere=window.PMD_STAGE_ATMOSPHERE.build({
+   THREE,scene:stage,HX,HZ,stadium:selected,SCENIC_TEXTURES,getWeather:()=>WXk
+  });
+  const scenicTick=stage.userData.pmdTick;
+  stage.userData.pmdTick=(dt,t)=>{
+   if(scenicTick)scenicTick(dt,t);
+   atmosphere.tick(dt,t);
+  };
+ }
  window.PMD_CITY.activeScene=stage;
  arrangeStadiumCrowd();
  const sky=selected==='volcano'?0x563443:selected==='glacier'?0x8fc9e7:0x75bafa;
