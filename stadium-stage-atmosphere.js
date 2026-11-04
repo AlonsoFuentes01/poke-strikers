@@ -88,6 +88,29 @@ function build(options){
   const m=floorSprite(cloudShadow,31,16,-12+i*34,-6+i*9,.032,0);
   m.renderOrder=3;clouds.push({m,phase:i*2.7});
  }
+ // Aureola polar (Glaciar) o respiración de calor (Volcán).
+ // Una lámina transparente detrás del edificio: no tapa sprites ni cancha.
+ const atmosphereRibbonTex=texture(512,128,(q,w,h)=>{
+  const col=glacier?'rgba(142,237,255,.36)':'rgba(255,145,71,.25)';
+  const col2=glacier?'rgba(218,252,255,.17)':'rgba(255,213,131,.16)';
+  for(let band=0;band<3;band++){
+   q.beginPath();
+   for(let x=0;x<w;x+=4){
+    const y=37+band*20+Math.sin(x*.014+band*1.3)*16+
+      Math.sin(x*.034+band*.9)*7;
+    if(x===0)q.moveTo(x,y);else q.lineTo(x,y);
+   }
+   q.lineWidth=glacier?9:5;
+   q.strokeStyle=band===0?col:col2;q.stroke();
+  }
+ });
+ const ribbon=new THREE.Mesh(new THREE.PlaneGeometry(96,22),
+  new THREE.MeshBasicMaterial({map:atmosphereRibbonTex,
+   transparent:true,opacity:.16,depthWrite:false,depthTest:true,
+   side:THREE.DoubleSide,blending:glacier?THREE.AdditiveBlending:THREE.NormalBlending,
+   fog:false,toneMapped:false}));
+ ribbon.position.set(0,16,-45);
+ group.add(ribbon);
  const glows=[];
  function glow(x,y,z,size,intensity=1){
   const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:haloTex,
@@ -98,11 +121,13 @@ function build(options){
   glows.push({sprite,x,y,z,size,phase:rnd()*TAU,intensity});
  }
  if(glacier){
+  glow(0,8,-29,11,.25);
   for(const side of [-1,1]){
    for(const z of [-13,-2,12])glow(side*(HX+5.8),2.4,z,5.8,.54);
    glow(side*37,5,-31,8.8,.32);
   }
  }else{
+  glow(0,7,-28,13,.27);
   for(const side of [-1,1]){
    for(const z of [-14,0,12])glow(side*(HX+4.8),1.4,z,5.8,.63);
    glow(side*56,4,-43,14,.8);
@@ -140,6 +165,10 @@ function build(options){
  function tick(dt,t){
   const wx=(typeof getWeather==='function'?getWeather():'clear');
   const secs=t*.001;
+  ribbon.material.opacity=(glacier?.13:.075)*
+    (wx==='fog'?.42:wx==='cloudy'?.65:1)*
+    (.78+.22*Math.sin(secs*.42));
+  ribbon.position.y=16+Math.sin(secs*.23)*.3;
   const dark=wx==='fog'?.68:wx==='cloudy'?.45:wx==='snow'?.35:.15;
   for(const cloud of clouds){
    cloud.m.material.opacity=dark*(glacier?.22:.19);
