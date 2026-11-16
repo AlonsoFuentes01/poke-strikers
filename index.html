@@ -793,11 +793,11 @@ countdownScreen.innerHTML='<span style="transform:scale(1);transition:transform 
 document.body.appendChild(countdownScreen);
 function setVolcanoLoading(on){volcanoLoading.style.display=on?'flex':'none';}
 function matchCountdownStop(){matchCountdown=-1;matchGoSound=false;countdownScreen.style.display='none';}
-function matchCountdownStart(){matchCountdown=3.55;matchGoSound=false;countdownScreen.style.display='flex';countdownScreen.firstElementChild.textContent='3';}
+function matchCountdownStart(){matchCountdown=3.55;matchGoSound=false;countdownScreen.style.display='flex';countdownScreen.firstElementChild.textContent='1';}
 function matchCountdownTick(dt){
  if(matchCountdown<0)return;
  matchCountdown=Math.max(0,matchCountdown-dt);
- const label=matchCountdown>2.55?'3':matchCountdown>1.55?'2':matchCountdown>.55?'1':'GO!';
+ const label=matchCountdown>2.55?'1':matchCountdown>1.55?'2':matchCountdown>.55?'3':'GO!';
  const el=countdownScreen.firstElementChild;
  if(el.textContent!==label){el.textContent=label;el.style.transform='scale(1.27)';}
  else el.style.transform='scale(1)';
