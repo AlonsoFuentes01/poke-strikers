@@ -778,6 +778,37 @@ let cameraTopMix=0;
 // Inicio con vista general. El encuadre del partido amplía los Pokémon.
 const CAM_ZOOM_GAME=1.04,CAM_ZOOM_INTRO=.64,CAM_INTRO_SECONDS=4.6;
 let targetZoom2D=CAM_ZOOM_GAME,camIntroLeft=0,stadiumEntrance=null;
+// Carga estática del Volcán, transición de cámara existente y 3–2–1–GO.
+let matchCountdown=-1,matchGoSound=false,matchStartToken=0;
+const volcanoLoading=document.createElement('div');
+volcanoLoading.id='volcanoLoading';
+volcanoLoading.setAttribute('role','status');volcanoLoading.setAttribute('aria-live','polite');
+volcanoLoading.style.cssText='position:fixed;inset:0;z-index:150;display:none;align-items:center;justify-content:center;background:#1b1024;overflow:hidden;';
+volcanoLoading.innerHTML='<img src="./assets/volcano-loading.webp?v=load-volcano-1" alt="Estadio Volcán, fortaleza de obsidiana y volcán en erupción" style="width:100%;height:100%;object-fit:contain;image-rendering:auto">';
+document.body.appendChild(volcanoLoading);
+const countdownScreen=document.createElement('div');
+countdownScreen.setAttribute('aria-live','assertive');
+countdownScreen.style.cssText='position:fixed;inset:0;z-index:35;display:none;align-items:center;justify-content:center;pointer-events:none;font:1000 clamp(86px,18vw,250px) system-ui,sans-serif;color:#fff2cb;text-shadow:0 10px 0 #36213c,0 16px 22px #000c,0 0 33px #ff9c51;letter-spacing:5px';
+countdownScreen.innerHTML='<span style="transform:scale(1);transition:transform .16s ease-out"></span>';
+document.body.appendChild(countdownScreen);
+function setVolcanoLoading(on){volcanoLoading.style.display=on?'flex':'none';}
+function matchCountdownStop(){matchCountdown=-1;matchGoSound=false;countdownScreen.style.display='none';}
+function matchCountdownStart(){matchCountdown=3.55;matchGoSound=false;countdownScreen.style.display='flex';countdownScreen.firstElementChild.textContent='3';}
+function matchCountdownTick(dt){
+ if(matchCountdown<0)return;
+ matchCountdown=Math.max(0,matchCountdown-dt);
+ const label=matchCountdown>2.55?'3':matchCountdown>1.55?'2':matchCountdown>.55?'1':'GO!';
+ const el=countdownScreen.firstElementChild;
+ if(el.textContent!==label){el.textContent=label;el.style.transform='scale(1.27)';}
+ else el.style.transform='scale(1)';
+ if(label==='GO!'){
+  el.style.color='#ffe07d';
+  if(!matchGoSound){matchGoSound=true;
+   if(ready&&(!netOn()||NET.role==='guest'||NET.role==='host'&&NET.guestReady))sfx('whistle');
+  }
+ }else el.style.color='#fff2cb';
+ if(matchCountdown===0)matchCountdownStop();
+}
 let ballCamX=0,ballCamZ=0;
 // Entrada en formación: salen del edificio por el centro, bajan y toman sus puestos.
 // Su movimiento es puramente visual y no cambia la física del partido.
@@ -821,8 +852,7 @@ function finishPlayersEntrance(){
   p.mv=false;p.introBob=0;p.g.position.set(p.x,0,p.z);
  }
  stadiumEntrance=null;
- // Silbato una sola vez al terminar la entrada, también en modo online.
- if(ready&&(!netOn()||NET.role==='guest'||NET.role==='host'&&NET.guestReady))sfx('whistle');
+ // El silbato inicial se emite únicamente cuando aparece "GO!".
 }
 const stadiumIntro=document.createElement('div');
 stadiumIntro.setAttribute('aria-hidden','true');
@@ -830,6 +860,7 @@ stadiumIntro.style.cssText='position:fixed;left:50%;top:24%;transform:translate(
 stadiumIntro.innerHTML='<div id="introStageTitle" style="display:inline-block;padding:10px 24px;background:#243651dc;border:3px solid #eed49b;border-radius:10px;box-shadow:0 5px 0 #131f37a0;color:#ffe8af;font:bold clamp(17px,3.3vw,38px) system-ui,sans-serif;letter-spacing:2px">🏟️ ESTADIO CIUDAD</div><div style="color:#fff5d9;font:700 clamp(11px,1.7vw,18px) system-ui,sans-serif;margin-top:10px;letter-spacing:3px">POKÉ STRIKERS</div>';
 document.body.appendChild(stadiumIntro);
 function showStadiumIntro(){
+ matchCountdownStop();
  const title=$('introStageTitle');
  if(title){title.textContent=stadiumMode==='volcano'?'🌋 ESTADIO VOLCÁN':stadiumMode==='glacier'?'❄️ ESTADIO GLACIAR':'🏟️ ESTADIO CIUDAD';
  title.style.background=stadiumMode==='volcano'?'#472c3be8':stadiumMode==='glacier'?'#2a5576e8':'#243651dc';
@@ -840,7 +871,7 @@ function showStadiumIntro(){
  stadiumIntro.style.display='block';stadiumIntro.style.opacity='0';
  beginPlayersEntrance();
 }
-function hideStadiumIntro(){camIntroLeft=0;stadiumIntro.style.display='none';stadiumEntrance=null;cameraTopMix=0;}
+function hideStadiumIntro(){camIntroLeft=0;stadiumIntro.style.display='none';stadiumEntrance=null;cameraTopMix=0;matchCountdownStop();setVolcanoLoading(false);}
 function resetCamera2D(){
  cameraTopMix=0;ballCamX=0;ballCamZ=0;
  cam.position.copy(CAMERA_2D_POS);cam.up.set(0,1,0);cam.lookAt(CAMERA_2D_LOOK);
@@ -1486,7 +1517,7 @@ function doShoot(){const u=B&&B.o;if(!u||u!==user())return;const[dx,dz]=aimDir(u
 function doPass(u,air){const q=passTarget(u);if(!q)return;pass(u,q.x-u.x,q.z-u.z,q,air)}
 // Las acciones dependen del contexto: con balón → tiro/pase; sin balón → placaje/cambio. Clic izq. sin balón no hace nada.
 function actDown(a,has){
- if(camIntroLeft>0)return;
+ if(camIntroLeft>0||matchCountdown>=0)return;
  if(freeze&&goalCelebration){if(a==='shoot'&&!paused)goalJump();return}
   if(L4.on||!ready||freeze||over||paused)return;const u=user();
  if(a==='shoot'){if(has)shootArmed=true}
@@ -1498,7 +1529,7 @@ function actDown(a,has){
 }
 function actUp(a){
  if(L4.on||a!=='shoot')return;
- if(shootArmed&&ready&&!camIntroLeft&&!freeze&&!over&&!paused&&B&&B.o===user())doShoot();
+ if(shootArmed&&ready&&!camIntroLeft&&matchCountdown<0&&!freeze&&!over&&!paused&&B&&B.o===user())doShoot();
  shootArmed=false;charge=0;
 }
 function inputDown(code){if(L4.on)return;const has=!!(B&&B.o===user());actsOf(code).forEach(a=>actDown(a,has))}
@@ -1514,7 +1545,7 @@ function postHit(cx,cz){
  B.x=cx+nx*rr*1.002;B.z=cz+nz*rr*1.002;B.sup=false;B.tg=null;sfx('bounce',1);
 }
 function update(){
- if(camIntroLeft>0||!ready||(paused&&!netOn())||NET.role==='guest'||(NET.role==='host'&&NET.open&&!NET.guestReady))return;
+ if(camIntroLeft>0||matchCountdown>=0||!ready||(paused&&!netOn())||NET.role==='guest'||(NET.role==='host'&&NET.open&&!NET.guestReady))return;
  stormGameTick();if(cheer>0)cheer--;
  if(freeze>0){if(goalCelebration)celebrationWalk();if(--freeze==0){$('msg').textContent='';finishGoalCelebration();kickoff();sfx('whistle')}return}
  if(FK&&FK.hold>0){if(--FK.hold===0){$('msg').textContent='';sfx('whistle')}return}   // pausa de la falta
@@ -1684,17 +1715,26 @@ function l4Tick(){
 
 // ---------- flujo ----------
 async function start(){
+ const token=++matchStartToken,loadingSince=performance.now();
  audioInit();ready=false;over=false;trClear();stormReset();pitchU.wear.value=.38;document.body.classList.add('playing');$('menu').style.display='none';$('splash').style.display='none';$('end').style.display='none';$('msg').style.color='#fff';$('msg').textContent='CARGANDO…';
+ matchCountdownStop();setVolcanoLoading(stadiumMode==='volcano');
  grp.clear();P=[];const T=sel.map(team);names=T.map(t=>t.n);cols=T.map(t=>t.c);CREST=T.map(t=>'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/'+t.p[0]+'.png');
  BENCH=[[],[]];SUBS=[0,0];
  [0,1].forEach(t=>T[t].p.forEach((id,i)=>{if(i<3)P.push(mkPlayer(id,T[t].c,t,i==2,i));else{const b=mkPlayer(id,T[t].c,t,false,i-3);b.g.visible=false;BENCH[t].push(b)}}));
- await Promise.all([...P,...BENCH[0],...BENCH[1]].map(loadStats));buildCrowd(T);
- finishGoalCelebration();lastGoalShooter=null;score=[0,0];time=5400;beginStadiumAtmosphere();envChipUpdate();sta=1;charge=0;cameraCue=null;impactCue=0;power=0;powerBoost=0;possessionTicks=0;alt=false;l4Setup();netMatchInit();kickoff();resetCamera2D();showStadiumIntro();
+ await Promise.all([...P,...BENCH[0],...BENCH[1]].map(loadStats));
+ if(token!==matchStartToken)return;
+ buildCrowd(T);
+ if(stadiumMode==='volcano'){
+  const remaining=Math.max(0,3600-(performance.now()-loadingSince));
+  if(remaining>0)await new Promise(resolve=>setTimeout(resolve,remaining));
+  if(token!==matchStartToken)return;
+ }
+ finishGoalCelebration();lastGoalShooter=null;score=[0,0];time=5400;beginStadiumAtmosphere();envChipUpdate();sta=1;charge=0;cameraCue=null;impactCue=0;power=0;powerBoost=0;possessionTicks=0;alt=false;l4Setup();netMatchInit();kickoff();resetCamera2D();setVolcanoLoading(false);showStadiumIntro();
  camLook.set(0,.8,0);lookT.set(0,.8,0);camBall.set(0,0,0);vb.x=vb.z=0;hud();$('msg').textContent=netOn()?'ESPERANDO AL RIVAL…':'';ready=true;netReadyHook();
 }
 // Online: la partida (y la revancha) solo empieza cuando AMBOS jugadores confirman "Listo".
 $('go').onclick=()=>{if(netOn())setReady(!NET.myReady);else start()};$('re').onclick=()=>{if(netOn())setReady(!NET.myReady);else start()};
-const toMenu=(fromNet)=>{stormReset();hideStadiumIntro();finishGoalCelebration();document.body.classList.remove('l4');L4.on=false;netMenu(fromNet===true);ready=false;document.body.classList.remove('playing');splashActive=false;$('splash').style.display='none';$('end').style.display='none';$('msg').textContent='';$('menu').style.display='flex';showMenuPreview();if(window.wizGo)wizGo(2)};
+const toMenu=(fromNet)=>{matchStartToken++;stormReset();hideStadiumIntro();finishGoalCelebration();document.body.classList.remove('l4');L4.on=false;netMenu(fromNet===true);ready=false;document.body.classList.remove('playing');splashActive=false;$('splash').style.display='none';$('end').style.display='none';$('msg').textContent='';$('menu').style.display='flex';showMenuPreview();if(window.wizGo)wizGo(2)};
 $('chg').onclick=toMenu;$('ch2').onclick=toMenu;
 
 // ---------- render ----------
@@ -2567,8 +2607,9 @@ function render(t){pollSplashPad();aimTick(t);ctlTick(t);const dt=Math.min(.1,cl
    const alpha=Math.max(0,Math.min(1,p/.10,(.86-p)/.15));
    stadiumIntro.style.opacity=String(alpha);
    stadiumIntro.style.transform='translate(-50%,0) scale('+(1.06-.06*ease).toFixed(3)+')';
-   if(camIntroLeft===0){stadiumIntro.style.display='none';finishPlayersEntrance();}
+   if(camIntroLeft===0){stadiumIntro.style.display='none';finishPlayersEntrance();matchCountdownStart();}
   }else{
+   matchCountdownTick(dt);
    cameraTopMix=Math.min(1,cameraTopMix+dt*1.9);
    if(fkCam)nextZoom=1.08;
    else if(goalCelebration||(cameraCue&&cameraCue.kind==='goal'))nextZoom=1.10;
